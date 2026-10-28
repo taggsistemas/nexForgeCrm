@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+graphify-out/
+artifacts/
+playwright-report/
+test-results/
+*.log
+.venv/

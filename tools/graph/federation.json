@@ -1,0 +1,1 @@
+{"schemaVersion":1,"repositories":[{"id":"nexforge-crm","enabled":true},{"id":"nexforge-erp","enabled":false,"reason":"Requires separate authorization and graph export"}],"links":[],"contractNamespace":"nexforge.integration"}

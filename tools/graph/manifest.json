@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "repository": "nexforge-crm",
+  "nodes": [
+    {"id":"crm:http:health-live","kind":"endpoint","source":"apps/api/src/app.ts","symbol":"GET /api/v1/health/live"},
+    {"id":"crm:http:health-ready","kind":"endpoint","source":"apps/api/src/app.ts","symbol":"GET /api/v1/health/ready"},
+    {"id":"crm:policy:company-scope","kind":"policy","source":"apps/api/src/infrastructure/access.ts","symbol":"companyScope"},
+    {"id":"crm:ui:foundation","kind":"component","source":"apps/web/src/App.tsx","symbol":"App"},
+    {"id":"crm:contract:event","kind":"contract","source":"packages/contracts/src/index.ts","symbol":"IntegrationEvent"}
+  ],
+  "edges": [
+    {"from":"crm:http:health-live","to":"tests/integration/health.test.ts","relation":"tested_by"},
+    {"from":"crm:http:health-ready","to":"tests/integration/health.test.ts","relation":"tested_by"},
+    {"from":"crm:policy:company-scope","to":"tests/unit/access.test.ts","relation":"tested_by"},
+    {"from":"crm:ui:foundation","to":"tests/e2e/foundation.spec.ts","relation":"tested_by"}
+  ]
+}

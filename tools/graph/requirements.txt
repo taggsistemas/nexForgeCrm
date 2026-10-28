@@ -1,0 +1,2 @@
+# Exact version must be selected and committed after an online compatibility test.
+# Do not install an unreviewed floating Graphify release in CI.

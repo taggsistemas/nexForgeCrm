@@ -1,0 +1,12 @@
+# NexForge CRM
+- Work only within this repository. Do not modify the NexForge ERP.
+- Independent application, authentication, database and deployment.
+- TypeScript, React/Vite, Express and MongoDB.
+- Business data must be scoped to a verified tenant and authorized company.
+- Never accept tenant headers as proof of identity or authorization.
+- Keep business endpoints closed until authentication is implemented.
+- Do not cache authenticated HTTP responses in the service worker.
+- Never commit secrets, customer records, location records or local database dumps.
+- Keep docs and tools/graph/manifest.json consistent with changes.
+- Run npm run check and npm run test:e2e when dependencies are available.
+- Report unexecuted checks honestly. Graph metadata is not Graphify AST output.

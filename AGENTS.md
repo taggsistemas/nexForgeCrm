@@ -48,3 +48,5 @@
 - Attendance location (property/equipment) must belong to the live Party; opportunity activities inherit the opportunity location. Territory filters use the property region, never the seller portfolio or a frontend-trusted region, and apply after Party scope and before counts.
 
 - Tickets require a property of the live Party; queue scope follows profile (company, coordination territory by property region, commercial portfolio, or assigned technician) before counts. Only coordination/administrator triage. Opening, first response, resolution and cancellation instants come from the server; only the agreed deadline is typed. Assignment history is immutable; closing requires a solution.
+
+- Work orders come from a ticket or scheduled maintenance on a property of the live Party; territory is the property region. Keep attendance time (server check-in/out), reported labor/travel and billable hours (authorized only at coordination closing) separate. A ticket cannot be resolved while linked work orders are open.

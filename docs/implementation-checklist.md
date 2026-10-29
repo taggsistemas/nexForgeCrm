@@ -14,8 +14,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 6. Oportunidades e propostas | Implementada; homologação de uso pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
 | 7. Agenda e visitas | Implementada; homologação de uso pendente | Adaptar ao local/equipamento e uniformizar filtros |
 | 8. Chamados e triagem | Implementada; homologação de uso pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
-| 9. OS básica | Próxima | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
-| 10. Peças utilizadas | Pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
+| 9. OS básica | Implementada; homologação de uso pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
+| 10. Peças utilizadas | Próxima | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
 | 11. Dashboards | Pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
 | 12. Homologação e piloto | Pendente | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
 
@@ -148,11 +148,24 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Alertas de chamados sem retorno/atrasados (RF-CHA-005, fase P1).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 9. OS básica
+## Etapa 9 — OS básica
 
-- [ ] OS vinculada a chamado ou manutenção programada, com equipamento/propriedade.
-- [ ] Diagnóstico, técnico, execução, horas trabalhadas, deslocamento, horas faturáveis separadas, solução e retorno pela mesma falha.
-- [ ] Técnico executa só OS atribuídas; conclusão exige dados obrigatórios e permissão de encerramento.
+- [x] OS numerada a partir de chamado (local herdado) ou de manutenção programada (propriedade obrigatória, equipamento opcional).
+- [x] Território da OS pela região da propriedade; técnico e coordenação limitados ao território e à equipe.
+- [x] Quatro registros separados: atendimento (servidor), horas trabalhadas, deslocamento (min/km) e horas faturáveis autorizadas no encerramento.
+- [x] Conclusão pelo técnico atribuído com diagnóstico, solução e horas; encerramento só pela Coordenação/Administrador.
+- [x] Retorno pela mesma falha ligado à OS original; chamado não é resolvido com OS aberta; OS no detalhe do chamado e na linha do tempo do equipamento.
+- [x] Tela técnica reescrita (legível) com Nova OS, conclusão e encerramento.
+- [x] Testes: 3 cenários MongoDB novos e suíte técnica adaptada, 3 unitários novos, E2E técnico e de layout ajustados.
+- [x] Verificação completa: check (188 Vitest), MongoDB 83/83, layout 115 aprovados e 2 ignorados, E2E 82/82.
+- [ ] Evidências, fotos, checklist, assinatura e PDF da OS (RF-OS-005/006, fase P1).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 10. Peças utilizadas
+
+- [ ] Selecionar peças do catálogo na OS com quantidade e devolução.
+- [ ] Referências de preço/custo apenas quando autorizadas; sem baixa de estoque nem cobrança automática.
+- [ ] Histórico das peças na OS e na linha do tempo do equipamento.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

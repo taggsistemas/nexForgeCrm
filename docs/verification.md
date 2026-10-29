@@ -308,3 +308,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Nova suíte `tickets-mongo` (4 casos reais): abertura só dentro da autoridade (carteira, território, empresa), equipamento de outra propriedade e campos forjados recusados; escopo por perfil antes de contagens e ordenação por criticidade; primeiro retorno único, designação concorrente (uma vence), técnico de fora da equipe recusado, prazo anterior à abertura recusado, prazo vencido, escalonamento, resolução com solução obrigatória, histórico com nomes; reincidência só com chamado resolvido do mesmo cliente, arquivamento bloqueado e configuração por list:manage.
 - Novo E2E de chamados (desktop/celular): abertura sem datas no payload e primeiro retorno.
 - `npm run check`: aprovado, 185 Vitest, build, grafo declarado (296 nós/375 arestas, não Graphify AST). `npm run test:db`: 80/80. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 82/82.
+
+## Etapa 9 — OS básica (29/10/2026)
+
+- OS numerada a partir de chamado ou manutenção programada, território pela propriedade, quatro registros separados (atendimento do servidor, horas trabalhadas, deslocamento, horas faturáveis no encerramento), conclusão pelo técnico e encerramento pela coordenação, retorno pela mesma falha e bloqueio de resolver chamado com OS aberta. Tela técnica reescrita.
+- Nova suíte `work-orders-mongo` (3 casos reais); suíte técnica adaptada (propriedade obrigatória e território da propriedade). Testes unitários e E2E técnicos atualizados para conclusão com diagnóstico, solução e horas.
+- Primeira rodada: `relationships-mongo` estourou 30 s no beforeAll sob carga paralela (6 usuários com hash de senha desde a etapa 2; sozinha leva 9,7 s) e um caso de layout ficou 38 min parado por congelamento do ambiente (limite de 20 s; isolado passa em menos de 1 s). Ajustado o limite do beforeAll para 90 s, como nas suítes novas; sem mudança de produção.
+- Rodada final: `npm run check` aprovado, 188 Vitest, grafo declarado (299 nós/381 arestas, não Graphify AST). `npm run test:db`: 83/83. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 82/82.

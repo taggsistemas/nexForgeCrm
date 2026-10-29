@@ -32,7 +32,7 @@ describe.skipIf(!uri)('relationships and reviewed qualification: real MongoDB au
   a=await tenant('relationship-a');b=await tenant('relationship-b');company=a.context.companyIds[0]!;companyB=b.context.companyIds[0]!;
   const user=async(name:string,profileKey:'seller'|'sales_admin'|'supervisor'|'director'|'auditor',supervisedUserIds:string[]=[])=>{const u=await administrationService.create(a.context,{name,email:name+'@example.invalid',password,profileKey,companyIds:[company],supervisedUserIds});await prepareAccount(u.email);return (await identityService.login(u.email,password))!;};
   s1=await user('rel-seller-one','seller');s2=await user('rel-seller-two','seller');sales=await user('rel-sales','sales_admin');supervisor=await user('rel-supervisor','supervisor',[s1.context.userId]);director=await user('rel-director','director');auditor=await user('rel-auditor','auditor');
- },30000);
+ },90000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('keeps intake minimal, blocks conversion/customer shortcuts and preserves scoped contacts and transfers',async()=>{
   const initial=await request(app).post(base()+'/leads').set(headers(s1)).send({name:'Primeiro contato',email:'prospect@example.invalid'});expect(initial.status).toBe(201);const lead=initial.body.record;expect(lead.taxId).toBe('');expect(lead.qualification.state).toBe('none');

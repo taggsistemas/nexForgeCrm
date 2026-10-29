@@ -34,3 +34,13 @@ Qualificação e oportunidades mostram nome atual do autor, ação, data/hora S�
 Produtos/serviços usam um cadastro com campos adequados a cada tipo. Serviço oferece **Hora (h)** ou **Serviço fechado**, precisão decimal e prazo de execução. 1,5 h representa uma hora e meia, sem iniciar cobrança automática. NCM/CEST, peso e caixa ficam em produtos. Trocar explicitamente um produto para serviço pede confirmação se houver dados físicos a remover; não há migração silenciosa de registros existentes.
 
 API base `/api/v1/companies/:companyId/technical`: GET/POST `/`, GET `/options`, GET `/:id`, POST `/:id/check-in`, `check-out`, `cancel`, `interrupt`. Autenticação canônica, primeiro acesso, privacidade, trial, empresa e permissões continuam obrigatórios. A homologação integral ainda depende dos testes de integração e de aparelhos físicos; consultar `verification.md`.
+
+## Ordem de serviço (etapa 9 — 29/10/2026)
+
+- O atendimento técnico passa a ser **OS** com número OS-000001 por empresa. Origem: **chamado** (cliente, propriedade e equipamento vêm do chamado; o chamado passa a "em atendimento" e recebe o evento "OS aberta") ou **manutenção programada** (cliente aprovado, propriedade obrigatória e equipamento opcional na propriedade). Agendamentos anteriores aparecem como "Agendamento anterior".
+- **Território da OS** é a região da propriedade; o técnico precisa atuar nessa região e a Coordenação só agenda/acompanha OS do seu território e da sua equipe. Agendamentos anteriores sem propriedade continuam pela região da carteira.
+- **Quatro registros separados**: tempo de atendimento (check-in a checkout, servidor), horas trabalhadas e deslocamento (minutos e km) informados pelo técnico na conclusão, e horas faturáveis autorizadas pela coordenação no encerramento. Check-in/out não calcula cobrança.
+- **Conclusão** (técnico atribuído): exige diagnóstico, solução, horas trabalhadas (> 0) e deslocamento. **Encerramento** (`technical:manage`, Coordenação/Administrador): só após a conclusão, uma vez, com horas faturáveis (0 permitido) e observação; data do servidor.
+- **Retorno pela mesma falha**: a OS pode apontar uma OS concluída do mesmo cliente; a original aparece na OS nova.
+- Chamado não pode ser resolvido com OS pendente ou em andamento (OPEN_WORK_ORDER).
+- GET `/technical/orders?ticketId|partyId|equipmentId` lista OS no mesmo escopo técnico; usada no detalhe do chamado e na linha do tempo do equipamento. POST `/technical/:id/close` encerra.

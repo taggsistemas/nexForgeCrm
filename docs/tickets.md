@@ -36,4 +36,4 @@ Base: /api/v1/companies/:companyId/tickets
 - GET /options (clientes, propriedades e equipamentos que o ator pode usar na abertura), GET /assignees, GET/PUT /settings.
 
 ## Fora do escopo
-Alertas automáticos (RF-CHA-005), OS vinculada (etapa 9) e indicadores consolidados (etapa 11).
+Alertas automáticos (RF-CHA-005) e indicadores consolidados (etapa 11). OS vinculadas: ver technical-work.md (etapa 9).

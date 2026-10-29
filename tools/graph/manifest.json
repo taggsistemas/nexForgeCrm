@@ -1777,6 +1777,24 @@
       "kind": "test",
       "source": "tests/e2e/tickets.spec.ts",
       "symbol": "coordination opens a critical ticket"
+    },
+    {
+      "id": "crm:technical:work-orders-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/technical/WorkOrderList.tsx",
+      "symbol": "WorkOrderList"
+    },
+    {
+      "id": "crm:technical:work-orders-test",
+      "kind": "test",
+      "source": "tests/integration/work-orders-mongo.test.ts",
+      "symbol": "work orders: origin, location"
+    },
+    {
+      "id": "crm:technical:work-orders-unit",
+      "kind": "test",
+      "source": "tests/unit/work-orders.test.ts",
+      "symbol": "work order inputs"
     }
   ],
   "edges": [
@@ -3654,6 +3672,36 @@
       "from": "crm:tickets:e2e",
       "to": "apps/web/src/features/tickets/Tickets.tsx",
       "kind": "tests"
+    },
+    {
+      "from": "crm:technical:work-orders-ui",
+      "to": "apps/web/src/features/tickets/Tickets.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:technical:work-orders-ui",
+      "to": "apps/web/src/features/relationships/PartyEquipment.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:technical:work-orders-test",
+      "to": "apps/api/src/modules/technical/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:technical:work-orders-test",
+      "to": "apps/api/src/modules/tickets/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:technical:work-orders-unit",
+      "to": "apps/api/src/modules/technical/input.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:tickets:service",
+      "to": "apps/api/src/modules/technical/models.ts",
+      "kind": "depends-on"
     }
   ]
 }

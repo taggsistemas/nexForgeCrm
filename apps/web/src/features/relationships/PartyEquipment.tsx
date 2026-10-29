@@ -5,6 +5,7 @@ import {equipmentStatuses,equipmentStatusNames,type EquipmentView,type PartyHist
 import {relationshipApi} from './api';
 import {optionLabel,selectableOptions} from './PartyLists';
 import {PartyAttendances} from './PartyAttendances';
+import {WorkOrderList} from '../technical/WorkOrderList';
 import {ticketStatusNames,type TicketView} from '../../../../../packages/contracts/src/tickets';
 const emptyDraft={propertyId:'',categoryId:'',brand:'',model:'',serialNumber:'',status:'em_operacao',installedAt:'',warrantyUntil:'',supplier:'',notes:''};
 const day=(value:string|null)=>value?new Date(value+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
@@ -70,7 +71,8 @@ export function PartyEquipment({companyId,record,lists,canWrite}:{companyId:stri
    {timeline?.items===null?<p role="status">Carregando linha do tempo...</p>:<HistoryTimeline title="Eventos do equipamento" events={(timeline?.items??[]).map(event=>({action:equipmentActionNames[event.action]??'Alteração registrada',actor:event.actor,at:event.at,detail:event.changes.map(change=>(equipmentFieldNames[change.field]??change.field)+': '+equipmentValue(change.field,change.before)+' → '+equipmentValue(change.field,change.after)).join(' · ')}))}/>}
    {timeline&&<section className="nf-history"><div className="nf-history-heading"><h3>Atendimentos no equipamento</h3></div><PartyAttendances companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/></section>}
    {timeline&&<EquipmentTickets companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/>}
-   <p className="nf-field-hint">Ordens de serviço e peças passam a aparecer aqui nas próximas etapas.</p>
+   {timeline&&<WorkOrderList companyId={companyId} query={{partyId:record.id,equipmentId:timeline.row.id}} title="Ordens de serviço do equipamento"/>}
+   <p className="nf-field-hint">Peças utilizadas passam a aparecer aqui na próxima etapa.</p>
   </Modal>
  </>;
 }

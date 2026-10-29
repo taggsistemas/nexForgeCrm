@@ -1,18 +1,19 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
 import {HistoryTimeline} from '../../components/HistoryTimeline';
+import {WorkOrderList} from '../technical/WorkOrderList';
 import {defaultTicketCriticalityNames,ticketCriticalities,ticketOrigins,ticketOriginNames,ticketStatusNames,openTicketStatuses,type TicketAction,type TicketCriticality,type TicketEventView,type TicketSettingsView,type TicketView} from '../../../../../packages/contracts/src/tickets';
 type Account={companies:{id:string;name:string}[];permissions?:string[]};
 type Option={id:string;name:string;propertyId?:string};
 const when=(value:string|null)=>value?new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'—';
 const duration=(minutes:number|null)=>minutes===null?'—':minutes<60?minutes+' min':minutes<1440?Math.floor(minutes/60)+' h '+(minutes%60)+' min':Math.floor(minutes/1440)+' d '+Math.floor(minutes%1440/60)+' h';
-const eventNames:Record<string,string>={opened:'Chamado aberto',first_response:'Primeiro retorno',assigned:'Designação',deadline_set:'Prazo pactuado',escalated:'Escalonamento',status_changed:'Situação alterada',resolved:'Chamado resolvido',cancelled:'Chamado cancelado'};
+const eventNames:Record<string,string>={work_order_created:'OS aberta',opened:'Chamado aberto',first_response:'Primeiro retorno',assigned:'Designação',deadline_set:'Prazo pactuado',escalated:'Escalonamento',status_changed:'Situação alterada',resolved:'Chamado resolvido',cancelled:'Chamado cancelado'};
 const actionNames:Record<TicketAction,string>={'first-response':'Registrar primeiro retorno',assign:'Designar responsável',deadline:'Definir prazo pactuado',escalate:'Escalonar',status:'Alterar situação',resolve:'Resolver',cancel:'Cancelar chamado'};
 async function api(company:string,path:string,options:RequestInit={}){
  const response=await fetch('/api/v1/companies/'+company+'/tickets'+path,{...options,credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',...options.headers}});
  if(!response.ok){const data=await response.json().catch(()=>({}));
   if(response.status===401||['PASSWORD_CHANGE_REQUIRED','PRIVACY_ACCEPTANCE_REQUIRED'].includes(data.code)){window.location.reload();throw Error('Atualize seu acesso.');}
-  const reasons:Record<string,string>={CLOSED:'O chamado já foi encerrado.',ALREADY_RESPONDED:'O primeiro retorno já foi registrado.',SAME_ASSIGNEE:'Esse responsável já está designado.',DEADLINE_BEFORE_OPENING:'O prazo precisa ser posterior à abertura.'};
+  const reasons:Record<string,string>={CLOSED:'O chamado já foi encerrado.',ALREADY_RESPONDED:'O primeiro retorno já foi registrado.',SAME_ASSIGNEE:'Esse responsável já está designado.',DEADLINE_BEFORE_OPENING:'O prazo precisa ser posterior à abertura.',OPEN_WORK_ORDER:'Há ordem de serviço pendente ou em andamento para este chamado. Conclua ou cancele a OS antes de resolver.'};
   throw Error(data.code==='TICKET_RULE_REJECTED'?reasons[data.reason]??'Ação não permitida.':data.code==='INVALID_REFERENCE'?'Propriedade, equipamento, responsável ou chamado anterior inválidos para este acesso.':response.status===409?'O chamado foi alterado por outra pessoa. Atualize e tente novamente.':response.status===403?'Você não tem permissão para esta operação.':response.status===404?'Registro não encontrado ou fora do seu acesso.':'Confira os campos e sua conexão.');
  }return response.json();
 }
@@ -106,6 +107,7 @@ export function Tickets({account}:{account:Account}){
     {record.solution&&<div><dt>Solução</dt><dd>{record.solution}</dd></div>}
    </dl>
    {open&&record.canManage&&<div className="nf-crm-row-actions nf-ticket-actions">{(Object.keys(actionNames) as TicketAction[]).filter(item=>item!=='first-response'||!record.firstResponseAt).map(item=><button key={item} type="button" className={item==='resolve'||item==='first-response'?'nf-primary':'nf-secondary'} onClick={()=>startAction(item)}>{actionNames[item]}</button>)}</div>}
+   {permissions.includes('technical:read')&&<WorkOrderList companyId={company} query={{ticketId:record.id}} title="Ordens de serviço do chamado"/>}
    <HistoryTimeline title="Histórico do chamado" events={detail!.history.map(item=>({action:eventNames[item.action]??item.action,actor:item.actor,at:item.at,detail:[item.fromAssignee||item.toAssignee?(item.fromAssignee||'sem responsável')+' → '+(item.toAssignee||'sem responsável'):'',ticketStatusNames[item.statusAfter as keyof typeof ticketStatusNames]].filter(Boolean).join(' · '),reason:item.note,reasonLabel:'Registro'}))}/></>}
   </Modal>
   <Modal open={Boolean(action)} title={action?actionNames[action]:''} size="compact" busy={busy} onClose={()=>setAction(null)}>

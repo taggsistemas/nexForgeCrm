@@ -11,6 +11,7 @@ import {RecordConflict,RecordNotFound,InvalidReference} from '../relationships/s
 import {locationNames} from '../relationships/locations.js';
 import {technicalTeamAuthority} from '../technical/access.js';
 import {Ticket,TicketEvent,TicketSequence,TicketSetting} from './models.js';
+import {TechnicalWork} from '../technical/models.js';
 import {ticketActionInputs,ticketCreateInput,ticketListInput,ticketOptionsInput,ticketSettingsInput,TicketRuleRejected} from './input.js';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 const literal=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -147,6 +148,7 @@ export const ticketService={
    if(action==='deadline'){if(input.agreedDeadline!.valueOf()<=new Date(row.openedAt).valueOf())throw new TicketRuleRejected('DEADLINE_BEFORE_OPENING');set.agreedDeadline=input.agreedDeadline;}
    if(action==='escalate')set.escalationLevel=row.escalationLevel+1;
    if(action==='status')set.status=input.status;
+   if(action==='resolve'&&await TechnicalWork.exists({tenantId:ctx.tenantId,companyId,ticketId:row._id,state:{$in:['pending','in_progress']}}).session(session))throw new TicketRuleRejected('OPEN_WORK_ORDER');
    if(action==='resolve'){set.status='resolvido';set.resolvedAt=now;set.solution=input.solution;if(!row.firstResponseAt)set.firstResponseAt=now;}
    if(action==='cancel'){set.status='cancelado';set.cancelledAt=now;set.cancelReason=input.reason;}
    const updated=await Ticket.findOneAndUpdate({_id:row._id,tenantId:ctx.tenantId,companyId,version:input.version},{$set:set,$inc:{version:1}},{new:true,session,runValidators:true});if(!updated)throw new RecordConflict();

@@ -1,0 +1,22 @@
+import {Schema,model} from 'mongoose';
+import {visitPlanPeriods,visitPlanStates} from '../../../../../packages/contracts/src/territories.js';
+import {agendaTimeZones} from '../../../../../packages/contracts/src/agenda.js';
+const scope={tenantId:{type:Schema.Types.ObjectId,required:true,immutable:true},companyId:{type:Schema.Types.ObjectId,required:true,immutable:true}};
+const options={timestamps:true,versionKey:false,strict:'throw'} as const;
+const regionSchema=new Schema({...scope,name:{type:String,required:true,maxlength:120},nameKey:{type:String,required:true},state:{type:String,default:'',maxlength:2},cities:[{type:String,maxlength:120}],notes:{type:String,default:'',maxlength:2000},active:{type:Boolean,default:true},version:{type:Number,default:0},referenceRevision:{type:Number,default:0}},options);
+regionSchema.index({tenantId:1,companyId:1,nameKey:1},{unique:true});
+export const Region=model('CrmRegion',regionSchema);
+const portfolioSchema=new Schema({...scope,name:{type:String,required:true,maxlength:120},nameKey:{type:String,required:true},ownerId:{type:Schema.Types.ObjectId,required:true},regionId:{type:Schema.Types.ObjectId,default:null},notes:{type:String,default:'',maxlength:2000},active:{type:Boolean,default:true},version:{type:Number,default:0},referenceRevision:{type:Number,default:0}},options);
+portfolioSchema.index({tenantId:1,companyId:1,nameKey:1},{unique:true});
+portfolioSchema.index({tenantId:1,companyId:1,ownerId:1,active:1});
+export const Portfolio=model('CrmPortfolio',portfolioSchema);
+const planSchema=new Schema({...scope,agendaRevision:{type:Number,default:0},title:{type:String,required:true,maxlength:160},portfolioId:{type:Schema.Types.ObjectId,required:true,immutable:true},ownerId:{type:Schema.Types.ObjectId,required:true,immutable:true},period:{type:String,enum:[...visitPlanPeriods],required:true,immutable:true},startDate:{type:String,required:true,immutable:true},endDate:{type:String,required:true,immutable:true},timeZone:{type:String,enum:[...agendaTimeZones],required:true,immutable:true},notes:{type:String,default:'',maxlength:2000},state:{type:String,enum:[...visitPlanStates],default:'draft'},publishedAt:Date,cancelledAt:Date,completedAt:Date,version:{type:Number,default:0}},options);
+planSchema.index({tenantId:1,companyId:1,ownerId:1,startDate:1});
+export const VisitPlan=model('CrmVisitPlan',planSchema);
+const itemSchema=new Schema({...scope,planId:{type:Schema.Types.ObjectId,required:true,immutable:true},partyId:{type:Schema.Types.ObjectId,required:true,immutable:true},startAt:{type:Date,required:true},endAt:{type:Date,required:true},durationMinutes:{type:Number,required:true,min:15,max:480},objective:{type:String,required:true,maxlength:500},version:{type:Number,default:0}},options);
+itemSchema.index({tenantId:1,companyId:1,planId:1,partyId:1,startAt:1},{unique:true});
+export const VisitPlanItem=model('CrmVisitPlanItem',itemSchema);
+const auditSchema=new Schema({...scope,actorId:{type:Schema.Types.ObjectId,required:true},entityId:{type:Schema.Types.ObjectId,required:true},action:{type:String,enum:['region.created','region.updated','portfolio.created','portfolio.updated','portfolio.assigned','visitplan.created','visitplan.updated','visitplan.item.created','visitplan.item.updated','visitplan.item.removed','visitplan.published','visitplan.cancelled','visitplan.completed'],required:true},previousOwnerId:Schema.Types.ObjectId,nextOwnerId:Schema.Types.ObjectId,affectedCount:Number},options);
+auditSchema.index({tenantId:1,companyId:1,createdAt:-1});
+export const TerritoryAudit=model('CrmTerritoryAudit',auditSchema);
+export async function initializeTerritoryModels(){await Promise.all([Region.init(),Portfolio.init(),VisitPlan.init(),VisitPlanItem.init(),TerritoryAudit.init()]);}

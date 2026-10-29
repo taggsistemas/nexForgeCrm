@@ -1,16 +1,31 @@
+import {initializeTerritoryModels} from './modules/territories/models.js';
+import {initializeAgendaModels} from './modules/agenda/models.js';
+import {initializeOpportunityModels} from './modules/opportunities/models.js';
+import { initializeRelationshipModels } from './modules/relationships/models.js';
+import { initializeAccountSecurityModels } from './modules/account-security/models.js';
+import { createSmtpMailer } from './modules/account-security/mail.js';
+import { startPasswordRecoveryWorker } from './modules/account-security/worker.js';
+import { AdministrationAudit } from './modules/administration/models.js';
 import mongoose from 'mongoose';
+import { platformAuth } from './modules/platform/auth.js';
+import { platformClients, initializeClientModels } from './modules/platform/clients.js';
+import { PlatformAdmin, PlatformSession } from './modules/platform/models.js';
 import { createApp } from './app.js';
 import { readConfig } from './infrastructure/config.js';
+import { identityService } from './modules/identity/service.js';
 const config = readConfig(process.env);
+const recoveryMailer=createSmtpMailer(process.env);
 await mongoose.connect(config.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-const app = createApp({ origin: config.WEB_ORIGIN, databaseReady: () => mongoose.connection.readyState === 1 });
+await Promise.all([initializeClientModels(), PlatformAdmin.init(), PlatformSession.init(), AdministrationAudit.init(),initializeRelationshipModels(),initializeAccountSecurityModels(),initializeOpportunityModels(),initializeAgendaModels(),initializeTerritoryModels()]);
+const app = createApp({ origin: config.WEB_ORIGIN, databaseReady: () => mongoose.connection.readyState === 1, identity: identityService, platform: { auth: platformAuth, clients: platformClients }, secureCookies: config.NODE_ENV === 'production', recoveryMailer,privacyContact:config.PRIVACY_CONTACT_EMAIL });
+const stopRecovery=startPasswordRecoveryWorker(config.WEB_ORIGIN,recoveryMailer);
 const server = app.listen(config.PORT, () => console.info('NexForge CRM API listening on ' + config.PORT));
 let closing = false;
 function shutdown() {
   if (closing) return;
   closing = true;
   const timeout = setTimeout(() => process.exit(1), 10000).unref();
-  server.close(async () => { await mongoose.disconnect(); clearTimeout(timeout); });
+  server.close(async () => { await stopRecovery();await mongoose.disconnect(); clearTimeout(timeout); });
 }
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);

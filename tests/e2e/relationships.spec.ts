@@ -1,0 +1,114 @@
+import {test,expect} from '@playwright/test';
+import {privacyPolicy} from '../../packages/contracts/src/privacy';
+const company='a'.repeat(24),user='b'.repeat(24),id='c'.repeat(24),contactId='d'.repeat(24);
+const account={user:{id:user,name:'Vendedor',email:'seller@example.invalid'},tenant:{name:'Empresa Teste'},companies:[{id:company,name:'Empresa Teste'}],permissions:['company:read','lead:read','lead:write','customer:read','customer:write','contact:read','contact:write'],security:{mustChangePassword:false,privacyAcceptanceRequired:false}};
+const record={id,kind:'lead',name:'Acme',legalName:'Acme Ltda',taxId:'11222333000181',stateRegistration:'ISENTO',email:'acme@example.invalid',phone:'42999999999',customerType:'outro',stage:'novo',address:{postalCode:'85010000',street:'Rua Teste',number:'100',complement:'',neighborhood:'Centro',city:'Guarapuava',state:'PR',country:'Brasil'},ownerId:user,notes:'',version:0,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+test('lead intake is minimal and qualification completes the scoped pipeline',async({page})=>{
+ let created=false,converted=false,contact=false,partyPayload:Record<string,unknown>|undefined,qualifiedPayload:Record<string,unknown>|undefined,contactPayload:Record<string,unknown>|undefined;
+ let current={...record,contactName:'Ana Compras',legalName:'',taxId:'',stage:'novo'};
+ await page.route('**/api/v1/auth/session',route=>route.fulfill({json:account}));
+ await page.route('https://viacep.com.br/ws/85010000/json/',route=>route.fulfill({json:{logradouro:'Rua Teste',bairro:'Centro',localidade:'Guarapuava',uf:'PR'}}));
+ await page.route('**/api/v1/companies/*/crm/**',async route=>{
+  const url=new URL(route.request().url()),path=url.pathname,method=route.request().method();
+  if(path.endsWith('/owners'))return route.fulfill({json:{items:[{id:user,name:'Vendedor'}]}});
+  if(path.endsWith('/references'))return route.fulfill({json:{items:created?[{id,name:'Acme',kind:converted?'customer':'lead'}]:[]}});
+  if(path.endsWith('/convert')){converted=true;return route.fulfill({json:{record:{...current,kind:'customer',customerType:'atacado',version:2}}});}
+  if(path.endsWith('/leads/'+id)&&method==='PATCH'){qualifiedPayload=route.request().postDataJSON();current={...record,...qualifiedPayload,contactName:'Ana Compras',stage:'qualificado',version:1} as typeof current;return route.fulfill({json:{record:current}});}
+  if(path.endsWith('/contacts')&&method==='POST'){contactPayload=route.request().postDataJSON();contact=true;return route.fulfill({status:201,json:{record:{id:contactId,partyId:id,name:'Contato Teste',email:'contact@example.invalid',phone:'',position:'Compras',notes:'',ownerId:user,version:0,createdAt:record.createdAt,updatedAt:record.updatedAt}}});}
+  if(path.endsWith('/contacts'))return route.fulfill({json:{items:contact?[{id:contactId,partyId:id,name:'Contato Teste',email:'contact@example.invalid',phone:'',position:'Compras',notes:'',ownerId:user,version:0,createdAt:record.createdAt,updatedAt:record.updatedAt}]:[],total:contact?1:0,page:1,pageSize:20}});
+  if(path.endsWith('/leads')&&method==='POST'){partyPayload=route.request().postDataJSON();created=true;return route.fulfill({status:201,json:{record:current}});}
+  if(path.endsWith('/leads')){const items=created&&!converted&&(!url.searchParams.has('stage')||url.searchParams.get('stage')===current.stage)?[current]:[];return route.fulfill({json:{items,total:items.length,page:1,pageSize:20}});}
+  if(path.endsWith('/customers'))return route.fulfill({json:{items:converted?[{...current,kind:'customer',customerType:'atacado',version:2}]:[],total:converted?1:0,page:1,pageSize:20}});
+  return route.fulfill({status:404,json:{}});
+ });
+ await page.goto('/');
+ if(test.info().project.name==='mobile')await page.getByRole('button',{name:'Abrir ou fechar menu'}).click();
+ await page.getByRole('navigation').getByRole('button',{name:'Pipeline comercial'}).click();
+ await expect(page.getByRole('region',{name:'Novo',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'+ Novo lead'}).click();
+ const modal=page.getByRole('dialog');
+ await modal.getByLabel('Nome da empresa',{exact:true}).fill('Acme');
+ await modal.getByLabel('Nome do contato principal').fill('Ana Compras');
+ await modal.getByLabel('Telefone com DDD').fill('42999999999');
+ await modal.getByLabel('E-mail',{exact:true}).fill('acme@example.invalid');
+ await expect(modal.getByLabel('CNPJ',{exact:true})).toHaveCount(0);
+ await expect(modal.getByLabel('Razão social / nome completo')).toHaveCount(0);
+ await expect(modal.getByLabel('CEP',{exact:true})).not.toBeVisible();
+ await modal.getByRole('button',{name:'Salvar cadastro'}).click();
+ expect(partyPayload).toMatchObject({name:'Acme',contactName:'Ana Compras',ownerId:user});
+ expect(partyPayload).not.toHaveProperty('taxId');expect(partyPayload).not.toHaveProperty('tenantId');
+ const newColumn=page.getByRole('region',{name:'Novo',exact:true});
+ await expect(newColumn).toContainText('Acme');
+ await expect(page.getByRole('button',{name:'Converter',exact:true})).toHaveCount(0);
+ await newColumn.getByRole('button',{name:'Qualificar',exact:true}).click();
+ await modal.getByLabel('Razão social / nome completo').fill('Acme Ltda');
+ await modal.getByLabel('CNPJ',{exact:true}).fill('11222333000181');
+ await expect(modal.getByLabel('CNPJ',{exact:true})).toHaveValue('11.222.333/0001-81');
+ await modal.getByLabel('CEP',{exact:true}).fill('85010000');
+ await expect(modal.getByLabel('Cidade',{exact:true})).toHaveValue('Guarapuava');
+ await modal.getByLabel('Número',{exact:true}).fill('100');
+ await page.screenshot({path:'artifacts/qualification-modal-'+test.info().project.name+'.png',fullPage:true});
+ await modal.getByRole('button',{name:'Salvar cadastro'}).click();
+ expect(qualifiedPayload).toMatchObject({stage:'qualificado',version:0,contactName:'Ana Compras'});
+ const qualifiedColumn=page.getByRole('region',{name:'Qualificado',exact:true});
+ await expect(qualifiedColumn).toContainText('Acme');
+ await expect(newColumn).not.toContainText('Acme');
+ await page.screenshot({path:'artifacts/lead-pipeline-'+test.info().project.name+'.png',fullPage:true});
+ await qualifiedColumn.getByRole('button',{name:'Contatos',exact:true}).click();
+ await page.getByRole('button',{name:'+ Novo contato'}).click();
+ await modal.getByLabel('Nome do contato',{exact:true}).fill('Contato Teste');
+ await modal.getByLabel('E-mail',{exact:true}).fill('contact@example.invalid');
+ await modal.getByLabel('Cargo / função').fill('Compras');
+ await modal.getByRole('button',{name:'Salvar cadastro'}).click();
+ await expect(page.getByRole('table')).toContainText('Contato Teste');
+ expect(contactPayload).not.toHaveProperty('ownerId');
+ await page.getByRole('tab',{name:'Leads',exact:true}).click();
+ await page.getByRole('button',{name:'Converter',exact:true}).click();
+ await modal.getByLabel('Tipo de cliente').selectOption('atacado');
+ await modal.getByRole('button',{name:'Confirmar conversão'}).click();
+ await expect(page.getByRole('tab',{name:'Clientes',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(page.getByRole('table')).toContainText('atacado');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('temporary password and privacy onboarding are modal gates before the dashboard',async({page})=>{
+ let logged=true,changed=false,accepted=false;
+ await page.route('**/api/v1/auth/session',route=>route.fulfill(logged?{json:{...account,security:{mustChangePassword:!changed,privacyAcceptanceRequired:!accepted}}}:{status:401,json:{code:'AUTHENTICATION_REQUIRED'}}));
+ await page.route('**/api/v1/auth/privacy-policy',route=>route.fulfill({json:privacyPolicy}));
+ await page.route('**/api/v1/auth/password/change',async route=>{expect(route.request().postDataJSON()).toEqual({currentPassword:'temporary-test-password',newPassword:'personal-test-password'});changed=true;logged=false;await route.fulfill({status:204});});
+ await page.route('**/api/v1/auth/login',route=>{logged=true;return route.fulfill({json:{...account,security:{mustChangePassword:false,privacyAcceptanceRequired:true}}});});
+ await page.route('**/api/v1/auth/privacy/accept',route=>{expect(route.request().postDataJSON()).toEqual({version:privacyPolicy.version,accepted:true});accepted=true;return route.fulfill({status:204});});
+ await page.goto('/');
+ await expect(page.getByRole('heading',{name:'Dashboard comercial'})).toHaveCount(0);
+ const modal=page.getByRole('dialog');
+ await modal.getByLabel('Senha temporária / atual').fill('temporary-test-password');
+ await modal.getByLabel('Nova senha pessoal').fill('personal-test-password');
+ await modal.getByLabel('Confirmar nova senha').fill('personal-test-password');
+ await modal.getByRole('button',{name:'Alterar senha',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Acessar sua conta',exact:true})).toBeVisible();
+ await page.getByLabel('E-mail',{exact:true}).fill('seller@example.invalid');
+ await page.getByLabel('Senha',{exact:true}).fill('personal-test-password');
+ await page.getByRole('button',{name:'Entrar no CRM'}).click();
+ await expect(page.getByRole('heading',{name:'Termos de uso e privacidade',exact:true})).toBeVisible();
+ await modal.getByRole('checkbox').check();
+ await modal.getByRole('button',{name:'Aceitar termos e continuar'}).click();
+ await expect(page.getByRole('heading',{name:'Dashboard comercial'})).toBeVisible();
+});
+test('forgot password and reset use modals and the reset token leaves the address bar',async({page})=>{
+ await page.route('**/api/v1/auth/session',route=>route.fulfill({status:401,json:{}}));
+ await page.route('**/api/v1/auth/password/forgot',route=>route.fulfill({status:202,json:{message:'Se houver conta ativa...'}}));
+ await page.goto('/');
+ await page.getByRole('button',{name:'Esqueci a senha'}).click();
+ await page.getByLabel('E-mail cadastrado').fill('seller@example.invalid');
+ await page.getByRole('button',{name:'Enviar instruções'}).click();
+ await expect(page.getByRole('status')).toContainText(['Conexão disponível','Se houver uma conta ativa']);
+ const token='e'.repeat(64);let resetBody:unknown;
+ await page.route('**/api/v1/auth/password/reset',route=>{resetBody=route.request().postDataJSON();return route.fulfill({status:204});});
+ await page.goto('/reset-password#token='+token);
+ await expect(page).toHaveURL(/\/reset-password$/);
+ await page.getByLabel('Nova senha',{exact:true}).fill('reset-personal-password');
+ await page.getByLabel('Confirmar nova senha',{exact:true}).fill('reset-personal-password');
+ await page.getByRole('button',{name:'Salvar nova senha'}).click();
+ await expect(page.getByRole('status')).toContainText('Senha atualizada');
+ expect(resetBody).toEqual({token,newPassword:'reset-personal-password'});
+});

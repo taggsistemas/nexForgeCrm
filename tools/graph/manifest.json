@@ -2,16 +2,2217 @@
   "schemaVersion": 1,
   "repository": "nexforge-crm",
   "nodes": [
-    {"id":"crm:http:health-live","kind":"endpoint","source":"apps/api/src/app.ts","symbol":"GET /api/v1/health/live"},
-    {"id":"crm:http:health-ready","kind":"endpoint","source":"apps/api/src/app.ts","symbol":"GET /api/v1/health/ready"},
-    {"id":"crm:policy:company-scope","kind":"policy","source":"apps/api/src/infrastructure/access.ts","symbol":"companyScope"},
-    {"id":"crm:ui:foundation","kind":"component","source":"apps/web/src/App.tsx","symbol":"App"},
-    {"id":"crm:contract:event","kind":"contract","source":"packages/contracts/src/index.ts","symbol":"IntegrationEvent"}
+    {
+      "id": "crm:http:health-live",
+      "kind": "endpoint",
+      "source": "apps/api/src/app.ts",
+      "symbol": "GET /api/v1/health/live"
+    },
+    {
+      "id": "crm:http:health-ready",
+      "kind": "endpoint",
+      "source": "apps/api/src/app.ts",
+      "symbol": "GET /api/v1/health/ready"
+    },
+    {
+      "id": "crm:policy:company-scope",
+      "kind": "policy",
+      "source": "apps/api/src/infrastructure/access.ts",
+      "symbol": "companyScope"
+    },
+    {
+      "id": "crm:ui:foundation",
+      "kind": "component",
+      "source": "apps/web/src/App.tsx",
+      "symbol": "App"
+    },
+    {
+      "id": "crm:contract:event",
+      "kind": "contract",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "IntegrationEvent"
+    },
+    {
+      "id": "crm:identity:models",
+      "kind": "models",
+      "source": "apps/api/src/modules/identity/models.ts",
+      "symbol": "membershipSchema"
+    },
+    {
+      "id": "crm:identity:security",
+      "kind": "service",
+      "source": "apps/api/src/modules/identity/security.ts",
+      "symbol": "hashPassword"
+    },
+    {
+      "id": "crm:identity:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/identity/service.ts",
+      "symbol": "identityService"
+    },
+    {
+      "id": "crm:identity:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/identity/router.ts",
+      "symbol": "createIdentityRouter"
+    },
+    {
+      "id": "crm:identity:bootstrap",
+      "kind": "command",
+      "source": "apps/api/src/modules/identity/bootstrap.ts",
+      "symbol": "bootstrap"
+    },
+    {
+      "id": "crm:identity:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/identity/IdentityPanel.tsx",
+      "symbol": "IdentityPanel"
+    },
+    {
+      "id": "crm:platform:models",
+      "kind": "models",
+      "source": "apps/api/src/modules/platform/models.ts",
+      "symbol": "PlatformAdmin"
+    },
+    {
+      "id": "crm:platform:auth",
+      "kind": "service",
+      "source": "apps/api/src/modules/platform/auth.ts",
+      "symbol": "platformAuth"
+    },
+    {
+      "id": "crm:platform:clients",
+      "kind": "service",
+      "source": "apps/api/src/modules/platform/clients.ts",
+      "symbol": "platformClients"
+    },
+    {
+      "id": "crm:platform:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "createPlatformRouter"
+    },
+    {
+      "id": "crm:platform:bootstrap",
+      "kind": "command",
+      "source": "apps/api/src/modules/platform/bootstrap.ts",
+      "symbol": "bootstrapMaster"
+    },
+    {
+      "id": "crm:platform:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/platform/MasterPage.tsx",
+      "symbol": "MasterPage"
+    },
+    {
+      "id": "crm:platform:endpoint:login",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "router.post('/login'"
+    },
+    {
+      "id": "crm:platform:endpoint:session",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "router.get('/session'"
+    },
+    {
+      "id": "crm:platform:endpoint:logout",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "router.post('/logout'"
+    },
+    {
+      "id": "crm:platform:endpoint:clients-list",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "router.get('/clients'"
+    },
+    {
+      "id": "crm:platform:endpoint:clients-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "router.post('/clients'"
+    },
+    {
+      "id": "crm:platform:endpoint:clients-status",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts",
+      "symbol": "router.patch('/clients/:id/status'"
+    },
+    {
+      "id": "crm:platform:bootstrap-service",
+      "kind": "service",
+      "source": "apps/api/src/modules/platform/bootstrap-service.ts",
+      "symbol": "runMasterBootstrap"
+    },
+    {
+      "id": "crm:platform:bootstrap-errors",
+      "kind": "service",
+      "source": "apps/api/src/modules/platform/bootstrap-errors.ts",
+      "symbol": "formatBootstrapError"
+    },
+    {
+      "id": "crm:config:database",
+      "kind": "service",
+      "source": "apps/api/src/infrastructure/config.ts",
+      "symbol": "readDatabaseConfig"
+    },
+    {
+      "id": "crm:platform:network-diagnostics",
+      "kind": "command",
+      "source": "apps/api/src/modules/platform/network-diagnostics.ts",
+      "symbol": "diagnoseDatabaseNetwork"
+    },
+    {
+      "id": "crm:infrastructure:error-codes",
+      "kind": "service",
+      "source": "apps/api/src/infrastructure/error-codes.ts",
+      "symbol": "safeErrorCode"
+    },
+    {
+      "id": "crm:platform:client-input",
+      "kind": "validation",
+      "source": "apps/api/src/modules/platform/client-input.ts",
+      "symbol": "newClientSchema"
+    },
+    {
+      "id": "crm:contract:customer",
+      "kind": "contract",
+      "source": "packages/contracts/src/customer.ts",
+      "symbol": "CustomerRegistration"
+    },
+    {
+      "id": "crm:ui:client-registration",
+      "kind": "component",
+      "source": "apps/web/src/features/platform/ClientRegistrationForm.tsx",
+      "symbol": "ClientRegistrationForm"
+    },
+    {
+      "id": "crm:ui:brand-panel",
+      "kind": "component",
+      "source": "apps/web/src/components/BrandPanel.tsx",
+      "symbol": "BrandPanel"
+    },
+    {
+      "id": "crm:ui:theme-toggle",
+      "kind": "component",
+      "source": "apps/web/src/components/ThemeToggle.tsx",
+      "symbol": "ThemeToggle"
+    },
+    {
+      "id": "crm:ui:identity-hook",
+      "kind": "function",
+      "source": "apps/web/src/features/identity/IdentityPanel.tsx",
+      "symbol": "useIdentity"
+    },
+    {
+      "id": "crm:security:http-input",
+      "kind": "middleware",
+      "source": "apps/api/src/infrastructure/request-security.ts",
+      "symbol": "rejectUnsafeInputKeys"
+    },
+    {
+      "id": "crm:security:company-authorization",
+      "kind": "policy",
+      "source": "apps/api/src/infrastructure/authorization.ts",
+      "symbol": "authorizeCompany"
+    },
+    {
+      "id": "crm:security:credentials",
+      "kind": "validation",
+      "source": "apps/api/src/infrastructure/credentials.ts",
+      "symbol": "credentialsSchema"
+    },
+    {
+      "id": "crm:identity:single-session",
+      "kind": "policy",
+      "source": "apps/api/src/modules/identity/single-session.ts",
+      "symbol": "replaceSingleSession"
+    },
+    {
+      "id": "crm:identity:default-profiles",
+      "kind": "function",
+      "source": "apps/api/src/modules/identity/default-profiles.ts",
+      "symbol": "createDefaultProfiles"
+    },
+    {
+      "id": "crm:policy:commercial-ownership",
+      "kind": "policy",
+      "source": "apps/api/src/modules/identity/profile-access.ts",
+      "symbol": "commercialFilter"
+    },
+    {
+      "id": "crm:contract:profiles",
+      "kind": "contract",
+      "source": "packages/contracts/src/profiles.ts",
+      "symbol": "profileDefinitions"
+    },
+    {
+      "id": "crm:administration:input",
+      "kind": "validation",
+      "source": "apps/api/src/modules/administration/input.ts",
+      "symbol": "createUserInput"
+    },
+    {
+      "id": "crm:administration:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/administration/service.ts",
+      "symbol": "administrationService"
+    },
+    {
+      "id": "crm:administration:audit",
+      "kind": "model",
+      "source": "apps/api/src/modules/administration/models.ts",
+      "symbol": "AdministrationAudit"
+    },
+    {
+      "id": "crm:administration:users-list",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/administration/router.ts",
+      "symbol": "router.get('/users'"
+    },
+    {
+      "id": "crm:administration:users-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/administration/router.ts",
+      "symbol": "router.post('/users'"
+    },
+    {
+      "id": "crm:administration:users-update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/administration/router.ts",
+      "symbol": "router.patch('/users/:id'"
+    },
+    {
+      "id": "crm:ui:user-administration",
+      "kind": "component",
+      "source": "apps/web/src/features/administration/UserAdministration.tsx",
+      "symbol": "UserAdministration"
+    },
+    {
+      "id": "crm:tests:database-runner",
+      "kind": "tool",
+      "source": "tools/test-database.mjs",
+      "symbol": "MongoMemoryReplSet"
+    },
+    {
+      "id": "crm:relationships:models",
+      "kind": "models",
+      "source": "apps/api/src/modules/relationships/models.ts",
+      "symbol": "Party"
+    },
+    {
+      "id": "crm:relationships:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/relationships/service.ts",
+      "symbol": "relationshipService"
+    },
+    {
+      "id": "crm:relationships:input",
+      "kind": "validation",
+      "source": "apps/api/src/modules/relationships/input.ts",
+      "symbol": "updatePartyInput"
+    },
+    {
+      "id": "crm:relationships:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/relationships/router.ts",
+      "symbol": "createRelationshipRouter"
+    },
+    {
+      "id": "crm:relationships:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/Relationships.tsx",
+      "symbol": "Relationships"
+    },
+    {
+      "id": "crm:ui:modal",
+      "kind": "component",
+      "source": "apps/web/src/components/Modal.tsx",
+      "symbol": "Modal"
+    },
+    {
+      "id": "crm:account:models",
+      "kind": "models",
+      "source": "apps/api/src/modules/account-security/models.ts",
+      "symbol": "PasswordReset"
+    },
+    {
+      "id": "crm:account:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/account-security/service.ts",
+      "symbol": "accountSecurityService"
+    },
+    {
+      "id": "crm:account:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/account-security/router.ts",
+      "symbol": "createAccountSecurityRouter"
+    },
+    {
+      "id": "crm:account:mail",
+      "kind": "service",
+      "source": "apps/api/src/modules/account-security/mail.ts",
+      "symbol": "RecoveryMailer"
+    },
+    {
+      "id": "crm:account:worker",
+      "kind": "service",
+      "source": "apps/api/src/modules/account-security/worker.ts",
+      "symbol": "dispatchPasswordRecovery"
+    },
+    {
+      "id": "crm:account:gate",
+      "kind": "policy",
+      "source": "apps/api/src/infrastructure/account-gate.ts",
+      "symbol": "assertAccountReady"
+    },
+    {
+      "id": "crm:account:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/account-security/AccountSecurity.tsx",
+      "symbol": "AccountOnboarding"
+    },
+    {
+      "id": "crm:account:reset-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/account-security/ResetPasswordPage.tsx",
+      "symbol": "ResetPasswordPage"
+    },
+    {
+      "id": "crm:privacy:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/privacy.ts",
+      "symbol": "privacyPolicy"
+    },
+    {
+      "id": "crm:relationships:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/relationships.ts",
+      "symbol": "PartyView"
+    },
+    {
+      "id": "crm:commercial:planned",
+      "kind": "contract",
+      "source": "packages/contracts/src/commercial-roadmap.ts",
+      "symbol": "priceTableScopes"
+    },
+    {
+      "id": "crm:relationships:test",
+      "kind": "test",
+      "source": "tests/integration/relationships-mongo.test.ts",
+      "symbol": "describe"
+    },
+    {
+      "id": "crm:account:test",
+      "kind": "test",
+      "source": "tests/integration/account-security-mongo.test.ts",
+      "symbol": "describe"
+    },
+    {
+      "id": "crm:relationships:e2e",
+      "kind": "test",
+      "source": "tests/e2e/relationships.spec.ts",
+      "symbol": "test("
+    },
+    {
+      "id": "crm:customer:read",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "customer:read"
+    },
+    {
+      "id": "crm:customer:write",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "customer:write"
+    },
+    {
+      "id": "crm:relationships:events",
+      "kind": "events",
+      "source": "apps/api/src/modules/relationships/models.ts",
+      "symbol": "lead.created"
+    },
+    {
+      "id": "crm:account:events",
+      "kind": "events",
+      "source": "apps/api/src/modules/account-security/models.ts",
+      "symbol": "password.changed"
+    },
+    {
+      "id": "crm:lead:qualification",
+      "kind": "policy",
+      "source": "apps/api/src/modules/relationships/qualification.ts",
+      "symbol": "assertLeadQualified"
+    },
+    {
+      "id": "crm:lead:stage-query",
+      "kind": "validation",
+      "source": "apps/api/src/modules/relationships/input.ts",
+      "symbol": "stage:z.enum(leadStages).optional()"
+    },
+    {
+      "id": "crm:lead:stage-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/relationships/models.ts",
+      "symbol": "lead.stage_changed"
+    },
+    {
+      "id": "crm:lead:pipeline-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/Relationships.tsx",
+      "symbol": "initialPipeline"
+    },
+    {
+      "id": "crm:lead:qualification-test",
+      "kind": "test",
+      "source": "tests/unit/lead-qualification.test.ts",
+      "symbol": "progressive lead qualification"
+    },
+    {
+      "id": "crm:opportunity:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/opportunities.ts",
+      "symbol": "OpportunityView"
+    },
+    {
+      "id": "crm:opportunity:activity-contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/opportunities.ts",
+      "symbol": "OpportunityActivityView"
+    },
+    {
+      "id": "crm:opportunity:money",
+      "kind": "function",
+      "source": "packages/contracts/src/opportunities.ts",
+      "symbol": "moneyToCents"
+    },
+    {
+      "id": "crm:opportunity:model",
+      "kind": "model",
+      "source": "apps/api/src/modules/opportunities/models.ts",
+      "symbol": "Opportunity=model"
+    },
+    {
+      "id": "crm:opportunity:activity-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/opportunities/models.ts",
+      "symbol": "OpportunityActivity=model"
+    },
+    {
+      "id": "crm:opportunity:history-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/opportunities/models.ts",
+      "symbol": "OpportunityHistory=model"
+    },
+    {
+      "id": "crm:opportunity:inputs",
+      "kind": "validation",
+      "source": "apps/api/src/modules/opportunities/input.ts",
+      "symbol": "createOpportunityInput"
+    },
+    {
+      "id": "crm:opportunity:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/opportunities/service.ts",
+      "symbol": "opportunityService"
+    },
+    {
+      "id": "crm:opportunity:parent-policy",
+      "kind": "policy",
+      "source": "apps/api/src/modules/opportunities/service.ts",
+      "symbol": "parentFilter"
+    },
+    {
+      "id": "crm:opportunity:router",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "createOpportunityRouter"
+    },
+    {
+      "id": "crm:opportunity:read",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.get('/'"
+    },
+    {
+      "id": "crm:opportunity:create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.post('/'"
+    },
+    {
+      "id": "crm:opportunity:detail",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.get('/:id'"
+    },
+    {
+      "id": "crm:opportunity:update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.patch('/:id'"
+    },
+    {
+      "id": "crm:opportunity:references",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.get('/references'"
+    },
+    {
+      "id": "crm:opportunity:activities-read",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.get('/:id/activities'"
+    },
+    {
+      "id": "crm:opportunity:activities-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.post('/:id/activities'"
+    },
+    {
+      "id": "crm:opportunity:activities-update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.patch('/:id/activities/:activityId'"
+    },
+    {
+      "id": "crm:opportunity:history-read",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/opportunities/router.ts",
+      "symbol": "router.get('/:id/history'"
+    },
+    {
+      "id": "crm:opportunity:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/opportunities/Opportunities.tsx",
+      "symbol": "Opportunities"
+    },
+    {
+      "id": "crm:opportunity:integration-test",
+      "kind": "test",
+      "source": "tests/integration/opportunities-mongo.test.ts",
+      "symbol": "inherits scope from the current party"
+    },
+    {
+      "id": "crm:opportunity:unit-test",
+      "kind": "test",
+      "source": "tests/unit/opportunities.test.ts",
+      "symbol": "opportunity and activity input boundaries"
+    },
+    {
+      "id": "crm:opportunity:e2e",
+      "kind": "test",
+      "source": "tests/e2e/opportunities.spec.ts",
+      "symbol": "opportunity modal"
+    },
+    {
+      "id": "crm:opportunity:stage-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/opportunities/models.ts",
+      "symbol": "opportunity.stage_changed"
+    },
+    {
+      "id": "crm:opportunity:activity-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/opportunities/models.ts",
+      "symbol": "activity.updated"
+    },
+    {
+      "id": "crm:permission:pipeline-read",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "pipeline:read"
+    },
+    {
+      "id": "crm:permission:pipeline-write",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "pipeline:write"
+    },
+    {
+      "id": "crm:permission:activity-read",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "activity:read"
+    },
+    {
+      "id": "crm:permission:activity-write",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "activity:write"
+    },
+    {
+      "id": "crm:agenda:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/agenda.ts",
+      "symbol": "AgendaActivityView"
+    },
+    {
+      "id": "crm:agenda:series-contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/agenda.ts",
+      "symbol": "AgendaSeriesView"
+    },
+    {
+      "id": "crm:agenda:calendar-range",
+      "kind": "function",
+      "source": "packages/contracts/src/agenda.ts",
+      "symbol": "calendarRange"
+    },
+    {
+      "id": "crm:agenda:activity-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/agenda/models.ts",
+      "symbol": "AgendaActivity=model"
+    },
+    {
+      "id": "crm:agenda:series-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/agenda/models.ts",
+      "symbol": "AgendaSeries=model"
+    },
+    {
+      "id": "crm:agenda:audit-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/agenda/models.ts",
+      "symbol": "AgendaAudit=model"
+    },
+    {
+      "id": "crm:agenda:inputs",
+      "kind": "validation",
+      "source": "apps/api/src/modules/agenda/input.ts",
+      "symbol": "createAgendaInput"
+    },
+    {
+      "id": "crm:agenda:recurrence",
+      "kind": "function",
+      "source": "apps/api/src/modules/agenda/recurrence.ts",
+      "symbol": "materializeOccurrences"
+    },
+    {
+      "id": "crm:agenda:wall-time",
+      "kind": "function",
+      "source": "apps/api/src/modules/agenda/recurrence.ts",
+      "symbol": "wallTimeToInstant"
+    },
+    {
+      "id": "crm:agenda:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/agenda/service.ts",
+      "symbol": "agendaService"
+    },
+    {
+      "id": "crm:agenda:parent-policy",
+      "kind": "policy",
+      "source": "apps/api/src/modules/agenda/service.ts",
+      "symbol": "castParentFilter"
+    },
+    {
+      "id": "crm:agenda:router",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "createAgendaRouter"
+    },
+    {
+      "id": "crm:agenda:owners",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.get('/owners'"
+    },
+    {
+      "id": "crm:agenda:references",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.get('/references'"
+    },
+    {
+      "id": "crm:agenda:list",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.get('/activities'"
+    },
+    {
+      "id": "crm:agenda:create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.post('/activities'"
+    },
+    {
+      "id": "crm:agenda:detail",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.get('/activities/:source/:id'"
+    },
+    {
+      "id": "crm:agenda:update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.patch('/activities/:source/:id'"
+    },
+    {
+      "id": "crm:agenda:cancel-series",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/agenda/router.ts",
+      "symbol": "router.post('/series/:id/cancel'"
+    },
+    {
+      "id": "crm:agenda:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/agenda/Agenda.tsx",
+      "symbol": "Agenda"
+    },
+    {
+      "id": "crm:agenda:integration-test",
+      "kind": "test",
+      "source": "tests/integration/agenda-mongo.test.ts",
+      "symbol": "unifies existing opportunity tasks"
+    },
+    {
+      "id": "crm:agenda:unit-test",
+      "kind": "test",
+      "source": "tests/unit/agenda.test.ts",
+      "symbol": "agenda date ranges"
+    },
+    {
+      "id": "crm:agenda:e2e",
+      "kind": "test",
+      "source": "tests/e2e/agenda.spec.ts",
+      "symbol": "calendar views unify activities"
+    },
+    {
+      "id": "crm:agenda:activity-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/agenda/models.ts",
+      "symbol": "agenda.activity.created"
+    },
+    {
+      "id": "crm:agenda:series-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/agenda/models.ts",
+      "symbol": "agenda.series.cancelled"
+    },
+    {
+      "id": "crm:territories:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/territories.ts",
+      "symbol": "PortfolioView"
+    },
+    {
+      "id": "crm:territories:plan-contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/territories.ts",
+      "symbol": "VisitPlanView"
+    },
+    {
+      "id": "crm:territories:periods",
+      "kind": "function",
+      "source": "packages/contracts/src/territories.ts",
+      "symbol": "visitPlanRange"
+    },
+    {
+      "id": "crm:territories:region-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "Region=model"
+    },
+    {
+      "id": "crm:territories:portfolio-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "Portfolio=model"
+    },
+    {
+      "id": "crm:territories:plan-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "VisitPlan=model"
+    },
+    {
+      "id": "crm:territories:item-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "VisitPlanItem=model"
+    },
+    {
+      "id": "crm:territories:audit-model",
+      "kind": "model",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "TerritoryAudit=model"
+    },
+    {
+      "id": "crm:territories:inputs",
+      "kind": "validation",
+      "source": "apps/api/src/modules/territories/input.ts",
+      "symbol": "transferInput"
+    },
+    {
+      "id": "crm:territories:seller-policy",
+      "kind": "policy",
+      "source": "apps/api/src/modules/territories/shared.ts",
+      "symbol": "async function seller"
+    },
+    {
+      "id": "crm:territories:parent-policy",
+      "kind": "policy",
+      "source": "apps/api/src/modules/territories/shared.ts",
+      "symbol": "partyFilter"
+    },
+    {
+      "id": "crm:territories:catalog",
+      "kind": "service",
+      "source": "apps/api/src/modules/territories/catalog.ts",
+      "symbol": "territoryCatalog"
+    },
+    {
+      "id": "crm:territories:planning",
+      "kind": "service",
+      "source": "apps/api/src/modules/territories/planning.ts",
+      "symbol": "visitPlanning"
+    },
+    {
+      "id": "crm:territories:assignment-policy",
+      "kind": "policy",
+      "source": "apps/api/src/modules/territories/planning.ts",
+      "symbol": "validateAssignment"
+    },
+    {
+      "id": "crm:territories:router",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "createTerritoryRouter"
+    },
+    {
+      "id": "crm:territories:regions-read",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.get('/regions'"
+    },
+    {
+      "id": "crm:territories:regions-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.post('/regions'"
+    },
+    {
+      "id": "crm:territories:regions-update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.patch('/regions/:id'"
+    },
+    {
+      "id": "crm:territories:portfolio-read",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.get('/portfolios'"
+    },
+    {
+      "id": "crm:territories:portfolio-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.post('/portfolios'"
+    },
+    {
+      "id": "crm:territories:portfolio-update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.patch('/portfolios/:id'"
+    },
+    {
+      "id": "crm:territories:parties",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.get('/parties'"
+    },
+    {
+      "id": "crm:territories:options",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.get('/options'"
+    },
+    {
+      "id": "crm:territories:transfer",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.post('/assignments'"
+    },
+    {
+      "id": "crm:territories:plans-read",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.get('/plans'"
+    },
+    {
+      "id": "crm:territories:plans-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.post('/plans'"
+    },
+    {
+      "id": "crm:territories:plans-detail",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.get('/plans/:id'"
+    },
+    {
+      "id": "crm:territories:plans-update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.patch('/plans/:id'"
+    },
+    {
+      "id": "crm:territories:items-create",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.post('/plans/:id/items'"
+    },
+    {
+      "id": "crm:territories:items-update",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.patch('/plans/:id/items/:itemId'"
+    },
+    {
+      "id": "crm:territories:items-remove",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "router.post('/plans/:id/items/:itemId/remove'"
+    },
+    {
+      "id": "crm:territories:plan-actions",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/territories/router.ts",
+      "symbol": "['publish','cancel','complete']"
+    },
+    {
+      "id": "crm:territories:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/territories/Territories.tsx",
+      "symbol": "Territories"
+    },
+    {
+      "id": "crm:territories:ui-options",
+      "kind": "component",
+      "source": "apps/web/src/features/territories/Territories.tsx",
+      "symbol": "RemoteSelect"
+    },
+    {
+      "id": "crm:territories:unit-test",
+      "kind": "test",
+      "source": "tests/unit/territories.test.ts",
+      "symbol": "regions, portfolios and planning contracts"
+    },
+    {
+      "id": "crm:territories:db-test",
+      "kind": "test",
+      "source": "tests/integration/territories-mongo.test.ts",
+      "symbol": "enforces region permissions"
+    },
+    {
+      "id": "crm:territories:e2e",
+      "kind": "test",
+      "source": "tests/e2e/territories.spec.ts",
+      "symbol": "region, portfolio, assignment and visit publication"
+    },
+    {
+      "id": "crm:territories:transfer-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "portfolio.assigned"
+    },
+    {
+      "id": "crm:territories:publish-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "visitplan.published"
+    },
+    {
+      "id": "crm:territories:cancel-event",
+      "kind": "event",
+      "source": "apps/api/src/modules/territories/models.ts",
+      "symbol": "visitplan.cancelled"
+    },
+    {
+      "id": "crm:permission:region-read",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "region:read"
+    },
+    {
+      "id": "crm:permission:portfolio-read",
+      "kind": "permission",
+      "source": "packages/contracts/src/index.ts",
+      "symbol": "portfolio:read"
+    },
+    {
+      "id": "crm:territories:legacy-owner-guard",
+      "kind": "policy",
+      "source": "apps/api/src/modules/relationships/service.ts",
+      "symbol": "PortfolioTransferRequired"
+    }
   ],
   "edges": [
-    {"from":"crm:http:health-live","to":"tests/integration/health.test.ts","relation":"tested_by"},
-    {"from":"crm:http:health-ready","to":"tests/integration/health.test.ts","relation":"tested_by"},
-    {"from":"crm:policy:company-scope","to":"tests/unit/access.test.ts","relation":"tested_by"},
-    {"from":"crm:ui:foundation","to":"tests/e2e/foundation.spec.ts","relation":"tested_by"}
+    {
+      "from": "crm:http:health-live",
+      "to": "tests/integration/health.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:http:health-ready",
+      "to": "tests/integration/health.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:policy:company-scope",
+      "to": "tests/unit/access.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:ui:foundation",
+      "to": "tests/e2e/foundation.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:security",
+      "to": "tests/unit/security.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:security",
+      "to": "tests/native/security.test.mjs",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:http",
+      "to": "tests/integration/auth.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:ui",
+      "to": "tests/e2e/identity.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:service",
+      "to": "tests/integration/identity-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:http",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:clients",
+      "to": "tests/integration/platform-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:ui",
+      "to": "tests/e2e/platform.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:auth",
+      "to": "tests/native/security.test.mjs",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:auth",
+      "to": "tests/native/platform-security.test.mjs",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:endpoint:login",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:endpoint:session",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:endpoint:logout",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:endpoint:clients-list",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:endpoint:clients-create",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:endpoint:clients-status",
+      "to": "tests/integration/platform.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:bootstrap-service",
+      "to": "tests/unit/bootstrap.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:bootstrap-errors",
+      "to": "tests/unit/bootstrap.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:config:database",
+      "to": "tests/unit/bootstrap.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:network-diagnostics",
+      "to": "tests/unit/network-diagnostics.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:infrastructure:error-codes",
+      "to": "tests/unit/error-codes.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:platform:client-input",
+      "to": "packages/contracts/src/customer.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:platform:client-input",
+      "to": "tests/unit/customer.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:ui:client-registration",
+      "to": "packages/contracts/src/customer.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:ui:client-registration",
+      "to": "tests/e2e/customer-registration.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:contract:customer",
+      "to": "tests/unit/customer.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:ui:foundation",
+      "to": "apps/web/src/components/BrandPanel.tsx",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:ui:foundation",
+      "to": "apps/web/src/components/ThemeToggle.tsx",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:ui:identity-hook",
+      "to": "tests/e2e/foundation.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:ui:brand-panel",
+      "to": "tests/e2e/platform.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:ui:theme-toggle",
+      "to": "tests/e2e/foundation.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:security:http-input",
+      "to": "tests/integration/security-boundaries.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:security:company-authorization",
+      "to": "tests/integration/security-boundaries.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:security:company-authorization",
+      "to": "apps/api/src/infrastructure/access.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:security:credentials",
+      "to": "tests/unit/credential-boundaries.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:ui:foundation",
+      "to": "tests/e2e/security.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:policy:company-scope",
+      "to": "tests/integration/identity-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:single-session",
+      "to": "tests/integration/identity-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:single-session",
+      "to": "tests/integration/platform-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:single-session",
+      "to": "tests/unit/profiles.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:identity:default-profiles",
+      "to": "packages/contracts/src/profiles.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:policy:commercial-ownership",
+      "to": "tests/integration/administration-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:contract:profiles",
+      "to": "tests/unit/profiles.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:administration:input",
+      "to": "tests/unit/profiles.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:administration:service",
+      "to": "tests/integration/administration-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:administration:audit",
+      "to": "tests/integration/administration-mongo.test.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:administration:users-list",
+      "to": "apps/api/src/modules/administration/service.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:administration:users-create",
+      "to": "apps/api/src/modules/administration/service.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:administration:users-update",
+      "to": "apps/api/src/modules/administration/service.ts",
+      "relation": "depends_on"
+    },
+    {
+      "from": "crm:administration:users-update",
+      "to": "apps/api/src/modules/identity/single-session.ts",
+      "relation": "revokes_session"
+    },
+    {
+      "from": "crm:administration:users-create",
+      "to": "apps/api/src/modules/administration/models.ts",
+      "relation": "audits"
+    },
+    {
+      "from": "crm:administration:users-update",
+      "to": "apps/api/src/modules/administration/models.ts",
+      "relation": "audits"
+    },
+    {
+      "from": "crm:ui:user-administration",
+      "to": "tests/e2e/administration.spec.ts",
+      "relation": "tested_by"
+    },
+    {
+      "from": "crm:tests:database-runner",
+      "to": "tests/integration/administration-mongo.test.ts",
+      "relation": "runs"
+    },
+    {
+      "from": "crm:relationships:models",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:service",
+      "to": "apps/api/src/modules/relationships/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:input",
+      "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:http",
+      "to": "apps/api/src/modules/relationships/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:ui",
+      "to": "apps/web/src/features/relationships/Relationships.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:ui:modal",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:models",
+      "to": "apps/api/src/modules/account-security/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:service",
+      "to": "apps/api/src/modules/account-security/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:http",
+      "to": "apps/api/src/modules/account-security/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:mail",
+      "to": "apps/api/src/modules/account-security/mail.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:worker",
+      "to": "apps/api/src/modules/account-security/worker.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:gate",
+      "to": "apps/api/src/infrastructure/account-gate.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:ui",
+      "to": "apps/web/src/features/account-security/AccountSecurity.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:reset-ui",
+      "to": "apps/web/src/features/account-security/ResetPasswordPage.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:privacy:contract",
+      "to": "packages/contracts/src/privacy.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:contract",
+      "to": "packages/contracts/src/relationships.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:commercial:planned",
+      "to": "packages/contracts/src/commercial-roadmap.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:test",
+      "to": "tests/integration/relationships-mongo.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:account:test",
+      "to": "tests/integration/account-security-mongo.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:e2e",
+      "to": "tests/e2e/relationships.spec.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:relationships:http",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:service",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:account:service",
+      "to": "apps/api/src/modules/identity/security.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:account:service",
+      "to": "packages/contracts/src/privacy.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:account:worker",
+      "to": "apps/api/src/modules/account-security/mail.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:account:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:test",
+      "to": "apps/api/src/modules/relationships/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:account:test",
+      "to": "apps/api/src/modules/account-security/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:lead:qualification",
+      "to": "apps/api/src/modules/relationships/qualification.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:lead:stage-query",
+      "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:lead:stage-event",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:lead:pipeline-ui",
+      "to": "apps/web/src/features/relationships/Relationships.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:lead:qualification-test",
+      "to": "tests/unit/lead-qualification.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:lead:qualification",
+      "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:service",
+      "to": "apps/api/src/modules/relationships/qualification.ts",
+      "kind": "enforces"
+    },
+    {
+      "from": "crm:lead:pipeline-ui",
+      "to": "packages/contracts/src/relationships.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:lead:qualification-test",
+      "to": "apps/api/src/modules/relationships/qualification.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:opportunity:contract",
+      "to": "packages/contracts/src/opportunities.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:activity-contract",
+      "to": "packages/contracts/src/opportunities.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:money",
+      "to": "packages/contracts/src/opportunities.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:model",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:activity-model",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:history-model",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:inputs",
+      "to": "apps/api/src/modules/opportunities/input.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:service",
+      "to": "apps/api/src/modules/opportunities/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:parent-policy",
+      "to": "apps/api/src/modules/opportunities/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:router",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:read",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:create",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:detail",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:update",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:references",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:activities-read",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:activities-create",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:activities-update",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:history-read",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:ui",
+      "to": "apps/web/src/features/opportunities/Opportunities.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:integration-test",
+      "to": "tests/integration/opportunities-mongo.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:unit-test",
+      "to": "tests/unit/opportunities.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:e2e",
+      "to": "tests/e2e/opportunities.spec.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:stage-event",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:activity-event",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:permission:pipeline-read",
+      "to": "packages/contracts/src/index.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:permission:pipeline-write",
+      "to": "packages/contracts/src/index.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:permission:activity-read",
+      "to": "packages/contracts/src/index.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:permission:activity-write",
+      "to": "packages/contracts/src/index.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:opportunity:service",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:parent-policy",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:service",
+      "to": "apps/api/src/modules/relationships/qualification.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:service",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:service",
+      "to": "apps/api/src/modules/opportunities/input.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:router",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:ui",
+      "to": "packages/contracts/src/opportunities.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:integration-test",
+      "to": "apps/api/src/modules/opportunities/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:unit-test",
+      "to": "apps/api/src/modules/opportunities/input.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunity:e2e",
+      "to": "apps/web/src/features/opportunities/Opportunities.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:contract",
+      "to": "packages/contracts/src/agenda.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:series-contract",
+      "to": "packages/contracts/src/agenda.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:calendar-range",
+      "to": "packages/contracts/src/agenda.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:activity-model",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:series-model",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:audit-model",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:inputs",
+      "to": "apps/api/src/modules/agenda/input.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:recurrence",
+      "to": "apps/api/src/modules/agenda/recurrence.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:wall-time",
+      "to": "apps/api/src/modules/agenda/recurrence.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/agenda/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:parent-policy",
+      "to": "apps/api/src/modules/agenda/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:router",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:owners",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:references",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:list",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:create",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:detail",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:update",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:cancel-series",
+      "to": "apps/api/src/modules/agenda/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:ui",
+      "to": "apps/web/src/features/agenda/Agenda.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:integration-test",
+      "to": "tests/integration/agenda-mongo.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:unit-test",
+      "to": "tests/unit/agenda.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:e2e",
+      "to": "tests/e2e/agenda.spec.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:activity-event",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:series-event",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/opportunities/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/opportunities/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:parent-policy",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/agenda/recurrence.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/agenda/input.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:router",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:recurrence",
+      "to": "packages/contracts/src/agenda.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:ui",
+      "to": "packages/contracts/src/agenda.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:integration-test",
+      "to": "apps/api/src/modules/agenda/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:unit-test",
+      "to": "apps/api/src/modules/agenda/recurrence.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:e2e",
+      "to": "apps/web/src/features/agenda/Agenda.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:contract",
+      "to": "packages/contracts/src/territories.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plan-contract",
+      "to": "packages/contracts/src/territories.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:periods",
+      "to": "packages/contracts/src/territories.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:region-model",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:portfolio-model",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plan-model",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:item-model",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:audit-model",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:inputs",
+      "to": "apps/api/src/modules/territories/input.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:seller-policy",
+      "to": "apps/api/src/modules/territories/shared.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:parent-policy",
+      "to": "apps/api/src/modules/territories/shared.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:catalog",
+      "to": "apps/api/src/modules/territories/catalog.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:planning",
+      "to": "apps/api/src/modules/territories/planning.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:assignment-policy",
+      "to": "apps/api/src/modules/territories/planning.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:router",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:regions-read",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:regions-create",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:regions-update",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:portfolio-read",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:portfolio-create",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:portfolio-update",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:parties",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:options",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:transfer",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plans-read",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plans-create",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plans-detail",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plans-update",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:items-create",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:items-update",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:items-remove",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:plan-actions",
+      "to": "apps/api/src/modules/territories/router.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:ui",
+      "to": "apps/web/src/features/territories/Territories.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:ui-options",
+      "to": "apps/web/src/features/territories/Territories.tsx",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:unit-test",
+      "to": "tests/unit/territories.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:db-test",
+      "to": "tests/integration/territories-mongo.test.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:e2e",
+      "to": "tests/e2e/territories.spec.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:transfer-event",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:publish-event",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:cancel-event",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:permission:region-read",
+      "to": "packages/contracts/src/index.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:permission:portfolio-read",
+      "to": "packages/contracts/src/index.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:legacy-owner-guard",
+      "to": "apps/api/src/modules/relationships/service.ts",
+      "kind": "declared-in"
+    },
+    {
+      "from": "crm:territories:catalog",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:catalog",
+      "to": "apps/api/src/modules/identity/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:catalog",
+      "to": "apps/api/src/modules/territories/shared.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:planning",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:planning",
+      "to": "apps/api/src/modules/agenda/recurrence.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:planning",
+      "to": "packages/contracts/src/territories.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:seller-policy",
+      "to": "apps/api/src/modules/identity/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:parent-policy",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:router",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:ui",
+      "to": "packages/contracts/src/territories.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:db-test",
+      "to": "apps/api/src/modules/territories/planning.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:e2e",
+      "to": "apps/web/src/features/territories/Territories.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:agenda:service",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:territories:legacy-owner-guard",
+      "to": "apps/api/src/modules/territories/errors.ts",
+      "kind": "depends-on"
+    }
   ]
 }

@@ -1,42 +1,61 @@
 # NexForge CRM
+CRM independente do NexForge ERP: TypeScript, React/Vite, Express e MongoDB.
+Repositório: https://github.com/taggsistemas/nexForgeCrm.
 
-CRM independente do NexForge ERP. Fundação em TypeScript, React/Vite, Express e MongoDB.
-
-## Estado atual
-- Interface responsiva com roadmap; não contém indicadores comerciais fictícios.
-- Configuração PWA para cache do shell público. Instalação e offline precisam de validação E2E.
-- API com liveness/readiness, validação de configuração e encerramento controlado.
-- Política de escopo tenant/empresa e contratos iniciais.
-- Testes unitários, HTTP e E2E escritos.
-- Autenticação, persistência de domínios, sincronização offline e módulos comerciais ainda não implementados.
-- Cores e símbolo são provisórios; falta conferir os tokens oficiais NexForge no ERP.
+## Incremento atual
+- Interface responsiva com formulário de acesso e roadmap sem números fictícios.
+- Modelos de identidade, tenant, empresas, vínculos, perfis e sessões.
+- Login por organização, sessão revogável e logout; bootstrap administrativo.
+- API com liveness/readiness e configuração própria.
+- PWA configurada para cache apenas do shell público.
+- Contratos iniciais e metadados para complementar o Graphify.
+- Módulos comerciais, dados offline e integração ERP ainda não implementados.
+- Identidade visual provisória, pendente de conferir tokens oficiais NexForge.
 
 ## Executar
-Requisitos: Node 24, npm 11 e MongoDB próprio do CRM, preferencialmente replica set.
+Node 24, npm 11 e MongoDB próprio com replica set.
 1. npm install
-2. Copiar .env.example para .env e ajustar MONGODB_URI.
-3. npm run dev
-Frontend: http://localhost:5173. API: http://localhost:3001.
-A API só inicia após conectar ao banco. Nunca usar a URI do ERP.
+2. Usar o .env existente com a URI exclusiva do CRM. Somente se não existir, copiar .env.example e configurar.
+3. Executar npm run master:bootstrap (credenciais digitadas no terminal).
+4. npm run dev
+5. Abrir http://localhost:5173/taggmaster para cadastrar clientes e seus administradores.
+6. O cliente acessa http://localhost:5173 com a organização, e-mail e senha cadastrados.
+A API só inicia após conectar ao banco; nunca usar a URI do ERP.
 
-## Verificação
+## Verificar
 npm run check
 npx playwright install chromium
 npm run test:e2e
 
-Não foi possível instalar dependências inicialmente por falha DNS no registry npm.
-Não existe lockfile validado. Gerar package-lock.json com npm install, revisar e
-versionar antes de trocar o CI para npm ci. Builds e testes não são considerados
-aprovados até sua execução.
+Sem dependências: npm run test:native e npm run graph:metadata.
+Dependências e lockfile agora estão presentes. Build e TypeScript passaram.
+Os testes HTTP encontram EACCES no loopback deste ambiente; validar fora dele.
+Os testes MongoDB exigem URI exclusiva de teste e não usam o .env de produção.
+Ver docs/verification.md e resultado do CI remoto.
 
-## Graphify
-Ver tools/graph/README.md. npm run graph:metadata valida metadados declarados;
-isso não substitui a extração real do Graphify.
+## Documentação
+docs/taggmaster.md, docs/architecture.md, docs/authentication.md, docs/roadmap.md,
+docs/integrations.md e tools/graph/README.md.
+Graphify AST ainda pendente; os metadados explícitos não o substituem.
 
-## GitHub
-Origin pretendido: https://github.com/taggsistema/nexForgeCrm.git.
-A configuração local não confirma existência, propriedade ou envio remoto.
-A criação privada e o push dependem de autenticação com acesso a taggsistema.
+## Publicação
+Frontend e API são workspaces separados no mesmo repositório. Consulte [o guia de publicação](docs/deployment.md) para os dois serviços no Render ou Nginx + Node em servidor próprio. Modelos em deploy/ não publicam serviços automaticamente.
 
-## Arquitetura
-Ver docs/architecture.md, docs/roadmap.md e docs/integrations.md.
+## Segurança
+O tenant é determinado por sessão validada no servidor. Nenhum dado do frontend concede autorização. Consulte [regras, evidências e pendências](docs/security.md).
+
+## Usuários, perfis e sessão única
+O administrador do cliente acessa Configurações > Usuários e equipes. Cada novo login substitui a sessão anterior da conta. Veja [operação e matriz de acesso](docs/user-administration.md). Para comprovar isolamento em MongoDB local temporário, execute npm run test:db; o comando não carrega o .env do CRM.
+
+## Leads, clientes, contatos e acesso
+O menu Relacionamento oferece leads, clientes e contatos vinculados, pesquisa, responsável, edição, arquivamento e conversão de lead em cliente. Formulários de cadastro/edição usam modais. A API aplica escopo de tenant, empresa e carteira/equipe.
+
+Novos usuários recebem senha temporária e devem trocá-la no primeiro acesso. O aviso de privacidade exige aceite versionado antes do acesso comercial. Recuperação por e-mail exige SMTP no backend; sem configuração o serviço informa indisponibilidade. Consulte [relacionamento e acesso](docs/relationships.md), [escopo comercial futuro](docs/commercial-scope.md) e [minuta de tratamento de dados](docs/data-processing-agreement.md).
+
+O cadastro inicial de leads agora é simplificado e o menu Pipeline comercial acompanha Novo, Em contato, Qualificado e Descartado. Dados completos são cobrados no modal de qualificação e validados na API antes da conversão. Consulte [qualificação progressiva](docs/lead-qualification.md).
+
+No menu **Oportunidades**, registre negociações de leads qualificados/clientes com valor estimado, fechamento, ganho/perda e atividades vinculadas. Todos os formulários usam modais; a carteira acompanha o cadastro pai. Consulte [oportunidades e atividades](docs/opportunities.md).
+
+O menu **Agenda e visitas** agora oferece agenda comercial diária/semanal/mensal, filtros, atividades vinculadas e recorrências. Atividades existentes de oportunidades aparecem sem duplicação. Consulte [agenda comercial](docs/agenda.md).
+
+No menu **Carteiras e planejamento**, organize regiões e carteiras de vendedores, mova cadastros e prepare planos semanais, mensais, trimestrais ou semestrais. Publique o rascunho para gerar visitas na agenda. Consulte [carteiras e planos](docs/territories.md).

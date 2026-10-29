@@ -45,3 +45,11 @@ Não prometer revogação instantânea de dados de dispositivo que permanece off
 Validar identidade visual oficial; provedor de mapas e custos; canais de deploy;
 base legal e retenção por finalidade; versão Graphify e provedor semântico;
 lockfile e resultados de testes quando houver conectividade.
+## Domínio de oportunidades
+O cadastro de relacionamento é a fonte da carteira. CrmOpportunity referencia Party e deriva o responsável atual; CrmOpportunityActivity referencia oportunidade e herda o mesmo escopo. CrmOpportunityHistory guarda eventos internos de auditoria e ator. Nenhuma dessas coleções envia eventos externos ao ERP neste incremento. Moeda BRL e centavos inteiros são contratos próprios do CRM. A camada de aplicação verifica autorização pelo pai em leituras e escritas; contadores internos serializam mutações relacionadas dentro de transações MongoDB.
+
+## Domínio da agenda
+CrmAgendaActivity registra compromissos diretos de Party; CrmOpportunityActivity continua sendo a única fonte das atividades comerciais já cadastradas. A agenda unifica consultas por agregação, filtra o pai autorizado antes de contar/paginar e não migra dados. CrmAgendaSeries materializa ocorrências limitadas numa transação; CrmAgendaAudit registra mutações próprias. Data/hora local e fuso são convertidos no backend por regras IANA. A carteira continua pertencendo ao cadastro de relacionamento.
+
+## Regiões, carteiras e planejamento
+Party.ownerId permanece autoridade de acesso; Party.portfolioId agrupa os cadastros e a região deriva de CrmPortfolio.regionId. CrmVisitPlan guarda vendedor/período originais; CrmVisitPlanItem é o rascunho de horário e objetivo. Após publicar, AgendaActivity é a fonte dos horários/status e referencia o item único. O acesso de cada item segue o Party atual, independentemente do proprietário histórico do plano. Não há evento enviado ao ERP neste incremento.

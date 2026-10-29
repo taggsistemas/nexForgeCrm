@@ -5,13 +5,28 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      MONGODB_TEST_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      # Replace npm install with npm ci once the first verified lockfile exists.
-      - run: npm install
+      - name: Start isolated MongoDB replica set
+        run: |
+          docker run -d --name crm-mongo -p 27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            if docker exec crm-mongo mongosh --quiet --eval 'db.adminCommand({ping:1})' >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          docker exec crm-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+          for i in $(seq 1 30); do
+            if docker exec crm-mongo mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) quit(1)' >/dev/null 2>&1; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - run: npm ci --include=dev
+      - run: npm audit --audit-level=moderate
       - run: npm run check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
@@ -21,4 +36,6 @@ jobs:
           name: graph-and-e2e
           path: |
             artifacts/graph/
+            artifacts/security*.json
             playwright-report/
+            package-lock.json

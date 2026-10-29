@@ -1,1 +1,42 @@
-{"name":"nexforge-crm","private":true,"version":"0.1.0","type":"module","workspaces":["apps/*","packages/*"],"engines":{"node":">=24 <25"},"scripts":{"dev":"concurrently -n api,web \"npm run dev -w @nexforge/api\" \"npm run dev -w @nexforge/web\"","build":"npm run build --workspaces --if-present","typecheck":"tsc --noEmit","test":"vitest run","test:e2e":"playwright test","graph:metadata":"node tools/graph/build-metadata.mjs","check":"npm run typecheck && npm test && npm run build && npm run graph:metadata"},"devDependencies":{"@playwright/test":"^1.56.0","@types/cors":"^2.8.19","@types/express":"^5.0.3","@types/node":"^24.0.0","@types/react":"^19.0.0","@types/react-dom":"^19.0.0","@types/supertest":"^6.0.3","concurrently":"^9.2.0","supertest":"^7.1.0","tsx":"^4.20.0","typescript":"^5.9.0","vitest":"^3.2.0"}}
+{
+  "name": "nexforge-crm",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web \"npm run dev -w @nexforge/api\" \"npm run dev -w @nexforge/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "graph:metadata": "node tools/graph/build-metadata.mjs",
+    "check": "npm run test:native && npm run typecheck && npm test && npm run build && npm run graph:metadata",
+    "test:native": "node --test tests/native/*.test.mjs && node tools/graph/check-access.mjs",
+    "master:bootstrap": "npm run master:bootstrap -w @nexforge/api",
+    "master:check": "npm run master:bootstrap -w @nexforge/api -- --check",
+    "db:diagnose": "npm run db:diagnose -w @nexforge/api",
+    "test:db": "node tools/test-database.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/supertest": "^6.0.3",
+    "concurrently": "^9.2.0",
+    "mongodb-memory-server-core": "11.3.0",
+    "supertest": "^7.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  }
+}

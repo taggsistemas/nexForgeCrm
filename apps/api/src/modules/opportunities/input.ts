@@ -1,0 +1,12 @@
+import {z} from 'zod';
+import {objectId} from '../relationships/input.js';
+import {opportunityStages,openOpportunityStages,activityTypes,activityStatuses} from '../../../../../packages/contracts/src/opportunities.js';
+export const calendarDate=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value=>{const date=new Date(value+'T00:00:00Z');return Number.isFinite(date.valueOf())&&date.toISOString().slice(0,10)===value;});
+const fields={title:z.string().trim().min(1).max(160),amountCents:z.number().int().min(1).max(1e12),expectedCloseDate:calendarDate,notes:z.string().trim().max(3000).default('')};
+export const createOpportunityInput=z.object({...fields,partyId:objectId,stage:z.enum(openOpportunityStages).default('descoberta')}).strict();
+export const updateOpportunityInput=z.object({...fields,stage:z.enum(opportunityStages),lossReason:z.string().trim().max(1000)}).partial().extend({version:z.number().int().min(0)}).strict();
+export const opportunityListInput=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),search:z.string().trim().max(80).default(''),stage:z.enum(opportunityStages).optional()}).strict();
+export const pageInput=z.object({page:z.coerce.number().int().min(1).max(100000).default(1)}).strict();
+const activityFields={title:fields.title,type:z.enum(activityTypes),dueAt:z.iso.datetime({offset:true}).transform(value=>new Date(value)),notes:fields.notes};
+export const createActivityInput=z.object(activityFields).strict();
+export const updateActivityInput=z.object({...activityFields,status:z.enum(activityStatuses)}).partial().extend({version:z.number().int().min(0)}).strict();

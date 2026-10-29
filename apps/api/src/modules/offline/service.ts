@@ -19,7 +19,7 @@ function partyFilter(context:AccessContext,company:string,permission:'activity:r
 export function offlineReportView(row:InstanceType<typeof OfflineVisitReport>):OfflineVisitReportView{return {observedInAt:row.observedInAt.toISOString(),observedOutAt:row.observedOutAt.toISOString(),receivedAt:row.receivedAt.toISOString(),outcome:row.outcome as OfflineVisitReportView['outcome'],notes:row.notes,nextSteps:row.nextSteps??'',checkIn:{latitude:row.checkIn.latitude!,longitude:row.checkIn.longitude!,accuracy:row.checkIn.accuracy!},checkOut:{latitude:row.checkOut.latitude!,longitude:row.checkOut.longitude!,accuracy:row.checkOut.accuracy!}};}
 export const offlineService={
  async prepare(context:AccessContext,company:string,raw:unknown,sessionToken:string):Promise<OfflineSnapshot>{
-  const input=prepareInput.parse(raw),scope=ids(context,company);commercialFilter(context,company,'activity:read');
+  const input=prepareInput.parse(raw),scope=ids(context,company);commercialFilter(context,company,'activity:write');
   return mongoose.connection.transaction(async session=>{
    const auth=await Session.findOne({tenantId:context.tenantId,userId:context.userId,_id:context.userId,tokenHash:tokenHash(sessionToken),expiresAt:{$gt:new Date()}}).session(session);if(!auth)throw new AccessDenied();
    const tenant=await Tenant.findOne({_id:context.tenantId,active:true}).session(session);if(!tenant)throw new AccessDenied();

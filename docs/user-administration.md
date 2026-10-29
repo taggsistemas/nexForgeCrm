@@ -15,15 +15,48 @@ alteração por esta tela. Operações administrativas são auditadas na mesma t
 A lista inicial é limitada a 500 vínculos do tenant e ao escopo de empresas do ator.
 Os endpoints repetem a autorização no servidor; esconder o menu não concede segurança.
 
-## Matriz padrão
+## Matriz padrão de perfis (etapa 2 — 29/10/2026)
 
-| Perfil | Dados comerciais | Ações principais |
-|---|---|---|
-| Administrador do sistema | Empresas autorizadas do tenant | Usuários, perfis e todas as permissões comerciais |
-| Gerencial | Empresas autorizadas | Acompanhamento, metas, comissões e aprovações comerciais; não administra identidades |
-| Administrativo de vendas | Empresas autorizadas | Cadastros e operação comercial; não aprova propostas/pedidos nem administra identidades |
-| Supervisor | Próprios e de vendedores vinculados | Operação e acompanhamento da equipe; não aprova nem administra identidades |
-| Vendedor | Registros próprios | Carteira e operação individual; não aprova nem administra identidades |
+Fonte única: `packages/contracts/src/profiles.ts`. Cada usuário tem um único perfil.
+Escopo "empresa" = empresas autorizadas no vínculo; "equipe" = vínculos atuais
+validados no banco a cada autenticação; "próprio" = ownerId/atribuição do usuário.
+
+| Perfil | Escopo | Consulta | Cria/edita | Aprova/encerra | Não pode |
+|---|---|---|---|---|---|
+| Administrador do sistema | Empresa | Tudo | Tudo, inclusive usuários e perfis | Tudo, inclusive distribuição técnica | Outro tenant |
+| Direção | Empresa | Comercial, financeiro do cliente (crédito/pagamento), técnico, relatórios | Nada operacional | Qualificação com crédito, propostas e pedidos | Criar/editar leads, clientes, agenda; distribuir atendimentos; pacote offline |
+| Gerencial | Empresa | Comercial, técnico (consulta), relatórios | Operação comercial, regiões, carteiras, equipes, catálogo | Qualificação, propostas, pedidos | Distribuir atendimentos técnicos; administrar identidades |
+| Administrativo de vendas | Empresa | Comercial | Operação comercial, carteiras, catálogo | Qualificação | Comissões; atendimentos técnicos; propostas/pedidos |
+| Supervisor | Equipe comercial | Própria carteira e vendedores vinculados; técnicos vinculados nas regiões | Operação da equipe, carteiras | — | Aprovar; distribuir atendimentos |
+| Vendedor | Próprio | Própria carteira | Leads, clientes, contatos, oportunidades, agenda, visitas, offline | Enviar qualificação | Aprovar; ver outras carteiras |
+| Coordenação Técnica | Equipe técnica + regiões | Atendimentos dos técnicos vinculados; clientes aprovados das regiões | Agendar atendimentos | Cancelar/interromper atendimentos da equipe | Carteira comercial, crédito, catálogo, executar atendimento |
+| Técnico | Próprio | Atendimentos atribuídos | Check-in/out dos próprios atendimentos | — | Carteira comercial, preços, aprovações |
+| Auditoria | Empresa | Comercial, financeiro do cliente, técnico, relatórios | Nada | Nada | Comissões, metas, forecast, pacote offline |
+
+Somente a Coordenação Técnica (e o Administrador) distribui atendimentos técnicos.
+A Direção aprova sob as mesmas regras dos demais revisores: snapshot enviado,
+versão atual e revisor diferente de quem enviou. Financeiro e Estoque serão
+definidos com os respectivos módulos; nenhuma permissão foi reservada para eles.
+
+`qualification:read` permite abrir a ficha de qualificação (inclui condições de crédito
+e pagamento); editar exige `qualification:edit`, aprovar exige `qualification:approve`.
+O pacote offline exige `activity:write`: perfis só de consulta não baixam a carteira.
+
+### Inventário de rotas por permissão
+
+| Módulo | Permissões exigidas na rota (quantidade de rotas) |
+|---|---|
+| Relacionamento | lead/customer read/write (8), contact read/write (5), qualification read/edit/submit/approve (5), company:read (2) |
+| Oportunidades | pipeline:read (3), pipeline:write (3), activity:read (1), activity:write (2) |
+| Agenda | activity:read (3), activity:write (4) |
+| Carteiras e planos | region read/manage (3), portfolio read/manage (5), visit read/write (7), company:read (1) |
+| Visitas em campo | visit:read (2), visit:write (3) |
+| Offline | activity:write (2) |
+| Catálogo | catalog:read (3), catalog:manage (2) |
+| Técnico | technical:read (2 + check-in/out com technical:write no serviço), technical:manage (2) |
+| Usuários | user:manage (sessão autenticada, sem :companyId) |
+
+A interface esconde ações sem permissão, mas a decisão é sempre repetida no backend.
 
 As permissões de módulos comerciais ainda não implementados são contratos para
 esses módulos. Cada repositório comercial deverá usar commercialFilter com ownerId.

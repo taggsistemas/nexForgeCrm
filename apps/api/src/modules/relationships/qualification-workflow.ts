@@ -13,7 +13,7 @@ async function load(ctx:AccessContext,company:string,id:string,permission:Permis
  const row=await Party.findOne(commercialFilter(ctx,company,permission,{_id:id,archived:false,kind:{$in:kinds}})).session(session??null);if(!row)throw new RecordNotFound();return row;
 }
 async function transact<T>(fn:(session:mongoose.ClientSession)=>Promise<T>){try{return await mongoose.connection.transaction(fn);}catch(error){if((error as {code?:number}).code===11000)throw new RecordConflict();throw error;}}
-async function audit(ctx:AccessContext,company:string,id:unknown,action:string,session:mongoose.ClientSession,submissionId?:unknown,reason=''){await QualificationAudit.create([{...companyScope(ctx,company,'qualification:edit'),partyId:id,actorId:ctx.userId,action,submissionId,reason}],{session});}
+async function audit(ctx:AccessContext,company:string,id:unknown,action:string,session:mongoose.ClientSession,submissionId?:unknown,reason=''){await QualificationAudit.create([{...companyScope(ctx,company,'qualification:read'),partyId:id,actorId:ctx.userId,action,submissionId,reason}],{session});}
 function assertComplete(row:InstanceType<typeof Party>){
  assertLeadQualified({...row.toObject(),stage:'qualificado'});
  if(!commercialInput.safeParse(row.toObject().commercial).success)throw new QualificationRequired();
@@ -22,7 +22,7 @@ function assertComplete(row:InstanceType<typeof Party>){
 }
 export const qualificationWorkflow={
  async detail(ctx:AccessContext,company:string,id:string){
-  const row=await load(ctx,company,id,'qualification:edit'),filter={...companyScope(ctx,company,'qualification:edit'),partyId:id};
+  const row=await load(ctx,company,id,'qualification:read'),filter={...companyScope(ctx,company,'qualification:read'),partyId:id};
   const [submission,history]=await Promise.all([QualificationSubmission.findOne({...filter,revision:row.qualificationRevision}),QualificationAudit.find(filter).sort({createdAt:-1,_id:-1}).limit(20)]);
   const actors=await auditActorNames(ctx.tenantId,history.map(event=>String(event.actorId)));
   return {record:partyView(row),submission:submission?{id:String(submission._id),revision:submission.revision,submittedBy:String(submission.submittedBy),submittedAt:submission.createdAt.toISOString(),snapshot:submission.snapshot,stale:submission.partyVersion!==row.version}:null,history:history.map(event=>({action:event.action,reason:event.reason,at:event.createdAt.toISOString(),actor:auditActorLabel(actors,String(event.actorId),ctx.userId)})),canApprove:ctx.permissions.includes('qualification:approve')&&row.qualificationState==='submitted'&&Boolean(submission)&&submission?.partyVersion===row.version&&submission?.submittedBy.toString()!==ctx.userId};

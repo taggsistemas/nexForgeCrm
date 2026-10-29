@@ -38,7 +38,7 @@ export function Dashboard({account,pipeline=false,onNavigate}:{account:Account;p
  const active=allowed.find(row=>row.id===selected),attention=allowed.filter(row=>row.group==='attention'),progress=allowed.filter(row=>row.group==='progress');
  const hasAttention=attention.some(row=>(counts[row.id]??0)>0),ready=!loading&&!error&&updatedAt!==null;
  const shortcuts=[
-  {id:'relationship',label:'Leads e contatos',hint:'Consultar e cadastrar',permission:'lead:read'},
+  {id:'relationship',label:'Leads e contatos',hint:account.permissions?.includes('lead:write')?'Consultar e cadastrar':'Consultar cadastros',permission:'lead:read'},
   {id:'visits',label:'Minha agenda',hint:'Compromissos e visitas',permission:'activity:read'},
   {id:'opportunities',label:'Negociações',hint:'Valores e fechamento',permission:'pipeline:read'},
   {id:'catalog',label:'Produtos e preços',hint:'Consultar catálogo',permission:'catalog:read'},

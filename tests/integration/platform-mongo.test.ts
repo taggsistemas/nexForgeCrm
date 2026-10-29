@@ -8,6 +8,7 @@ import { hashPassword } from '../../apps/api/src/modules/identity/security.js';
 import { identityService } from '../../apps/api/src/modules/identity/service.js';
 import { platformAuth } from '../../apps/api/src/modules/platform/auth.js';
 import { ClientConflict, initializeClientModels, platformClients } from '../../apps/api/src/modules/platform/clients.js';
+import { profileKeys } from '../../packages/contracts/src/profiles.js';
 const uri = process.env.MONGODB_TEST_URI, database = 'nexforge_crm_test_' + randomUUID().replaceAll('-', '');
 describe.skipIf(!uri)('Tagg Master persistence and atomic provisioning (replica set)', () => {
   beforeAll(async () => {
@@ -33,7 +34,7 @@ describe.skipIf(!uri)('Tagg Master persistence and atomic provisioning (replica 
     expect(tenant?.registration?.address.street).toBe(input.address.street);
     expect(tenant?.registration?.contract.end).toBe(input.contract.end);
     expect(await Company.countDocuments({ tenantId: client.id })).toBe(1);
-    expect(await Role.countDocuments({ tenantId: client.id })).toBe(5);
+    expect(await Role.countDocuments({ tenantId: client.id })).toBe(profileKeys.length);
     expect(await Membership.countDocuments({ tenantId: client.id })).toBe(1);
     expect(await PlatformAudit.countDocuments({ tenantId: client.id, action: 'client.created' })).toBe(1);
     expect(JSON.stringify(client)).not.toContain(input.adminPassword);

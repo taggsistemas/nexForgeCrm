@@ -23,7 +23,7 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
   router.post('/'+path+'/:id/archive',authorizeCompany(identity,write),async(req,res)=>res.json(await relationshipService.archive(scope(res),String(req.params.companyId),kind,String(req.params.id),req.body)));
  }
  router.post('/leads/:id/convert',authorizeCompany(identity,'lead:write'),async(req,res)=>res.json({record:await relationshipService.convert(scope(res),String(req.params.companyId),String(req.params.id),req.body)}));
- router.get('/parties/:id/qualification',authorizeCompany(identity,'qualification:edit'),async(req,res)=>res.json(await qualificationWorkflow.detail(scope(res),String(req.params.companyId),String(req.params.id))));
+ router.get('/parties/:id/qualification',authorizeCompany(identity,'qualification:read'),async(req,res)=>res.json(await qualificationWorkflow.detail(scope(res),String(req.params.companyId),String(req.params.id))));
  router.patch('/parties/:id/qualification',authorizeCompany(identity,'qualification:edit'),async(req,res)=>res.json(await qualificationWorkflow.save(scope(res),String(req.params.companyId),String(req.params.id),req.body)));
  router.post('/parties/:id/qualification/submit',authorizeCompany(identity,'qualification:submit'),async(req,res)=>res.json(await qualificationWorkflow.submit(scope(res),String(req.params.companyId),String(req.params.id),req.body)));
  router.post('/parties/:id/qualification/approve',authorizeCompany(identity,'qualification:approve'),async(req,res)=>res.json(await qualificationWorkflow.decide(scope(res),String(req.params.companyId),String(req.params.id),'approve',req.body)));

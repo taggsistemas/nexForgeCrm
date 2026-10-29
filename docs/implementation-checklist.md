@@ -7,8 +7,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | Etapa | Situação | Entregas |
 | --- | --- | --- |
 | 1. Padronizar telas e modais | Implementada; homologação de uso pendente | Padrão visual compartilhado, navegação, formulários, listas, feedback e responsividade |
-| 2. Completar perfis e permissões | Próxima | Direção, Coordenação Técnica e matriz de ações/escopos; adequação dos perfis existentes |
-| 3. Evoluir clientes e contatos | Pendente | Origem, segmento, potencial, próxima ação, papéis e preferências |
+| 2. Completar perfis e permissões | Implementada; homologação de uso pendente | Direção (aprovações), Coordenação Técnica, Auditoria e matriz de ações/escopos |
+| 3. Evoluir clientes e contatos | Próxima | Origem, segmento, potencial, próxima ação, papéis e preferências |
 | 4. Propriedades/locais | Pendente | Vários locais por cliente e vínculos autorizados |
 | 5. Parque instalado | Pendente | Equipamentos, série, instalação, garantia e histórico |
 | 6. Oportunidades e propostas | Pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
@@ -43,16 +43,32 @@ Estilos compartilhados alcançam dashboard/pipeline, relacionamento/qualificaç�
 
 Testes visuais utilizam dados sintéticos e API simulada. Não comprovam autorização, persistência ou integridade MongoDB. Rolagem em formulários longos é preservada para não esconder conteúdo. A proteção de rascunhos contra fechamento acidental não foi generalizada nesta etapa; manter como refinamento de UX com critérios próprios.
 
-## Próxima etapa — 2. Completar perfis e permissões
+## Etapa 2 — perfis e permissões
 
-- [ ] Inventariar permissões efetivas atuais por endpoint e domínio.
-- [ ] Especificar matriz para Administrador, Direção, Gestão Comercial, Vendedor, Coordenação Técnica e Técnico.
-- [ ] Separar gestão técnica de atribuições comerciais; preparar Financeiro, Estoque e Auditoria conforme seus módulos.
-- [ ] Aplicar empresa/território/equipe/atribuição no backend sem confiar em filtros enviados pelo navegador.
-- [ ] Preservar qualificação, crédito, carteira comercial e atribuições técnicas existentes.
-- [ ] Adaptar cadastro de usuário e navegação aos perfis.
-- [ ] Testar tentativas de acesso cruzado, mudanças de vínculo e usuários suspensos.
-- [ ] Atualizar este checklist e informar a próxima etapa ao concluir.
+Decisões de Giovanni (29/10/2026): somente a Coordenação Técnica distribui atendimentos; a Direção consulta dados financeiros e aprova; um perfil por usuário; CPF/CNPJ único no grupo (tenant), com várias propriedades por documento; território pertence à propriedade (etapas 3 e 4).
+
+- [x] Inventariar permissões efetivas atuais por endpoint e domínio (user-administration.md).
+- [x] Especificar matriz para Administrador, Direção, Gerencial, Administrativo de vendas, Supervisor, Vendedor, Coordenação Técnica, Técnico e Auditoria.
+- [x] Separar gestão técnica de atribuições comerciais; Gerencial e Administrativo de vendas não distribuem atendimentos.
+- [x] Direção aprova qualificação/propostas/pedidos e lê condições financeiras, sem criar ou editar registros operacionais.
+- [x] Perfil Auditoria somente leitura, sem comissões/metas/forecast e sem pacote offline.
+- [x] Nova permissão `qualification:read` para abrir a ficha sem editar; auditoria de qualificação não depende de edição.
+- [x] Pacote offline exige `activity:write` no backend e no menu.
+- [x] Aplicar empresa/território/equipe/atribuição no backend sem confiar em filtros enviados pelo navegador.
+- [x] Preservar qualificação, crédito, carteira comercial e atribuições técnicas existentes.
+- [x] Adaptar cadastro de usuário e navegação aos perfis (perfis e descrições vêm do backend; botões de qualificação/atalhos respeitam leitura × edição).
+- [x] Testar acesso cruzado, mudança de vínculo e usuários suspensos (técnico/coordenação, relacionamento com Direção/Auditoria).
+- [x] Corrigir falhas encontradas na primeira execução real MongoDB: contagem de perfis no teste de plataforma; default literal em campo imutável e `__v` em subdocumentos de posição/auditoria quebravam recarga e rollback de atendimentos técnicos.
+- [ ] Financeiro e Estoque: definir com os respectivos módulos.
+- [ ] Homologar perfis com usuários reais do piloto.
+
+## Próxima etapa — 3. Evoluir clientes e contatos
+
+- [ ] Unicidade de CPF/CNPJ no tenant (hoje por empresa), com verificação prévia de duplicados existentes e decisão sobre clientes atendidos por mais de uma empresa do grupo.
+- [ ] Origem, segmento, classificação, potencial e próxima ação com listas configuráveis por empresa.
+- [ ] Papéis e preferências/consentimentos de contatos.
+- [ ] Responsável técnico e histórico de troca de responsável.
+- [ ] Ficha do cliente em abas, preservando qualificação/aprovação.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

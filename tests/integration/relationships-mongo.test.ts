@@ -20,7 +20,7 @@ import {prepareAccount} from '../fixtures/ready-account.js';
 import {seedRelationship} from '../fixtures/relationships.js';
 type Login=NonNullable<Awaited<ReturnType<typeof identityService.login>>>;
 const uri=process.env.MONGODB_TEST_URI,database='nexforge_crm_test_'+randomUUID().replaceAll('-',''),origin='http://localhost:5173';
-let a:Login,b:Login,s1:Login,s2:Login,sales:Login,supervisor:Login,company:string,companyB:string;
+let a:Login,b:Login,s1:Login,s2:Login,sales:Login,supervisor:Login,director:Login,auditor:Login,company:string,companyB:string;
 const app=createApp({origin,databaseReady:()=>true,identity:identityService}),headers=(login:Login)=>({Origin:origin,Cookie:'nf_session='+login.token}),base=()=>'/api/v1/companies/'+company+'/crm',path=(id:string)=>base()+'/parties/'+id+'/qualification';
 const complete=(version:number,taxId='11222333000181')=>({version,contactName:'Ana Compras',legalName:'Acme Ltda',taxId,registrationStatus:'isento',email:'contact@example.invalid',phone:'42999999999',customerType:'atacado',address:{postalCode:'85010000',street:'Rua Teste',number:'100',neighborhood:'Centro',city:'Guarapuava',state:'PR',country:'Brasil'},commercial:{creditLimitCents:150000,paymentMethods:['pix','boleto'],paymentTermDays:[30,60]}});
 async function submitted(login:Login,taxId:string){const lead=await relationshipService.create(login.context,company,'lead',{name:'Qualificar '+taxId,phone:'42999999999'});await qualificationWorkflow.save(login.context,company,lead.id,complete(0,taxId));const sent=await qualificationWorkflow.submit(login.context,company,lead.id,{version:1});return sent.record;}
@@ -30,8 +30,8 @@ describe.skipIf(!uri)('relationships and reviewed qualification: real MongoDB au
   const password='relationships-test-password',master=await PlatformAdmin.create({name:'Master',email:'rel-master@example.invalid',passwordHash:await hashPassword(password)});
   const tenant=async(name:string)=>{const c=await platformClients.create({...customerRegistrationFixture,name,slug:name,companyName:name,adminName:name,adminEmail:name+'@example.invalid',adminPassword:password},String(master._id));await prepareAccount(c.admin!.email);return (await identityService.login(c.admin!.email,password))!;};
   a=await tenant('relationship-a');b=await tenant('relationship-b');company=a.context.companyIds[0]!;companyB=b.context.companyIds[0]!;
-  const user=async(name:string,profileKey:'seller'|'sales_admin'|'supervisor',supervisedUserIds:string[]=[])=>{const u=await administrationService.create(a.context,{name,email:name+'@example.invalid',password,profileKey,companyIds:[company],supervisedUserIds});await prepareAccount(u.email);return (await identityService.login(u.email,password))!;};
-  s1=await user('rel-seller-one','seller');s2=await user('rel-seller-two','seller');sales=await user('rel-sales','sales_admin');supervisor=await user('rel-supervisor','supervisor',[s1.context.userId]);
+  const user=async(name:string,profileKey:'seller'|'sales_admin'|'supervisor'|'director'|'auditor',supervisedUserIds:string[]=[])=>{const u=await administrationService.create(a.context,{name,email:name+'@example.invalid',password,profileKey,companyIds:[company],supervisedUserIds});await prepareAccount(u.email);return (await identityService.login(u.email,password))!;};
+  s1=await user('rel-seller-one','seller');s2=await user('rel-seller-two','seller');sales=await user('rel-sales','sales_admin');supervisor=await user('rel-supervisor','supervisor',[s1.context.userId]);director=await user('rel-director','director');auditor=await user('rel-auditor','auditor');
  },30000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('keeps intake minimal, blocks conversion/customer shortcuts and preserves scoped contacts and transfers',async()=>{
@@ -66,6 +66,16 @@ describe.skipIf(!uri)('relationships and reviewed qualification: real MongoDB au
   try{await expect(qualificationWorkflow.decide(a.context,company,row.id,'approve',{version:row.version})).rejects.toThrow('audit unavailable');}finally{fail.mockRestore();}
   const saved=(await Party.findById(row.id))!;expect(saved.kind).toBe('lead');expect(saved.qualificationState).toBe('submitted');expect(saved.approvedAt).toBeNull();expect(saved.version).toBe(row.version);
   await qualificationWorkflow.decide(a.context,company,row.id,'approve',{version:row.version});
+ },30000);
+ it('lets direction review and approve with financial data while auditing stays read only',async()=>{
+  const row=await submitted(s1,'39053344705'),approve={version:row.version};
+  const seen=await request(app).get(path(row.id)).set(headers(director));expect(seen.status).toBe(200);expect(seen.body.canApprove).toBe(true);expect(seen.body.record.qualification.commercial.creditLimitCents).toBe(150000);
+  const audited=await request(app).get(path(row.id)).set(headers(auditor));expect(audited.status).toBe(200);expect(audited.body.canApprove).toBe(false);
+  for(const login of [director,auditor]){expect((await request(app).patch(path(row.id)).set(headers(login)).send(complete(row.version))).status).toBe(403);expect((await request(app).post(base()+'/leads').set(headers(login)).send({name:'Lead indevido',phone:'42999999999'})).status).toBe(403);}
+  expect((await request(app).post(path(row.id)+'/approve').set(headers(auditor)).send(approve)).status).toBe(403);
+  expect((await request(app).post('/api/v1/companies/'+company+'/offline/prepare').set(headers(auditor)).send({})).status).toBe(403);
+  const done=await request(app).post(path(row.id)+'/approve').set(headers(director)).send(approve);expect(done.status).toBe(200);expect(done.body.record.kind).toBe('customer');
+  const events=await QualificationAudit.find({partyId:row.id,action:'approved'});expect(events.map(event=>String(event.actorId))).toEqual([director.context.userId]);
  },30000);
  it('invalidates submitted snapshots on transfer, revokes former access and supports re-submission',async()=>{
   const row=await submitted(s1,'11144477735');await expect(relationshipService.update(a.context,company,'lead',row.id,{version:row.version,ownerId:s2.context.userId})).rejects.toThrow();

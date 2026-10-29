@@ -255,3 +255,15 @@ TypeScript e build passaram. Catálogo: 8 testes passaram, incluindo markup vers
 
 ### Refinamento: botões próximos aos containers (29/10/2026)
 Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações e margem acima/abaixo de botões soltos. Test:layout: 94 passaram, 2 ignorados por se aplicarem apenas a menu móvel. TypeScript, build API/web/PWA, graph:metadata (263 nós/325 arestas declarados) e diff --check passaram. Check geral: 126 Vitest passaram, 31 HTTP falharam com connect EACCES 127.0.0.1, 55 Mongo ignorados; nativos 4 e limites estáticos 5 passaram. E2E aguardou preview sem executar casos e foi interrompido. Próxima etapa permanece perfis/permissões; homologação visual humana pendente.
+
+## Etapa 2 — perfis e permissões (29/10/2026)
+
+- Primeira execução real das suítes MongoDB neste projeto (`npm run test:db`, replica set temporário 8.0.17, sem .env da aplicação). Resultado inicial: 54/57. Falhas corrigidas: contagem fixa de perfis no teste da plataforma; default literal em `source` imutável impedia recarregar atendimentos técnicos; subdocumentos `position` e `previous` sem `versionKey:false` faziam o rollback de transação lançar `__v` em modo estrito, mascarando a falha original.
+- Direção: aprova qualificação/propostas/pedidos e consulta condições financeiras; continua sem criar/editar. Nova permissão `qualification:read` abre a ficha; a auditoria de qualificação não exige edição. Perfil Auditoria somente leitura, sem comissões/metas/forecast/offline. Pacote offline passou a exigir `activity:write`.
+- `npm run test:db`: 58/58 aprovados, incluindo novo caso HTTP real (Direção lê crédito e aprova, Auditoria lê sem aprovar, ambos recebem 403 ao editar/criar, Auditoria recebe 403 no offline, auditoria registra a Direção como aprovadora).
+- `npm run check`: nativos, fronteiras, TypeScript, 164 Vitest aprovados (58 MongoDB ignorados sem URI nesse comando), build API/web/PWA e grafo declarado (263 nós/325 arestas, não Graphify AST).
+- `npm run test:layout`: 100 aprovados, 2 ignorados e 3 falhas no caso de administração adicionado no início da etapa (falhava antes destas alterações: `getByLabel` exato inclui o texto das opções do select). Seletor corrigido para combobox; caso reexecutado nos três tamanhos e aprovado.
+- Botão/filtro de qualificação aparece para quem lê, edita ou aprova; o backend continua exigindo `qualification:read` na ficha.
+- `npx playwright test --config playwright.local.config.ts` (E2E com API simulada): primeira execução completa neste projeto. Rodada inicial com build anterior: 74/78; após novo build com o ajuste acima, 78/78 aprovados (desktop e celular).
+- Estado final: `npm run check` aprovado (164 Vitest), `npm run test:db` 58/58, `npm run test:layout` 103 aprovados e 2 ignorados (menu móvel em desktop), E2E 78/78.
+- Homologação humana dos perfis pendente.

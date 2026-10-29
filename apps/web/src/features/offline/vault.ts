@@ -1,0 +1,30 @@
+import type {OfflineSnapshot,OfflineQueueItem} from '../../../../../packages/contracts/src/offline';
+import type {VisitPosition} from '../../../../../packages/contracts/src/field-visits';
+export interface OfflineDraftVisit {activityId?:string;activityVersion?:number;partyId:string;partyVersion:number;grantId:string;observedInAt:string;checkIn:VisitPosition}
+export interface VaultData {version:1;snapshot:OfflineSnapshot;ownerFilter:string;queue:(OfflineQueueItem&{grantId:string})[];draftVisit:OfflineDraftVisit|null;lastSeenAt:number}
+export interface Envelope {kdfIterations?:310000|600000;version:1;salt:string;iv:string;ciphertext:string;revision:number;pendingCount:number;blocked:boolean}
+const channel=typeof window!=='undefined'&&'BroadcastChannel'in window?new BroadcastChannel('nf-offline-control'):null;
+if(channel)channel.onmessage=()=>window.dispatchEvent(new Event('nf-offline-lock'));
+function emitLock(){window.dispatchEvent(new Event('nf-offline-lock'));channel?.postMessage('lock');}
+const dbName='nexforge-crm-offline-v1',aad=new TextEncoder().encode('nexforge-crm-offline-v1');
+const encode=(bytes:Uint8Array)=>{let result='';for(const byte of bytes)result+=String.fromCharCode(byte);return btoa(result);};
+const decode=(value:string)=>Uint8Array.from(atob(value),char=>char.charCodeAt(0));
+async function database(){return new Promise<IDBDatabase>((resolve,reject)=>{const req=indexedDB.open(dbName,1);req.onupgradeneeded=()=>req.result.createObjectStore('vault');req.onerror=()=>reject(Error('Armazenamento local indisponível.'));req.onsuccess=()=>resolve(req.result);});}
+export async function readEnvelope():Promise<Envelope|null>{const db=await database();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('vault','readonly'),req=tx.objectStore('vault').get('primary');req.onsuccess=()=>resolve(req.result??null);req.onerror=()=>reject(Error('Não foi possível ler a carteira local.'));});}finally{db.close();}}
+async function writeEnvelope(value:Envelope|null,expected:number|null,expectedSalt?:string){const db=await database();try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction('vault','readwrite'),store=tx.objectStore('vault'),req=store.get('primary');let reason='Não foi possível gravar no aparelho.';req.onsuccess=()=>{const old=req.result as Envelope|undefined;if((old?.revision??null)!==expected||expected!==null&&old?.salt!==expectedSalt){reason='A carteira mudou em outra aba. Bloqueie e desbloqueie novamente.';tx.abort();return;}if(value)store.put(value,'primary');else store.delete('primary');};tx.oncomplete=()=>resolve();tx.onerror=()=>reject(Error(reason));tx.onabort=()=>reject(Error(reason));});}finally{db.close();}}
+async function derive(passphrase:string,salt:Uint8Array,iterations=600000){if(!globalThis.crypto?.subtle)throw Error('Use HTTPS (ou localhost) para proteger a carteira offline.');if(passphrase.length<12||passphrase.length>256)throw Error('A senha local precisa de 12 a 256 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt as BufferSource,iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+export async function createVault(data:VaultData,passphrase:string){const salt=crypto.getRandomValues(new Uint8Array(16)),key=await derive(passphrase,salt);const envelope=await saveVault(data,key,encode(salt),null);return {data,key,envelope};}
+export async function unlockVault(passphrase:string){const envelope=await readEnvelope();if(!envelope||envelope.version!==1||envelope.kdfIterations!==undefined&&![310000,600000].includes(envelope.kdfIterations)||envelope.ciphertext.length>8*1024*1024)throw Error('Não existe uma carteira local válida. Prepare-a enquanto estiver conectado.');
+ try{const key=await derive(passphrase,decode(envelope.salt),envelope.kdfIterations??310000),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(envelope.iv),additionalData:aad},key,decode(envelope.ciphertext)),data=JSON.parse(new TextDecoder().decode(plain)) as VaultData;if(data.version!==1||!data.snapshot?.identity?.userId||!Array.isArray(data.queue)||data.queue.length>150||!Array.isArray(data.snapshot.parties)||data.snapshot.parties.length>500)throw Error();return {data,key,envelope};}catch{throw Error('Senha local incorreta ou carteira corrompida. Não há recuperação dessa senha pela TAGG.');}}
+export async function saveVault(data:VaultData,key:CryptoKey,salt:string,old:Envelope|null){
+ const iv=crypto.getRandomValues(new Uint8Array(12)),ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad},key,new TextEncoder().encode(JSON.stringify(data))),value:Envelope={kdfIterations:old?(old.kdfIterations??310000):600000,version:1,salt,iv:encode(iv),ciphertext:encode(new Uint8Array(ciphertext)),revision:(old?.revision??0)+1,pendingCount:data.queue.filter(item=>item.state==='pending'||item.state==='conflict'||item.state==='rejected').length+(data.draftVisit?1:0),blocked:false};await writeEnvelope(value,old?.revision??null,old?.salt);return value;
+}
+export async function clearVault(){const old=await readEnvelope();if(old)await writeEnvelope(null,old.revision,old.salt);emitLock();}
+export async function blockVault(){const old=await readEnvelope();if(old&&!old.blocked)await writeEnvelope({...old,blocked:true,revision:old.revision+1},old.revision,old.salt);emitLock();}
+export async function prepareOfflineLogout(){let old:Envelope|null;try{old=await readEnvelope();}catch{emitLock();return true;}if(old?.pendingCount&&!window.confirm('Existem registros offline não sincronizados. Sair apagará a carteira e essas pendências deste aparelho. Deseja continuar?'))return false;await clearVault();return true;}
+export function leaseValid(data:VaultData){return Date.now()>=Date.parse(data.snapshot.issuedAt)-60000&&Date.now()>=data.lastSeenAt-60000&&Date.now()<Date.parse(data.snapshot.expiresAt);}
+
+
+
+
+

@@ -1,3 +1,5 @@
+import {OfflineWorkspace} from './features/offline/OfflineWorkspace';
+import {FieldVisits} from './features/field-visits/FieldVisits';
 import {Territories} from './features/territories/Territories';
 import {Agenda} from './features/agenda/Agenda';
 import {Opportunities} from './features/opportunities/Opportunities';
@@ -14,6 +16,8 @@ const modules = [
   {id:'pipeline',group:'COMERCIAL',title:'Pipeline comercial',icon:'PC',description:'Captação, contato e qualificação de leads.'},
   {id:'opportunities',group:'COMERCIAL',title:'Oportunidades',icon:'OP',description:'Valores, fechamento, ganho/perda e atividades vinculadas.'},
   {id:'visits',group:'ATIVIDADES E VISITAS',title:'Agenda e visitas',icon:'AV',description:'Planejamento, roteiros e registro em campo.'},
+  {id:'offline',group:'ATIVIDADES E VISITAS',title:'Operação offline',icon:'OF',description:'Carteira criptografada, registros locais e sincronização.'},
+  {id:'field',group:'ATIVIDADES E VISITAS',title:'Rotas e visitas em campo',icon:'RV',description:'Roteiro diário, check-in, check-out e resultados.'},
   {id:'territories',group:'ATIVIDADES E VISITAS',title:'Carteiras e planejamento',icon:'CP',description:'Regiões, vendedores, carteiras e planos de visitas.'},
   {id:'proposals',group:'VENDAS',title:'Propostas e pedidos',icon:'VP',description:'Negociação, aprovações e histórico comercial.'},
   {id:'management',group:'GESTÃO',title:'Central gerencial',icon:'CG',description:'Metas, comissões, forecast e acompanhamento.'},
@@ -21,6 +25,7 @@ const modules = [
 ];
 export function App() {
   const identity = useIdentity();
+  const [offlinePortal,setOfflinePortal]=useState(false);
   const [online,setOnline] = useState(navigator.onLine);
   const [menu,setMenu] = useState(false);
   const [search,setSearch] = useState('');
@@ -31,11 +36,12 @@ export function App() {
     return ()=> {window.removeEventListener('online',update);window.removeEventListener('offline',update);};
   },[]);
   const connection=<span className="nf-connection" role="status"><i className={online ? 'nf-dot' : 'nf-dot offline'}/>{online ? 'Conexão disponível' : 'Sem conexão'}</span>;
+  if(offlinePortal)return <main className="nf-content"><OfflineWorkspace account={identity.account??undefined} onClose={()=>setOfflinePortal(false)}/></main>;
   if(identity.checking) return <div className="nf-loading" role="status">Verificando sessão...</div>;
-  if(!identity.account) return <main className="nf-login"><div className="nf-login-tools">{connection}<ThemeToggle/></div><div className="nf-login-layout"><BrandPanel/><IdentityPanel identity={identity}/></div></main>;
+  if(!identity.account) return <main className="nf-login"><div className="nf-login-tools">{connection}<ThemeToggle/></div><div className="nf-login-layout"><BrandPanel/><div><IdentityPanel identity={identity}/><button className="nf-secondary" onClick={()=>setOfflinePortal(true)}>Acessar carteira offline</button></div></div></main>;
   const account=identity.account;
   if(account.security?.mustChangePassword||account.security?.privacyAcceptanceRequired)return <AccountOnboarding mustChangePassword={account.security.mustChangePassword} tenantName={account.tenant.name} onLogout={identity.logout}/>;
-  const availableModules=modules.filter(item=>(item.id!=='territories'||account.permissions?.some(value=>['region:read','portfolio:read','visit:read'].includes(value)))&&(item.id!=='visits'||account.permissions?.includes('activity:read'))&&(item.id!=='opportunities'||account.permissions?.includes('pipeline:read'))&&(item.id!=='pipeline'||account.permissions?.includes('lead:read'))&&(item.id!=='administration'||account.permissions?.includes('user:manage'))&&(!['relationship','pipeline'].includes(item.id)||account.permissions?.some(permission=>['lead:read','customer:read','contact:read'].includes(permission))));
+  const availableModules=modules.filter(item=>(item.id!=='offline'||account.permissions?.includes('activity:read'))&&(item.id!=='field'||account.permissions?.includes('visit:read'))&&(item.id!=='territories'||account.permissions?.some(value=>['region:read','portfolio:read','visit:read'].includes(value)))&&(item.id!=='visits'||account.permissions?.includes('activity:read'))&&(item.id!=='opportunities'||account.permissions?.includes('pipeline:read'))&&(item.id!=='pipeline'||account.permissions?.includes('lead:read'))&&(item.id!=='administration'||account.permissions?.includes('user:manage'))&&(!['relationship','pipeline'].includes(item.id)||account.permissions?.some(permission=>['lead:read','customer:read','contact:read'].includes(permission))));
   const current=modules.find(item=>item.id===selected)!;
   return <div className="nf-shell">
     <aside className={'nf-sidebar '+(menu?'is-open':'')} aria-label="Menu do CRM">
@@ -49,9 +55,10 @@ export function App() {
       {identity.message && <p role="alert" className="nf-error">{identity.message}</p>}
       {selected==='overview'?<>
         <section className="nf-panel"><div className="nf-section-heading"><h2>Seu ambiente de trabalho</h2><span className="nf-badge">Acesso ativo</span></div><div className="nf-account-grid"><div><small>EMPRESA CLIENTE</small><strong>{account.tenant.name}</strong></div><div><small>USUÁRIO</small><strong>{account.user.name}</strong><span>{account.user.email}</span></div><div><small>EMPRESAS AUTORIZADAS</small>{account.companies.map(company=><strong key={company.id}>{company.name}</strong>)}</div></div></section>
-        <div className="nf-section-heading"><h2>Operação comercial</h2><span className="nf-muted">Módulos do CRM</span></div><section className="nf-module-grid">{availableModules.slice(1).map(item=><button className="nf-module-card" key={item.id} onClick={()=>setSelected(item.id)}><span className="nf-module-icon">{item.icon}</span><span className="nf-badge">{['administration','relationship','pipeline','opportunities','visits','territories'].includes(item.id)?'Disponível':'Em desenvolvimento'}</span><strong>{item.title}</strong><p>{item.description}</p></button>)}</section>
-      </>:selected==='territories'?<Territories account={account}/>:selected==='visits'?<Agenda account={account}/>:selected==='opportunities'?<Opportunities account={account}/>:['relationship','pipeline'].includes(selected)?<Relationships key={selected} account={account} initialPipeline={selected==='pipeline'}/>:selected==='administration'&&account.permissions?.includes('user:manage')?<UserAdministration companies={account.companies}/>:<section className="nf-panel nf-empty"><span className="nf-module-icon">{current.icon}</span><h2>{current.title}</h2><p>{current.description}</p><span className="nf-badge">Módulo em desenvolvimento</span><p>Este módulo ainda não está disponível para operação.</p><button className="nf-secondary" onClick={()=>setSelected('overview')}>Voltar à visão geral</button></section>}
+        <div className="nf-section-heading"><h2>Operação comercial</h2><span className="nf-muted">Módulos do CRM</span></div><section className="nf-module-grid">{availableModules.slice(1).map(item=><button className="nf-module-card" key={item.id} onClick={()=>setSelected(item.id)}><span className="nf-module-icon">{item.icon}</span><span className="nf-badge">{['administration','relationship','pipeline','opportunities','visits','territories','field','offline'].includes(item.id)?'Disponível':'Em desenvolvimento'}</span><strong>{item.title}</strong><p>{item.description}</p></button>)}</section>
+      </>:selected==='offline'?<OfflineWorkspace account={account}/>:selected==='field'?<FieldVisits account={account}/>:selected==='territories'?<Territories account={account}/>:selected==='visits'?<Agenda account={account}/>:selected==='opportunities'?<Opportunities account={account}/>:['relationship','pipeline'].includes(selected)?<Relationships key={selected} account={account} initialPipeline={selected==='pipeline'}/>:selected==='administration'&&account.permissions?.includes('user:manage')?<UserAdministration companies={account.companies}/>:<section className="nf-panel nf-empty"><span className="nf-module-icon">{current.icon}</span><h2>{current.title}</h2><p>{current.description}</p><span className="nf-badge">Módulo em desenvolvimento</span><p>Este módulo ainda não está disponível para operação.</p><button className="nf-secondary" onClick={()=>setSelected('overview')}>Voltar à visão geral</button></section>}
       </main><footer className="nf-footer">NexForge Plataforma Comercial Integrada — by TAGG Sistemas</footer>
     </div>
   </div>;
 }
+

@@ -1,3 +1,4 @@
+import {seedRelationship} from '../fixtures/relationships.js';
 import {afterAll,beforeAll,describe,expect,it,vi} from 'vitest';
 import mongoose from 'mongoose';
 import {randomUUID} from 'node:crypto';
@@ -39,9 +40,9 @@ describe.skipIf(!uri)('agenda: unified persisted calendar, live portfolio and re
  },30000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('unifies existing opportunity tasks and initial leads while enforcing tenant, company, role and live owner',async()=>{
-  const party=await relationshipService.create(s1.context,company,'lead',{name:'Initial Lead'});
-  const customer=await relationshipService.create(s1.context,company,'customer',{name:'Acme'});
-  const foreign=await relationshipService.create(b.context,companyB,'lead',{name:'Foreign'});
+  const party=await seedRelationship(s1.context,company,'lead',{name:'Initial Lead'});
+  const customer=await seedRelationship(s1.context,company,'customer',{name:'Acme'});
+  const foreign=await seedRelationship(b.context,companyB,'lead',{name:'Foreign'});
   const opportunity=await opportunityService.create(s1.context,company,{partyId:customer.id,title:'Offer',amountCents:10000,expectedCloseDate:'2030-01-30'});
   const old=await opportunityService.createActivity(s1.context,company,opportunity.id,{title:'Existing Opportunity Activity',type:'reuniao',dueAt:'2030-01-02T12:00:00Z'});
   expect((await request(app).post(base()+'/activities').set(headers(s1)).send(input(party.id))).status).toBe(201);
@@ -70,7 +71,7 @@ describe.skipIf(!uri)('agenda: unified persisted calendar, live portfolio and re
   expect((await agendaService.list(s2.context,company,period)).total).toBe(0);
  },30000);
  it('creates recurring opportunity tasks in the original collection and edits one occurrence with concurrency control',async()=>{
-  const party=await relationshipService.create(s1.context,company,'customer',{name:'Recurring Customer'}),opportunity=await opportunityService.create(s1.context,company,{partyId:party.id,title:'Recurring Offer',amountCents:1000,expectedCloseDate:'2030-02-28'});
+  const party=await seedRelationship(s1.context,company,'customer',{name:'Recurring Customer'}),opportunity=await opportunityService.create(s1.context,company,{partyId:party.id,title:'Recurring Offer',amountCents:1000,expectedCloseDate:'2030-02-28'});
   const result=await request(app).post(base()+'/activities').set(headers(s1)).send({...input(opportunity.id,'opportunity','2030-01-31T09:00'),recurrence:{frequency:'monthly',interval:1,count:3}});
   expect(result.status).toBe(201);expect(result.body.count).toBe(3);
   const rows=await OpportunityActivity.find({seriesId:result.body.series.id}).sort({dueAt:1});
@@ -91,7 +92,7 @@ describe.skipIf(!uri)('agenda: unified persisted calendar, live portfolio and re
   expect((await OpportunityActivity.findById(rows[0]!._id))!.status).toBe('concluida');
  },30000);
  it('cancels only future pending occurrences, preserves history and rejects stale or foreign series mutations',async()=>{
-  const party=await relationshipService.create(s1.context,company,'lead',{name:'Recurring Prospect'});
+  const party=await seedRelationship(s1.context,company,'lead',{name:'Recurring Prospect'});
   const future=dateParts(new Date(Date.now()+14*86400000),zone).date+'T09:00';
   const created=await agendaService.create(s1.context,company,{...input(party.id,'party',future),recurrence:{frequency:'weekly',interval:1,count:5}});
   const seriesId=created.series!.id,rows=await AgendaActivity.find({seriesId}).sort({dueAt:1});
@@ -115,7 +116,7 @@ describe.skipIf(!uri)('agenda: unified persisted calendar, live portfolio and re
   expect(await AgendaActivity.countDocuments()).toBe(before);
  },30000);
  it('returns complete daily totals beyond page one and validates bounded calendar filters',async()=>{
-  const party=await relationshipService.create(s2.context,company,'customer',{name:'Calendar Pagination'});
+  const party=await seedRelationship(s2.context,company,'customer',{name:'Calendar Pagination'});
   await AgendaActivity.insertMany(Array.from({length:55},(_,index)=>({tenantId:a.context.tenantId,companyId:company,partyId:party.id,title:'Paged '+index,type:'tarefa',dueAt:new Date('2031-01-02T12:00:00Z')})));
   const range={startDate:'2031-01-01',endDate:'2031-01-08',timeZone:zone};
   const result=await agendaService.list(s2.context,company,range);expect(result.total).toBe(55);expect(result.items).toHaveLength(50);expect(result.dailyCounts).toEqual([{date:'2031-01-02',total:55}]);

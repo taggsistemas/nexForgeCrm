@@ -1,3 +1,4 @@
+import {seedRelationship} from '../fixtures/relationships.js';
 import {afterAll,beforeAll,describe,expect,it,vi} from 'vitest';
 import mongoose from 'mongoose';
 import {randomUUID} from 'node:crypto';
@@ -53,7 +54,7 @@ describe.skipIf(!uri)('territories: ownership, references, periods, atomic publi
   expect((await request(app).post(base()+'/portfolios').set(headers(supervisor)).send({name:'Outside Team',ownerId:s2.context.userId})).status).toBe(400);
   const first=(await territoryCatalog.savePortfolio(supervisor.context,company,null,{name:'Carteira Um',ownerId:s1.context.userId,regionId:region.id})).id;
   const second=(await territoryCatalog.savePortfolio(a.context,company,null,{name:'Carteira Dois',ownerId:s2.context.userId,regionId:region.id})).id;
-  const client=await relationshipService.create(s1.context,company,'customer',{name:'Cliente Principal'}),other=await relationshipService.create(a.context,company,'lead',{name:'Prospect'});
+  const client=await seedRelationship(s1.context,company,'customer',{name:'Cliente Principal'}),other=await seedRelationship(a.context,company,'lead',{name:'Prospect'});
   const contact=await relationshipService.createContact(s1.context,company,client.id,{name:'Contato'});
   const opportunity=await opportunityService.create(s1.context,company,{partyId:client.id,title:'Oferta',amountCents:10000,expectedCloseDate:'2030-06-30'});
   const task=await agendaService.create(s1.context,company,{link:{source:'party',id:client.id},title:'Retorno',type:'tarefa',startLocal:'2030-06-03T09:00',timeZone:zone});
@@ -86,7 +87,7 @@ describe.skipIf(!uri)('territories: ownership, references, periods, atomic publi
  },30000);
  it('validates plan membership, overlap and canonical periods before publishing once to the agenda',async()=>{
   const book=await territoryCatalog.savePortfolio(a.context,company,null,{name:'Plano Carteira',ownerId:s1.context.userId});
-  const client=await relationshipService.create(s1.context,company,'customer',{name:'Visita Cliente'}),outside=await relationshipService.create(s1.context,company,'customer',{name:'Fora da Carteira'});
+  const client=await seedRelationship(s1.context,company,'customer',{name:'Visita Cliente'}),outside=await seedRelationship(s1.context,company,'customer',{name:'Fora da Carteira'});
   await territoryCatalog.transfer(a.context,company,{portfolioId:book.id,entries:[{partyId:client.id,version:0}]});
   const created=await visitPlanning.create(s1.context,company,{title:'Maio',portfolioId:book.id,period:'weekly',anchorDate:'2030-05-02',timeZone:zone}),id=created.id;
   const draft=await visitPlanning.detail(s1.context,company,id,{});
@@ -117,7 +118,7 @@ describe.skipIf(!uri)('territories: ownership, references, periods, atomic publi
  },30000);
  it('protects transferred clients during cancellation and preserves past and completed activities',async()=>{
   const book=await territoryCatalog.savePortfolio(a.context,company,null,{name:'Cancelamento',ownerId:s1.context.userId}),destination=await territoryCatalog.savePortfolio(a.context,company,null,{name:'Destino Cancelamento',ownerId:s2.context.userId});
-  const client=await relationshipService.create(s1.context,company,'customer',{name:'Cliente Cancelamento'});await territoryCatalog.transfer(a.context,company,{portfolioId:book.id,entries:[{partyId:client.id,version:0}]});
+  const client=await seedRelationship(s1.context,company,'customer',{name:'Cliente Cancelamento'});await territoryCatalog.transfer(a.context,company,{portfolioId:book.id,entries:[{partyId:client.id,version:0}]});
   const now=new Date(),anchor=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+2,1)).toISOString().slice(0,10);
   const created=await visitPlanning.create(s1.context,company,{title:'Futuro',portfolioId:book.id,period:'monthly',anchorDate:anchor,timeZone:zone});
   for(const hour of ['09','11','14'])await visitPlanning.saveItem(s1.context,company,created.id,null,{partyId:client.id,startLocal:anchor+'T'+hour+':00',durationMinutes:30,objective:'Acompanhar cliente'});
@@ -133,7 +134,7 @@ describe.skipIf(!uri)('territories: ownership, references, periods, atomic publi
   expect((await AgendaActivity.findById(activities[0]!._id))!.status).toBe('pendente');expect((await AgendaActivity.findById(activities[1]!._id))!.status).toBe('concluida');
  },30000);
  it('rolls back generated calendar entries on publication failure and versions draft item edits',async()=>{
-  const book=await territoryCatalog.savePortfolio(a.context,company,null,{name:'Rollback',ownerId:s1.context.userId}),client=await relationshipService.create(s1.context,company,'lead',{name:'Prospect Visita'});
+  const book=await territoryCatalog.savePortfolio(a.context,company,null,{name:'Rollback',ownerId:s1.context.userId}),client=await seedRelationship(s1.context,company,'lead',{name:'Prospect Visita'});
   await territoryCatalog.transfer(a.context,company,{portfolioId:book.id,entries:[{partyId:client.id,version:0}]});
   const created=await visitPlanning.create(s1.context,company,{title:'Semestre',portfolioId:book.id,period:'semiannual',anchorDate:'2030-09-10',timeZone:zone}),item=await visitPlanning.saveItem(s1.context,company,created.id,null,{partyId:client.id,startLocal:'2030-09-10T10:00',durationMinutes:30,objective:'Prospectar'});
   await visitPlanning.saveItem(s1.context,company,created.id,item.id,{version:0,startLocal:'2030-09-11T10:00',durationMinutes:45,objective:'Acompanhar'});

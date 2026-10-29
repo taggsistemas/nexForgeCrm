@@ -1,3 +1,4 @@
+import {lockSeats} from '../licensing/service.js';
 import { assertAccountReady } from '../../infrastructure/account-gate.js';
 import { AdministrationAudit } from './models.js';
 import mongoose from 'mongoose';
@@ -53,6 +54,7 @@ export const administrationService={
     const passwordHash=await hashPassword(input.password);
     try{
       return await mongoose.connection.transaction(async session=>{
+        await lockSeats(context.tenantId,session,true);
         const count=await Company.countDocuments({_id:{$in:input.companyIds},tenantId:context.tenantId,active:true}).session(session);
         if(count!==input.companyIds.length)throw new AdministrationInputError();
         if(await User.exists({email:input.email}).session(session))throw new AdministrationConflict();
@@ -76,6 +78,7 @@ export const administrationService={
       if(!member)return null;
       const companies=member.companyIds.map(String);
       if(companies.some(id=>!context.companyIds.includes(id)))throw new AdministrationDenied();
+      await lockSeats(context.tenantId,session,!member.active&&input.active);
       const profiles=await ensureProfiles(context.tenantId,session);
       await validateTeam(context,input.profileKey,input.supervisedUserIds,companies,session);
       const role=profiles.find(role=>role?.key===input.profileKey);

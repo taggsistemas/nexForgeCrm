@@ -53,3 +53,15 @@ CrmAgendaActivity registra compromissos diretos de Party; CrmOpportunityActivity
 
 ## Regiões, carteiras e planejamento
 Party.ownerId permanece autoridade de acesso; Party.portfolioId agrupa os cadastros e a região deriva de CrmPortfolio.regionId. CrmVisitPlan guarda vendedor/período originais; CrmVisitPlanItem é o rascunho de horário e objetivo. Após publicar, AgendaActivity é a fonte dos horários/status e referencia o item único. O acesso de cada item segue o Party atual, independentemente do proprietário histórico do plano. Não há evento enviado ao ERP neste incremento.
+
+## Field visits
+Direct AgendaActivity visits have a separate transactional CrmFieldExecution and immutable audit. Live Party scope remains authoritative. See field-visits.md for lifecycle, location trust limits and transport/provider boundaries.
+
+## Reviewed qualification
+Party keeps qualification state and proposed/approved commercial conditions. CrmQualificationSubmission snapshots each submitted revision; CrmQualificationAudit provides immutable workflow events. Approval and conversion share a transaction. Generic create/edit cannot grant approved status or credit changes. Old customers remain visible with explicit pending-regularization status. See lead-qualification.md.
+
+## Assinatura, trial e licenças
+Tenant.subscription guarda modalidade, capacidade contratada, preços opcionais e datas do trial; subscriptionVersion protege edição comercial, licenseRevision serializa alteração de capacidade e consumo/liberação de vagas. Identidade revalida expiração em cada acesso; licenças são reservadas por Membership ativa, independentemente de empresas e sessões. Ver subscriptions.md.
+
+## Offline
+OfflineGrant bounds local lease by canonical session/trial and separates a 7-day upload window. IndexedDB contains only an encrypted vault, unlocked independently from online identity. OfflineReceipt couples idempotency to business mutations. OfflineVisitReport stores device-observed evidence separately from server receipt; direct agenda occurrence becomes completed_offline, not an invented online FieldExecution. Single local vault and actor serialization are intentional bounds. See offline.md.

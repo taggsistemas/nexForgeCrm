@@ -29,7 +29,7 @@ describe('malicious HTTP inputs and tenant authorization',()=>{
   });
   it('rejects privilege and ownership mass assignment in customer creation',async()=>{
     const auth={login:vi.fn(),logout:vi.fn(),authenticate:vi.fn().mockResolvedValue({id:'master'})};
-    const clients={create:vi.fn(),list:vi.fn(),setActive:vi.fn()};
+    const clients={create:vi.fn(),list:vi.fn(),setSubscription:vi.fn(),setActive:vi.fn()};
     const app=createApp({origin,databaseReady:()=>true,platform:{auth,clients}});
     const input={...customerRegistrationFixture,name:'Cliente',slug:'cliente',companyName:'Empresa',adminName:'Admin',adminEmail:'admin@example.invalid',adminPassword:'test-password-only'};
     for(const extra of [{tenantId:'b'},{permissions:['*']},{isMaster:true},{admin:{role:'master'}}]){

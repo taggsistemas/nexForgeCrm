@@ -29,6 +29,11 @@ test('master registers fiscal, contact, address, admin and contract data', async
   await form.locator('[name=adminEmail]').fill('admin@example.invalid');
   await form.locator('[name=adminPassword]').fill('only-test-password-123');
   await form.locator('[name=confirmPassword]').fill('only-test-password-123');
+  await form.getByRole('combobox',{name:'Modalidade',exact:true}).selectOption('trial');
+  await form.getByLabel('Licenças contratadas',{exact:true}).fill('30');
+  await form.getByLabel('Mensalidade base (R$)',{exact:true}).fill('100,00');
+  await form.getByLabel('Adicional por licença/mês (R$)',{exact:true}).fill('20,00');
+  const passwordInput=form.locator('[name=adminPassword]');await passwordInput.locator('..').getByRole('button',{name:'Mostrar senha',exact:true}).click();await expect(passwordInput).toHaveAttribute('type','text');await expect(form.locator('[name=confirmPassword]')).toHaveAttribute('type','password');await passwordInput.locator('..').getByRole('button',{name:'Ocultar senha',exact:true}).click();expect(submitted).toBeUndefined();
   await form.locator('[name=contractStart]').fill('2026-01-01');
   await form.locator('[name=contractEnd]').fill('2025-12-31');
   await form.getByRole('button',{name:'Cadastrar empresa e administrador'}).click();
@@ -40,7 +45,9 @@ test('master registers fiscal, contact, address, admin and contract data', async
   await form.getByRole('button',{name:'Cadastrar empresa e administrador'}).click();
   await expect(page.getByRole('status').filter({hasText:'Cliente Cliente Teste cadastrado'})).toBeVisible();
   expect(submitted?.address).toMatchObject({street:'Rua de Teste',number:'100',city:'Guarapuava',state:'PR',country:'Brasil'});
+  expect(submitted?.subscription).toEqual({mode:'trial',licenseLimit:30,baseMonthlyCents:10000,extraSeatMonthlyCents:2000});
   expect(submitted?.contract).toEqual({start:'2026-01-01',end:'2026-12-31'});
+  await page.getByRole('button',{name:'+ Nova empresa',exact:true}).click();await expect(form.getByLabel('Licenças contratadas',{exact:true})).toHaveValue('25');await expect(form.getByRole('combobox',{name:'Modalidade',exact:true})).toHaveValue('paid');await expect(form.locator('[name=adminPassword]')).toHaveAttribute('type','password');
 });
 test('CEP lookup failure permits manual address', async ({page}) => {
   await page.route('**/api/v1/taggmaster/session', route=>route.fulfill({json:{admin:{id:'master',name:'Master',email:'master@example.invalid'}}}));

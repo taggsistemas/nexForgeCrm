@@ -1,3 +1,4 @@
+import {qualificationStates} from '../../../../../packages/contracts/src/qualification.js';
 import {z} from 'zod';
 import {brazilStates,digits,normalizeTaxId,normalizeStateRegistration,validTaxId} from '../../../../../packages/contracts/src/customer.js';
 import {customerTypes,leadStages} from '../../../../../packages/contracts/src/relationships.js';
@@ -29,4 +30,8 @@ export const convertInput=z.object({version:z.number().int().min(0),customerType
 const contactFields={name:z.string().trim().min(1).max(120),email,phone,position:optionalText(120),notes:optionalText(3000)};
 export const createContactInput=z.object(contactFields).strict();
 export const updateContactInput=z.object(contactFields).partial().extend({version:z.number().int().min(0)}).strict();
-export const listInput=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),search:z.string().trim().max(80).default(''),stage:z.enum(leadStages).optional()}).strict();
+export const listInput=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),search:z.string().trim().max(80).default(''),stage:z.enum(leadStages).optional(),qualificationState:z.enum(qualificationStates).optional()}).strict();
+
+export const intakeFields={name:partyFields.name,contactName:partyFields.contactName,email:partyFields.email,phone:partyFields.phone,address:partyFields.address,notes:partyFields.notes,ownerId:partyFields.ownerId,stage:z.enum(['novo','em_contato','descartado']).default('novo')};
+export const createLeadInput=z.object(intakeFields).strict().refine(value=>Boolean(value.phone||value.email),'Informe telefone ou e-mail.');
+export const updateLeadInput=z.object({...intakeFields,address:addressPatch.optional()}).partial().extend({version:z.number().int().min(0)}).strict();

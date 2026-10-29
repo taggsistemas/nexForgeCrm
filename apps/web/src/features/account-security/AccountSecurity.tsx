@@ -1,3 +1,4 @@
+import {PasswordInput} from '../../components/PasswordInput';
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
 type Policy={version:string;title:string;sections:{title:string;text:string}[];contact?:string};
@@ -36,7 +37,7 @@ export function AccountOnboarding({mustChangePassword,tenantName,onLogout}:{must
  return <main className="nf-loading"><Modal open title={mustChangePassword?'Defina sua senha pessoal':'Termos de uso e privacidade'} onClose={()=>{}} busy={busy} dismissible={false}>
   <p className="nf-muted">Organização: {tenantName}</p>
   <form className="nf-form" onSubmit={submit}>
-   {mustChangePassword?<><p>Antes de operar o CRM, substitua a senha temporária fornecida pelo administrador.</p><label>Senha temporária / atual<input name="currentPassword" type="password" required maxLength={1024} autoComplete="current-password"/></label><label>Nova senha pessoal<input name="newPassword" type="password" required minLength={12} maxLength={1024} autoComplete="new-password"/></label><label>Confirmar nova senha<input name="confirmPassword" type="password" required minLength={12} maxLength={1024} autoComplete="new-password"/></label></>:<><PrivacyText onLoaded={setVersion}/><label className="nf-check"><input name="accepted" type="checkbox" required disabled={!version}/>Li os Termos de uso e o Aviso de privacidade e aceito as regras de uso.</label></>}
+   {mustChangePassword?<><p>Antes de operar o CRM, substitua a senha temporária fornecida pelo administrador.</p><label>Senha temporária / atual<PasswordInput name="currentPassword" required maxLength={1024} autoComplete="current-password"/></label><label>Nova senha pessoal<PasswordInput name="newPassword" required minLength={12} maxLength={1024} autoComplete="new-password"/></label><label>Confirmar nova senha<PasswordInput name="confirmPassword" required minLength={12} maxLength={1024} autoComplete="new-password"/></label></>:<><PrivacyText onLoaded={setVersion}/><label className="nf-check"><input name="accepted" type="checkbox" required disabled={!version}/>Li os Termos de uso e o Aviso de privacidade e aceito as regras de uso.</label></>}
    {error&&<p role="alert" className="nf-error">{error}</p>}
    <div className="nf-admin-actions"><button type="button" className="nf-secondary" disabled={busy} onClick={()=>void onLogout()}>Sair</button><button className="nf-primary" disabled={busy||(!mustChangePassword&&!version)}>{busy?'Aguarde...':mustChangePassword?'Alterar senha':'Aceitar termos e continuar'}</button></div>
   </form>

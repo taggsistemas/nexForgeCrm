@@ -2,7 +2,7 @@ import { profileKeys } from '../../../../../packages/contracts/src/profiles.js';
 import { Schema, model } from 'mongoose';
 import { permissions } from '../../../../../packages/contracts/src/index.js';
 const options = { timestamps: true, strict: 'throw' } as const;
-const userSchema = new Schema({
+const userSchema = new Schema({fieldRevision:{type:Number,default:0},
   name: { type: String, required: true, maxlength: 120 },
   email: { type: String, required: true, lowercase: true, trim: true, maxlength: 254 },
   mustChangePassword: {type:Boolean,default:false},
@@ -25,7 +25,9 @@ const customerRegistrationSchema = new Schema({
   phone: { type: String, required: true, maxlength: 11 }, address: { type: customerAddressSchema, required: true },
   contract: { type: new Schema({ start: { type: String, required: true }, end: { type: String, required: true } }, { _id: false, strict: 'throw', versionKey: false }), required: true },
 }, { _id: false, strict: 'throw', versionKey: false });
+const subscriptionSchema=new Schema({mode:{type:String,enum:['paid','trial'],default:'paid'},licenseLimit:{type:Number,min:25,max:10000,default:25},baseMonthlyCents:{type:Number,default:null},extraSeatMonthlyCents:{type:Number,default:null},trialStartedAt:{type:Date,default:null},trialEndsAt:{type:Date,default:null}},{_id:false,strict:'throw',versionKey:false});
 const tenantSchema = new Schema({
+  subscription:{type:subscriptionSchema,default:()=>({})},subscriptionVersion:{type:Number,default:0},licenseRevision:{type:Number,default:0},
   name: { type: String, required: true, maxlength: 160 },
   registration: { type: customerRegistrationSchema, required: false },
   primaryAdminId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -73,3 +75,4 @@ const sessionSchema = new Schema({
 sessionSchema.index({ tokenHash: 1 }, { unique: true });
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 export const Session = model('Session', sessionSchema);
+

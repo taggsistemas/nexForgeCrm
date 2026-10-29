@@ -16,7 +16,7 @@ function setup(authorized = false) {
   const clients: PlatformClients = {
     list: vi.fn().mockResolvedValue({ items: [], page: 1, total: 0, pageSize: 20 }),
     create: vi.fn().mockResolvedValue({ id: 'a'.repeat(24), name: input.name, slug: input.slug, active: true, companyName: input.companyName, admin: { name: input.adminName, email: input.adminEmail }, createdAt: new Date().toISOString() }),
-    setActive: vi.fn().mockResolvedValue({ id: 'a'.repeat(24), active: false }),
+    setSubscription:vi.fn(),setActive: vi.fn().mockResolvedValue({ id: 'a'.repeat(24), active: false }),
   };
   return { auth, clients, app: createApp({ origin, databaseReady: () => true, secureCookies: true, platform: { auth, clients } }) };
 }
@@ -62,7 +62,7 @@ describe('Tagg Master HTTP boundary', () => {
     const { app, clients } = setup(true);
     const response = await request(app).post('/api/v1/taggmaster/clients').set('Origin', origin).set('Cookie', 'nf_master_session=' + token).send(input);
     expect(response.status).toBe(201);
-    expect(clients.create).toHaveBeenCalledWith(input, admin.id);
+    expect(clients.create).toHaveBeenCalledWith({...input,subscription:{mode:'paid',licenseLimit:25,baseMonthlyCents:null,extraSeatMonthlyCents:null}}, admin.id);
     expect(JSON.stringify(response.body)).not.toContain(input.adminPassword);
   });
   it('rejects password bounds and mass-assigned privileges', async () => {

@@ -1,3 +1,4 @@
+import {PasswordInput} from '../../components/PasswordInput';
 import {Modal} from '../../components/Modal';
 import {useEffect,useState,type FormEvent} from 'react';
 type Profile={key:string;name:string;visibility:string};
@@ -5,6 +6,7 @@ type User={id:string;name:string;email:string;active:boolean;profileKey:string|n
 async function api(path:string,options:RequestInit={}){
   const response=await fetch('/api/v1/admin'+path,{...options,credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',...options.headers}});
   if(!response.ok){
+    const data=await response.json().catch(()=>({}));if(data.code==='LICENSE_LIMIT_REACHED')throw Error('Limite de licenças atingido. Suspenda um usuário ou solicite mais licenças à TAGG.');
     if(response.status===401){window.location.reload();throw Error('Sessão encerrada. Entre novamente.');}
     throw Error(response.status===409?'Este e-mail já está cadastrado.':response.status===403?'Você não tem permissão para esta operação.':response.status===400?'Confira os campos, as empresas e os vendedores vinculados.':'Não foi possível concluir a operação.');
   }
@@ -35,7 +37,7 @@ export function UserAdministration({companies}:{companies:{id:string;name:string
     {error&&!formOpen&&<p role="alert" className="nf-error">{error}</p>}{message&&<p role="status" className="nf-admin-success">{message}</p>}
     <div className="nf-section-heading"><h2>Gerenciar usuários</h2><button className="nf-primary" disabled={loading||busy} onClick={()=>{reset();setError('');setMessage('');setFormOpen(true);}}>Novo usuário</button></div><Modal open={formOpen} title={editing?'Configurar usuário':'Cadastrar usuário'} busy={busy} onClose={()=>{setFormOpen(false);reset();}}><p className="nf-muted">Cada conta possui um perfil e acesso apenas às empresas autorizadas deste cliente.</p>
       <form className="nf-form" onSubmit={submit} key={editing?.id??'new'}>{error&&<p role="alert" className="nf-error">{error}</p>}<fieldset disabled={busy||loading}><div className="nf-admin-grid">
-      {editing?<div className="nf-admin-summary"><strong>{editing.name}</strong><span>{editing.email}</span></div>:<><label>Nome do usuário<input name="name" required maxLength={120}/></label><label>E-mail<input name="email" type="email" required maxLength={254} autoComplete="off"/></label><label>Senha temporária<input name="password" type="password" required minLength={12} maxLength={1024} autoComplete="new-password"/></label><label>Confirmar senha<input name="confirmPassword" type="password" required minLength={12} maxLength={1024} autoComplete="new-password"/></label></>}
+      {editing?<div className="nf-admin-summary"><strong>{editing.name}</strong><span>{editing.email}</span></div>:<><label>Nome do usuário<input name="name" required maxLength={120}/></label><label>E-mail<input name="email" type="email" required maxLength={254} autoComplete="off"/></label><label>Senha temporária<PasswordInput name="password" required minLength={12} maxLength={1024} autoComplete="new-password"/></label><label>Confirmar senha<PasswordInput name="confirmPassword" required minLength={12} maxLength={1024} autoComplete="new-password"/></label></>}
       <label>Perfil de acesso<select value={profileKey} required onChange={event=>{setProfileKey(event.target.value);setTeam([]);}}>{profiles.map(profile=><option key={profile.key} value={profile.key}>{profile.name}</option>)}</select></label>
       {editing&&<label className="nf-check"><input type="checkbox" checked={active} onChange={event=>setActive(event.target.checked)}/>Acesso ativo</label>}
       </div>

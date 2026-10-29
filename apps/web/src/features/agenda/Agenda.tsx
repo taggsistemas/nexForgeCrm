@@ -87,7 +87,7 @@ export function Agenda({account}:{account:Account}){
    </div></div><p className="nf-muted">Os totais dos dias incluem todo o resultado filtrado. Os títulos abaixo e no calendário correspondem à página atual.</p></>}
   </section>
   <section className="nf-panel"><div className="nf-section-heading"><h2>Atividades do período</h2><span>{total} registro(s)</span></div>
-   {!loading&&!rows.length?<p>Nenhuma atividade neste período e escopo.</p>:<ul className="nf-agenda-list">{rows.map(row=>{const parts=dateParts(new Date(row.dueAt),timeZone);return <li key={row.source+row.id}><div><strong>{row.title}</strong><p>{formatDate(parts.date)} às {parts.time} · {labels[row.type]} · {labels[row.status]}{row.status==='pendente'&&new Date(row.dueAt).valueOf()<Date.now()?' · Atrasada':''}</p><p>{row.partyName}{row.opportunityTitle?' / '+row.opportunityTitle:''} · {row.ownerName}{row.seriesId?' · Recorrente':''}</p></div><button className="nf-secondary" disabled={opening} onClick={()=>editActivity(row)}>{canWrite?'Editar ocorrência':'Ver atividade'}</button></li>;})}</ul>}
+   {!loading&&!rows.length?<p>Nenhuma atividade neste período e escopo.</p>:<ul className="nf-agenda-list">{rows.map(row=>{const parts=dateParts(new Date(row.dueAt),timeZone);return <li key={row.source+row.id}><div><strong>{row.title}</strong><p>{formatDate(parts.date)} às {parts.time} · {labels[row.type]} · {labels[row.status]}{row.status==='pendente'&&new Date(row.dueAt).valueOf()<Date.now()?' · Atrasada':''}</p><p>{row.offlineCapturedAt?'Registro offline (horário informado pelo aparelho) · ':''}{row.partyName}{row.opportunityTitle?' / '+row.opportunityTitle:''} · {row.ownerName}{row.seriesId?' · Recorrente':''}</p></div><button className="nf-secondary" disabled={opening} onClick={()=>editActivity(row)}>{canWrite?'Editar ocorrência':'Ver atividade'}</button></li>;})}</ul>}
    <div className="nf-crm-pagination"><button className="nf-secondary" disabled={loading||page<=1} onClick={()=>setPage(value=>value-1)}>Página anterior</button><span>Página {page} · até 50 por página</span><button className="nf-secondary" disabled={loading||page*50>=total} onClick={()=>setPage(value=>value+1)}>Próxima página</button></div>
   </section>
   <Modal open={Boolean(editor)} title={editor?.mode==='cancel'?'Cancelar próximas ocorrências':editor?.record?'Atividade da agenda':'Nova atividade da agenda'} busy={busy} onClose={()=>{setEditor(null);setError('');}}>
@@ -103,3 +103,4 @@ export function Agenda({account}:{account:Account}){
   </Modal>
  </section>;
 }
+

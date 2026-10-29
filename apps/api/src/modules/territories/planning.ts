@@ -118,11 +118,13 @@ export const visitPlanning={
     // Revalidate every linked party: a former seller cannot cancel a transferred client's calendar.
     for(const item of items){const client=await party(context,companyId,String(item.partyId),'visit:write',session);await Party.updateOne({_id:client._id,...company},{$inc:{commercialRevision:1}},{session});}
     const filter={...company,visitPlanId:row._id};
+    if(action==='cancel'&&await AgendaActivity.exists({...filter,fieldState:'in_progress'}).session(session))throw new TerritoryRuleRejected();
     if(action==='complete'){
      const activities=await AgendaActivity.find(filter).session(session);
      if(activities.length!==items.length||activities.some(activity=>activity.status==='pendente'))throw new TerritoryRuleRejected();
     }else{
      const pending={...filter,status:'pendente',dueAt:{$gte:new Date()}},activities=await AgendaActivity.find(pending).session(session);
+     if(activities.some(activity=>activity.fieldState==='in_progress'))throw new TerritoryRuleRejected();
      count=(await AgendaActivity.updateMany(pending,{$set:{status:'cancelada',completedAt:null},$inc:{version:1}},{session})).modifiedCount;
      if(activities.length)await AgendaAudit.insertMany(activities.map(activity=>({...company,actorId:context.userId,entityId:activity._id,source:'party',action:'agenda.activity.updated'})),{session});
     }

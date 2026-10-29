@@ -1051,6 +1051,312 @@
       "kind": "policy",
       "source": "apps/api/src/modules/relationships/service.ts",
       "symbol": "PortfolioTransferRequired"
+    },
+    {
+      "kind": "contract",
+      "id": "crm:field:contract",
+      "symbol": "FieldStopView",
+      "source": "packages/contracts/src/field-visits.ts"
+    },
+    {
+      "kind": "validation",
+      "id": "crm:field:input",
+      "symbol": "checkInInput",
+      "source": "apps/api/src/modules/field-visits/input.ts"
+    },
+    {
+      "kind": "models",
+      "id": "crm:field:models",
+      "symbol": "FieldExecution",
+      "source": "apps/api/src/modules/field-visits/models.ts"
+    },
+    {
+      "kind": "service",
+      "id": "crm:field:service",
+      "symbol": "fieldVisitService",
+      "source": "apps/api/src/modules/field-visits/service.ts"
+    },
+    {
+      "kind": "endpoint-group",
+      "id": "crm:field:http",
+      "symbol": "createFieldVisitRouter",
+      "source": "apps/api/src/modules/field-visits/router.ts"
+    },
+    {
+      "kind": "component",
+      "id": "crm:field:ui",
+      "symbol": "FieldVisits",
+      "source": "apps/web/src/features/field-visits/FieldVisits.tsx"
+    },
+    {
+      "kind": "test",
+      "id": "crm:field:unit",
+      "symbol": "checkInInput",
+      "source": "tests/unit/field-visits.test.ts"
+    },
+    {
+      "kind": "test",
+      "id": "crm:field:db",
+      "symbol": "fieldVisitService",
+      "source": "tests/integration/field-visits-mongo.test.ts"
+    },
+    {
+      "kind": "test",
+      "id": "crm:field:e2e",
+      "symbol": "openField",
+      "source": "tests/e2e/field-visits.spec.ts"
+    },
+    {
+      "id": "crm:field:checkin",
+      "source": "apps/api/src/modules/field-visits/service.ts",
+      "kind": "function",
+      "symbol": "async checkIn"
+    },
+    {
+      "id": "crm:field:checkout",
+      "source": "apps/api/src/modules/field-visits/service.ts",
+      "kind": "function",
+      "symbol": "async checkOut"
+    },
+    {
+      "id": "crm:field:interrupt",
+      "source": "apps/api/src/modules/field-visits/service.ts",
+      "kind": "function",
+      "symbol": "async interrupt"
+    },
+    {
+      "id": "crm:field:audit",
+      "source": "apps/api/src/modules/field-visits/models.ts",
+      "kind": "models",
+      "symbol": "FieldVisitAudit"
+    },
+    {
+      "id": "crm:field:permission",
+      "source": "apps/api/src/modules/field-visits/router.ts",
+      "kind": "policy",
+      "symbol": "authorizeCompany(identity,'visit:write')"
+    },
+    {
+      "id": "crm:field:daily-http",
+      "source": "apps/api/src/modules/field-visits/router.ts",
+      "kind": "endpoint",
+      "symbol": "router.get('/daily'"
+    },
+    {
+      "source": "docs/commercial-rules-review.md",
+      "symbol": "Regras comerciais revisadas",
+      "id": "crm:commercial:rules-review",
+      "kind": "specification"
+    },
+    {
+      "symbol": "qualificationStates",
+      "source": "packages/contracts/src/qualification.ts",
+      "id": "crm:qualification:contract",
+      "kind": "contract"
+    },
+    {
+      "symbol": "commercialInput",
+      "source": "apps/api/src/modules/relationships/qualification-input.ts",
+      "id": "crm:qualification:input",
+      "kind": "validation"
+    },
+    {
+      "symbol": "qualificationWorkflow",
+      "source": "apps/api/src/modules/relationships/qualification-workflow.ts",
+      "id": "crm:qualification:workflow",
+      "kind": "service"
+    },
+    {
+      "symbol": "QualificationSubmission",
+      "source": "apps/api/src/modules/relationships/models.ts",
+      "id": "crm:qualification:submission",
+      "kind": "models"
+    },
+    {
+      "symbol": "QualificationAudit",
+      "source": "apps/api/src/modules/relationships/models.ts",
+      "id": "crm:qualification:audit",
+      "kind": "models"
+    },
+    {
+      "symbol": "'/parties/:id/qualification/approve'",
+      "source": "apps/api/src/modules/relationships/router.ts",
+      "id": "crm:qualification:http",
+      "kind": "endpoint"
+    },
+    {
+      "symbol": "'qualification:approve'",
+      "source": "packages/contracts/src/profiles.ts",
+      "id": "crm:qualification:permission",
+      "kind": "policy"
+    },
+    {
+      "symbol": "QualificationModal",
+      "source": "apps/web/src/features/relationships/QualificationModal.tsx",
+      "id": "crm:qualification:ui",
+      "kind": "component"
+    },
+    {
+      "symbol": "qualificationDraftInput",
+      "source": "tests/unit/qualification-workflow.test.ts",
+      "id": "crm:qualification:test",
+      "kind": "test"
+    },
+    {
+      "symbol": "SubscriptionView",
+      "id": "crm:subscription:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/subscription.ts"
+    },
+    {
+      "symbol": "subscriptionInput",
+      "id": "crm:subscription:input",
+      "kind": "validation",
+      "source": "apps/api/src/modules/licensing/input.ts"
+    },
+    {
+      "symbol": "subscriptionExpired",
+      "id": "crm:subscription:scope",
+      "kind": "policy",
+      "source": "apps/api/src/modules/licensing/service.ts"
+    },
+    {
+      "symbol": "lockSeats",
+      "id": "crm:subscription:seats",
+      "kind": "service",
+      "source": "apps/api/src/modules/licensing/service.ts"
+    },
+    {
+      "symbol": "'/clients/:id/subscription'",
+      "id": "crm:subscription:http",
+      "kind": "endpoint",
+      "source": "apps/api/src/modules/platform/router.ts"
+    },
+    {
+      "symbol": "SubscriptionFields",
+      "id": "crm:subscription:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/platform/SubscriptionFields.tsx"
+    },
+    {
+      "symbol": "client.subscription.updated",
+      "id": "crm:subscription:audit",
+      "kind": "event",
+      "source": "apps/api/src/modules/platform/models.ts"
+    },
+    {
+      "symbol": "monthlyEstimate",
+      "id": "crm:subscription:unit",
+      "kind": "test",
+      "source": "tests/unit/licensing.test.ts"
+    },
+    {
+      "symbol": "LicenseLimitReached",
+      "id": "crm:subscription:db",
+      "kind": "test",
+      "source": "tests/integration/licensing-mongo.test.ts"
+    },
+    {
+      "symbol": "trial conversion",
+      "id": "crm:subscription:e2e",
+      "kind": "test",
+      "source": "tests/e2e/subscriptions.spec.ts"
+    },
+    {
+      "symbol": "PasswordInput",
+      "id": "crm:password:visibility",
+      "kind": "component",
+      "source": "apps/web/src/components/PasswordInput.tsx"
+    },
+    {
+      "source": "packages/contracts/src/offline.ts",
+      "id": "crm:offline:contract",
+      "kind": "contract",
+      "symbol": "OfflinePayload"
+    },
+    {
+      "source": "apps/api/src/modules/offline/input.ts",
+      "id": "crm:offline:input",
+      "kind": "validation",
+      "symbol": "syncInput"
+    },
+    {
+      "source": "apps/api/src/modules/offline/models.ts",
+      "id": "crm:offline:grant",
+      "kind": "models",
+      "symbol": "OfflineGrant"
+    },
+    {
+      "source": "apps/api/src/modules/offline/models.ts",
+      "id": "crm:offline:receipt",
+      "kind": "models",
+      "symbol": "OfflineReceipt"
+    },
+    {
+      "source": "apps/api/src/modules/offline/models.ts",
+      "id": "crm:offline:report",
+      "kind": "models",
+      "symbol": "OfflineVisitReport"
+    },
+    {
+      "source": "apps/api/src/modules/offline/models.ts",
+      "id": "crm:offline:audit",
+      "kind": "models",
+      "symbol": "OfflineAudit"
+    },
+    {
+      "source": "apps/api/src/modules/offline/service.ts",
+      "id": "crm:offline:service",
+      "kind": "service",
+      "symbol": "offlineService"
+    },
+    {
+      "source": "apps/api/src/modules/offline/router.ts",
+      "id": "crm:offline:http",
+      "kind": "endpoint-group",
+      "symbol": "createOfflineRouter"
+    },
+    {
+      "source": "apps/web/src/features/offline/vault.ts",
+      "id": "crm:offline:vault",
+      "kind": "service",
+      "symbol": "createVault"
+    },
+    {
+      "source": "apps/web/src/features/offline/vault.ts",
+      "id": "crm:offline:cas",
+      "kind": "policy",
+      "symbol": "writeEnvelope"
+    },
+    {
+      "source": "apps/web/src/features/offline/OfflineWorkspace.tsx",
+      "id": "crm:offline:ui",
+      "kind": "component",
+      "symbol": "OfflineWorkspace"
+    },
+    {
+      "source": "apps/web/src/features/offline/api.ts",
+      "id": "crm:offline:api-client",
+      "kind": "service",
+      "symbol": "syncOperation"
+    },
+    {
+      "source": "tests/unit/offline.test.ts",
+      "id": "crm:offline:unit",
+      "kind": "test",
+      "symbol": "operationInput"
+    },
+    {
+      "source": "tests/integration/offline-mongo.test.ts",
+      "id": "crm:offline:db",
+      "kind": "test",
+      "symbol": "OfflineReceipt"
+    },
+    {
+      "source": "tests/e2e/offline.spec.ts",
+      "id": "crm:offline:e2e",
+      "kind": "test",
+      "symbol": "coldOffline"
     }
   ],
   "edges": [
@@ -2213,6 +2519,191 @@
       "from": "crm:territories:legacy-owner-guard",
       "to": "apps/api/src/modules/territories/errors.ts",
       "kind": "depends-on"
+    },
+    {
+      "kind": "depends-on",
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "from": "crm:field:service"
+    },
+    {
+      "kind": "depends-on",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "from": "crm:field:service"
+    },
+    {
+      "kind": "depends-on",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "from": "crm:field:http"
+    },
+    {
+      "kind": "depends-on",
+      "to": "packages/contracts/src/field-visits.ts",
+      "from": "crm:field:ui"
+    },
+    {
+      "kind": "depends-on",
+      "to": "apps/api/src/modules/field-visits/service.ts",
+      "from": "crm:field:db"
+    },
+    {
+      "kind": "depends-on",
+      "from": "crm:field:checkin",
+      "to": "apps/api/src/modules/field-visits/models.ts"
+    },
+    {
+      "kind": "depends-on",
+      "from": "crm:field:checkout",
+      "to": "apps/api/src/modules/territories/models.ts"
+    },
+    {
+      "kind": "depends-on",
+      "from": "crm:field:interrupt",
+      "to": "apps/api/src/modules/identity/profile-access.ts"
+    },
+    {
+      "kind": "depends-on",
+      "from": "crm:field:models",
+      "to": "packages/contracts/src/field-visits.ts"
+    },
+    {
+      "to": "apps/api/src/modules/relationships/qualification.ts",
+      "from": "crm:commercial:rules-review",
+      "kind": "reviews"
+    },
+    {
+      "to": "packages/contracts/src/profiles.ts",
+      "from": "crm:commercial:rules-review",
+      "kind": "reviews"
+    },
+    {
+      "to": "apps/web/vite.config.ts",
+      "from": "crm:commercial:rules-review",
+      "kind": "reviews"
+    },
+    {
+      "to": "packages/contracts/src/commercial-roadmap.ts",
+      "from": "crm:commercial:rules-review",
+      "kind": "specifies-future-scope"
+    },
+    {
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "from": "crm:qualification:workflow",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "from": "crm:qualification:workflow",
+      "kind": "depends-on"
+    },
+    {
+      "to": "packages/contracts/src/qualification.ts",
+      "from": "crm:qualification:ui",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/relationships/qualification-workflow.ts",
+      "from": "crm:qualification:http",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/relationships/qualification-input.ts",
+      "from": "crm:qualification:test",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/identity/models.ts",
+      "from": "crm:subscription:seats",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/platform/clients.ts",
+      "from": "crm:subscription:http",
+      "kind": "depends-on"
+    },
+    {
+      "to": "packages/contracts/src/subscription.ts",
+      "from": "crm:subscription:ui",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/identity/service.ts",
+      "from": "crm:subscription:scope",
+      "kind": "used-by"
+    },
+    {
+      "to": "apps/api/src/modules/administration/service.ts",
+      "from": "crm:subscription:seats",
+      "kind": "used-by"
+    },
+    {
+      "to": "apps/web/src/features/platform/ClientRegistrationForm.tsx",
+      "from": "crm:password:visibility",
+      "kind": "used-by"
+    },
+    {
+      "to": "apps/web/src/features/account-security/AccountSecurity.tsx",
+      "from": "crm:password:visibility",
+      "kind": "used-by"
+    },
+    {
+      "to": "apps/api/src/modules/platform/clients.ts",
+      "from": "crm:subscription:db",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "from": "crm:offline:service",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/agenda/models.ts",
+      "from": "crm:offline:service",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/field-visits/models.ts",
+      "from": "crm:offline:service",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "from": "crm:offline:http",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/web/src/features/offline/vault.ts",
+      "from": "crm:offline:ui",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/web/src/features/offline/api.ts",
+      "from": "crm:offline:ui",
+      "kind": "depends-on"
+    },
+    {
+      "to": "packages/contracts/src/offline.ts",
+      "from": "crm:offline:vault",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/web/src/components/Modal.tsx",
+      "from": "crm:offline:ui",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/offline/service.ts",
+      "from": "crm:offline:db",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/web/src/features/offline/OfflineWorkspace.tsx",
+      "from": "crm:offline:e2e",
+      "kind": "depends-on"
+    },
+    {
+      "to": "apps/api/src/modules/field-visits/service.ts",
+      "from": "crm:offline:report",
+      "kind": "used-by"
     }
   ]
 }

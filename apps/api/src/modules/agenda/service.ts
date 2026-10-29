@@ -36,7 +36,7 @@ async function load(context:AccessContext,companyId:string,source:AgendaSource,i
  const party=await authorizeParty(context,companyId,String(activity.partyId),permission,session);return {activity,party,opportunity:null};
 }
 function view(activity:InstanceType<typeof AgendaActivity>|InstanceType<typeof OpportunityActivity>,source:AgendaSource,party:InstanceType<typeof Party>,ownerName:string,opportunity?:{title:string}|null):AgendaActivityView{
- return {id:String(activity._id),source,opportunityId:'opportunityId'in activity?String(activity.opportunityId):'',partyId:String(party._id),partyName:party.name,ownerId:String(party.ownerId),ownerName,opportunityTitle:opportunity?.title??'',title:activity.title,type:activity.type,status:activity.status,dueAt:activity.dueAt.toISOString(),completedAt:activity.completedAt?.toISOString()??null,notes:activity.notes,version:activity.version,...(activity.seriesId?{seriesId:String(activity.seriesId)}:{})};
+ return {...('offlineCapturedAt'in activity&&activity.offlineCapturedAt?{offlineCapturedAt:activity.offlineCapturedAt.toISOString()}:{}),id:String(activity._id),source,opportunityId:'opportunityId'in activity?String(activity.opportunityId):'',partyId:String(party._id),partyName:party.name,ownerId:String(party.ownerId),ownerName,opportunityTitle:opportunity?.title??'',title:activity.title,type:activity.type,status:activity.status,dueAt:activity.dueAt.toISOString(),completedAt:activity.completedAt?.toISOString()??null,notes:activity.notes,version:activity.version,...(activity.seriesId?{seriesId:String(activity.seriesId)}:{})};
 }
 function seriesView(row:InstanceType<typeof AgendaSeries>):AgendaSeriesView{return {id:String(row._id),frequency:row.frequency,interval:row.interval,count:row.count,timeZone:row.timeZone,state:row.state,version:row.version};}
 async function audit(context:AccessContext,companyId:string,entityId:unknown,source:string,action:string,session:mongoose.ClientSession,affectedCount?:number){await AgendaAudit.create([{...scope(context,companyId,'activity:write'),actorId:context.userId,entityId,source,action,affectedCount}],{session});}
@@ -105,7 +105,7 @@ export const agendaService={
   }
   return transaction(async session=>{
    const {activity,party}=await load(context,companyId,source,id,'activity:write',session);
-   if(activity.version!==version)throw new RecordConflict();await touch(party,context,companyId,session);
+   if(activity.version!==version)throw new RecordConflict();if('fieldState'in activity&&activity.fieldState!=='none')throw new AgendaRuleRejected();await touch(party,context,companyId,session);
    const nextStatus=changes.status??activity.status;
    if('visitPlanId'in activity&&activity.visitPlanId){
     const linked=await VisitPlan.findOne({_id:activity.visitPlanId,...scope(context,companyId,'activity:write')}).session(session);if(!linked)throw new AgendaRuleRejected();
@@ -132,9 +132,10 @@ export const agendaService={
     const rows=await OpportunityActivity.find(filter).session(session);
     const result=await OpportunityActivity.updateMany(filter,{$set:{status:'cancelada',completedAt:null},$inc:{version:1}},{session});count=result.modifiedCount;
     if(rows.length)await OpportunityHistory.insertMany(rows.map(row=>({...company,opportunityId:series.opportunityId,actorId:context.userId,entityId:row._id,action:'activity.updated'})),{session});
-   }else count=(await AgendaActivity.updateMany(filter,{$set:{status:'cancelada',completedAt:null},$inc:{version:1}},{session})).modifiedCount;
+   }else {if(await AgendaActivity.exists({...filter,fieldState:'in_progress'}).session(session))throw new AgendaRuleRejected();count=(await AgendaActivity.updateMany({...filter,fieldState:{$nin:['completed','interrupted']}},{$set:{status:'cancelada',completedAt:null},$inc:{version:1}},{session})).modifiedCount;}
    const updated=await AgendaSeries.updateOne({...company,_id:id,version,state:'active'},{$set:{state:'cancelled',cancelledAt:now},$inc:{version:1}},{session});if(updated.modifiedCount!==1)throw new RecordConflict();
    await audit(context,companyId,series._id,'series','agenda.series.cancelled',session,count);return {count};
   });
  }
 };
+

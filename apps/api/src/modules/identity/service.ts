@@ -1,3 +1,5 @@
+import {subscriptionExpired} from '../licensing/service.js';
+import {SubscriptionExpired} from '../licensing/input.js';
 import { privacyVersion } from '../../../../../packages/contracts/src/privacy.js';
 import { permissions as allPermissions } from '../../../../../packages/contracts/src/index.js';
 import { profileDefinitions, type ProfileKey } from '../../../../../packages/contracts/src/profiles.js';
@@ -24,7 +26,7 @@ async function resolveAccess(userId: string, tenantId: string): Promise<Verified
     Tenant.findOne({ _id: tenantId, active: true }),
     Membership.findOne({ userId, tenantId, active: true }),
   ]);
-  if (!user || !tenant || !membership) return null;
+  if (!user || !tenant || !membership || subscriptionExpired(tenant)) return null;
   // Scope every referenced role/company to the verified tenant, even if stored IDs are corrupt.
   const [companies, roles] = await Promise.all([
     Company.find({ _id: { $in: membership.companyIds }, tenantId, active: true }).sort({ _id: 1 }),
@@ -64,7 +66,7 @@ export const identityService = {
     const tenants = await Tenant.find({ _id: { $in: memberships.map(item => item.tenantId) }, active: true }).limit(2);
     // Never silently choose an organization when persisted access is ambiguous.
     if (tenants.length !== 1) return null;
-    const tenant = tenants[0]!;
+    const tenant = tenants[0]!;if(subscriptionExpired(tenant))throw new SubscriptionExpired();
 
     const verified = await resolveAccess(String(user._id), String(tenant._id));
     if (!verified || verified.credentialVersion!==user.passwordVersion) return null;

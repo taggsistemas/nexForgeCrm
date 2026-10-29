@@ -1,3 +1,5 @@
+import {QualificationWorkflowRequired} from './qualification-input.js';
+import {FieldExecution} from '../field-visits/models.js';
 import {PortfolioTransferRequired} from '../territories/errors.js';
 import {assertLeadQualified} from './qualification.js';
 import {digits,normalizeTaxId} from '../../../../../packages/contracts/src/customer.js';
@@ -8,7 +10,7 @@ import {Party,Contact,RelationshipAudit} from './models.js';
 import {User,Membership} from '../identity/models.js';
 import {companyScope,AccessDenied} from '../../infrastructure/access.js';
 import {commercialFilter} from '../identity/profile-access.js';
-import {createPartyInput,updatePartyInput,createContactInput,updateContactInput,versionInput,convertInput,listInput,objectId,addressInput} from './input.js';
+import {createPartyInput,createLeadInput,updateLeadInput,updatePartyInput,createContactInput,updateContactInput,versionInput,convertInput,listInput,objectId,addressInput} from './input.js';
 export class RecordNotFound extends Error {}
 export class RecordConflict extends Error {}
 export class InvalidReference extends Error {}
@@ -17,9 +19,9 @@ const writePermission=(kind:PartyKind):Permission=>kind==='lead'?'lead:write':'c
 const literal=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const searchTerm=(search:string,field:string)=>field==='phone'&&/^[0-9() .+/-]+$/.test(search)?digits(search):field==='taxId'&&/[0-9]/.test(search)?normalizeTaxId(search):search;
 const searchFilter=(search:string)=>search?{$or:['name','contactName','email','phone','taxId'].map(field=>({[field]:{$regex:literal(searchTerm(search,field)||search),$options:'i'}}))}:{};
-function partyView(row:InstanceType<typeof Party>):PartyView {
+export function partyView(row:InstanceType<typeof Party>):PartyView {
  const address=row.address;
- return {id:String(row._id),portfolioId:row.portfolioId?String(row.portfolioId):null,kind:row.kind as PartyKind,name:row.name,contactName:row.contactName??'',legalName:row.legalName,taxId:row.taxId,stateRegistration:row.stateRegistration,email:row.email,phone:row.phone,customerType:row.customerType,stage:row.stage,
+ return {qualification:{state:row.qualificationState,revision:row.qualificationRevision,reviewReason:row.reviewReason,approvedAt:row.approvedAt?.toISOString()??null,approvedBy:row.approvedBy?String(row.approvedBy):null,registrationStatus:row.registrationStatus,commercial:{creditLimitCents:row.commercial.creditLimitCents,paymentMethods:row.commercial.paymentMethods as import('../../../../../packages/contracts/src/qualification.js').CommercialConditions['paymentMethods'],paymentTermDays:row.commercial.paymentTermDays}},id:String(row._id),portfolioId:row.portfolioId?String(row.portfolioId):null,kind:row.kind as PartyKind,name:row.name,contactName:row.contactName??'',legalName:row.legalName,taxId:row.taxId,stateRegistration:row.stateRegistration,email:row.email,phone:row.phone,customerType:row.customerType,stage:row.stage,
  address:{postalCode:address.postalCode??'',street:address.street??'',number:address.number??'',complement:address.complement??'',neighborhood:address.neighborhood??'',city:address.city??'',state:address.state??'',country:address.country??'Brasil'},
  ownerId:String(row.ownerId),notes:row.notes,version:row.version,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()};
 }
@@ -53,14 +55,15 @@ async function transact<T>(operation:(session:mongoose.ClientSession)=>Promise<T
 }
 export const relationshipService={
  async list(context:AccessContext,companyId:string,kind:PartyKind,raw:unknown){
-  const input=listInput.parse(raw),filter=commercialFilter(context,companyId,readPermission(kind),{kind,archived:false,...searchFilter(input.search),...(kind==='lead'&&input.stage?{stage:input.stage}:{})});
+  const input=listInput.parse(raw),filter=commercialFilter(context,companyId,readPermission(kind),{kind,archived:false,...searchFilter(input.search),...(kind==='lead'&&input.stage?{stage:input.stage}:{}),...(input.qualificationState?(input.qualificationState==='none'?{$and:[{$or:[{qualificationState:'none'},{qualificationState:{$exists:false}}]}]}:{qualificationState:input.qualificationState}):{})});
   const [rows,total]=await Promise.all([Party.find(filter).sort({createdAt:-1,_id:-1}).skip((input.page-1)*20).limit(20),Party.countDocuments(filter)]);
   return {items:rows.map(partyView),total,page:input.page,pageSize:20};
  },
  async create(context:AccessContext,companyId:string,kind:PartyKind,raw:unknown){
-  const input=createPartyInput.parse(raw),scope=companyScope(context,companyId,writePermission(kind));
+  if(kind==='customer')throw new QualificationWorkflowRequired();
+  const input=createLeadInput.parse(raw),scope=companyScope(context,companyId,writePermission(kind));
   commercialFilter(context,companyId,writePermission(kind));
-  if(kind==='lead'&&input.stage==='qualificado')assertLeadQualified(input);
+
   return transact(async session=>{
    const ownerId=await ownedUser(context,companyId,input.ownerId,session);
    const [row]=await Party.create([{...input,...scope,ownerId,kind}],{session});
@@ -68,15 +71,17 @@ export const relationshipService={
   });
  },
  async update(context:AccessContext,companyId:string,kind:PartyKind,id:string,raw:unknown){
-  objectId.parse(id);const parsed=updatePartyInput.parse(raw);const {version,ownerId:requestedOwner}=parsed;
+  objectId.parse(id);const parsed=(kind==='lead'?updateLeadInput:updatePartyInput).parse(raw);const {version,ownerId:requestedOwner}=parsed;
   const input:Record<string,unknown>=Object.fromEntries(Object.entries(parsed).filter(([key])=>!['version','ownerId'].includes(key)&&Object.hasOwn(raw as object,key)));
   return transact(async session=>{
    const old=await Party.findOne(commercialFilter(context,companyId,writePermission(kind),{_id:id,kind,archived:false})).session(session);
    if(!old)throw new RecordNotFound();
+   if(old.qualificationState==='submitted')throw new QualificationWorkflowRequired();
+   if(kind==='customer'&&input.stage&&input.stage!==old.stage&&input.stage!=='qualificado')throw new QualificationWorkflowRequired();
    const ownerId=await ownedUser(context,companyId,requestedOwner??String(old.ownerId),session);
    if(old.portfolioId&&ownerId!==String(old.ownerId))throw new PortfolioTransferRequired();
    if(Object.hasOwn(input,'address'))input.address=addressInput.parse({...old.toObject().address,...input.address as Record<string,unknown>});
-   if(kind==='lead'&&(input.stage??old.stage)==='qualificado')assertLeadQualified({...old.toObject(),...input});
+   if(kind==='lead'&&!Boolean(input.phone??old.phone)&&!Boolean(input.email??old.email))throw new QualificationWorkflowRequired();
    const row=await Party.findOneAndUpdate(commercialFilter(context,companyId,writePermission(kind),{_id:id,kind,archived:false,version}),{$set:{...input,ownerId},$inc:{version:1}},{new:true,session,runValidators:true});
    if(!row)return conflictOrMissing(context,companyId,kind,id,session);
    if(String(old.ownerId)!==ownerId)await Contact.updateMany({tenantId:context.tenantId,companyId,partyId:row._id},{$set:{ownerId},$inc:{version:1}},{session,runValidators:true});
@@ -89,22 +94,13 @@ export const relationshipService={
   return transact(async session=>{
    const row=await Party.findOneAndUpdate(commercialFilter(context,companyId,writePermission(kind),{_id:id,kind,archived:false,version}),{$set:{archived:true},$inc:{version:1}},{new:true,session});
    if(!row)return conflictOrMissing(context,companyId,kind,id,session);
+   if(row.qualificationState==='submitted')throw new QualificationWorkflowRequired();
+   if(await FieldExecution.exists({tenantId:context.tenantId,companyId,partyId:id,state:'in_progress'}).session(session))throw new RecordConflict();
    await Contact.updateMany({tenantId:context.tenantId,companyId,partyId:row._id},{$set:{archived:true},$inc:{version:1}},{session});
    await audit(context,companyId,row._id,'party.archived',session);return {id};
   });
  },
- async convert(context:AccessContext,companyId:string,id:string,raw:unknown){
-  objectId.parse(id);const input=convertInput.parse(raw);companyScope(context,companyId,'customer:write');
-  return transact(async session=>{
-   const previous=await Party.findOne(commercialFilter(context,companyId,'lead:write',{_id:id,kind:'lead',archived:false})).session(session);
-   if(!previous)throw new RecordNotFound();
-   if(previous.version!==input.version)throw new RecordConflict();
-   assertLeadQualified(previous.toObject());
-   const row=await Party.findOneAndUpdate(commercialFilter(context,companyId,'lead:write',{_id:id,kind:'lead',archived:false,version:input.version}),{$set:{kind:'customer',stage:'qualificado',customerType:input.customerType},$inc:{version:1}},{session,new:true,runValidators:true});
-   if(!row)return conflictOrMissing(context,companyId,'lead',id,session);
-   await audit(context,companyId,row._id,'lead.converted',session);return partyView(row);
-  });
- },
+ async convert(_context:AccessContext,_companyId:string,_id:string,_raw:unknown):Promise<PartyView>{throw new QualificationWorkflowRequired();},
  async references(context:AccessContext,companyId:string,raw:unknown){
   const input=listInput.parse(raw),kinds:PartyKind[]=[];
   if(context.permissions.includes('lead:read'))kinds.push('lead');

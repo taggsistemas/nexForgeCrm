@@ -57,3 +57,9 @@ com arredondamento controlado; não confiar em totais enviados pelo navegador.
 A aplicação desta tabela depende dos cadastros de catálogo, regiões, equipes e
 aprovação comercial. Neste incremento só a classificação do cliente e os contratos
 de escopo foram preparados; não há cálculo de preços fictício nem pedido operacional.
+
+## Revisão que substitui o fluxo comercial inicial
+Consulte [commercial-rules-review.md](commercial-rules-review.md). Qualificação direta pelo vendedor e conversão manual descritas nos incrementos iniciais não atendem ao novo requisito de análise administrativa. Antes do offline, implementar submissão, devolução para revisão e aprovação/conversão atômica, com crédito e condições de pagamento. Catálogo também deve cobrir código automático, SKU do fabricante, unidades, caixas/kits e peso variável. Metas globais serão mantidas pelo administrativo de vendas, com desdobramento regional/equipe pelo supervisor. Essas regras novas estão especificadas, ainda não implementadas.
+
+## Correções implementadas: qualificação revisada
+O fluxo direto anterior foi substituído por rascunho, envio à análise, devolução e aprovação por outro usuário autorizado, com conversão automática. Crédito/pagamento e situação da IE entram na qualificação. Clientes existentes não são migrados nem aprovados automaticamente; podem ser regularizados pelo mesmo fluxo. Ver lead-qualification.md. Offline e os demais domínios continuam futuros.

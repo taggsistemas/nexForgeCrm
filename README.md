@@ -59,3 +59,13 @@ No menu **Oportunidades**, registre negociações de leads qualificados/clientes
 O menu **Agenda e visitas** agora oferece agenda comercial diária/semanal/mensal, filtros, atividades vinculadas e recorrências. Atividades existentes de oportunidades aparecem sem duplicação. Consulte [agenda comercial](docs/agenda.md).
 
 No menu **Carteiras e planejamento**, organize regiões e carteiras de vendedores, mova cadastros e prepare planos semanais, mensais, trimestrais ou semestrais. Publique o rascunho para gerar visitas na agenda. Consulte [carteiras e planos](docs/territories.md).
+
+Rotas e visitas em campo: consulte [docs/field-visits.md](docs/field-visits.md). Roteiro cronológico, check-in/out autorizado e acompanhamento por carteira; otimização viária e gravação offline ainda não disponíveis.
+
+Revisão antes da operação offline: [regras comerciais e lacunas atuais](docs/commercial-rules-review.md). Qualificação com análise administrativa e crédito/pagamento implementada; veja docs/lead-qualification.md. Catálogo completo, tabelas/pedidos e metas continuam futuros; offline está documentado em docs/offline.md; não confundir o escopo desses módulos com funcionalidades entregues.
+
+Trial, licenças e preços contratuais no TAGG Master: [docs/subscriptions.md](docs/subscriptions.md). Base de 25 usuários ativos por tenant, trial opcional de 30 dias, adicionais configuráveis e controles no backend; sem faturamento automático. Senhas podem ser mostradas/ocultadas por campo.
+
+## Offline entregue
+Carteira protegida por senha local, fila de atividades/visitas, reenvio idempotente, conflitos e autorização atual na sincronização. Há limites de validade e escopo; ver [docs/offline.md](docs/offline.md) antes do piloto. Prepare online antes de usar sem rede. Catálogo/preços, propostas/pedidos e gestão seguem nos próximos incrementos.
+

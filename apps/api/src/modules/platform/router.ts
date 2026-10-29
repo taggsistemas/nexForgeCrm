@@ -1,3 +1,4 @@
+import {updateSubscriptionInput,SubscriptionConflict,SubscriptionRuleRejected} from '../licensing/input.js';
 import { credentialsSchema } from '../../infrastructure/credentials.js';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -65,6 +66,12 @@ export function createPlatformRouter(auth: PlatformAuth, clients: PlatformClient
       if (error instanceof ClientConflict) { res.status(409).json({ code: 'CLIENT_ALREADY_EXISTS' }); return; }
       throw error;
     }
+  });
+  router.patch('/clients/:id/subscription',async(req,res)=>{
+    const id=z.string().regex(/^[a-f0-9]{24}$/i).safeParse(req.params.id),input=updateSubscriptionInput.safeParse(req.body);
+    if(!id.success||!input.success){res.status(400).json({code:'INVALID_INPUT'});return;}
+    try{const client=await clients.setSubscription(id.data,input.data,res.locals.platformAdmin.id);if(!client){res.status(404).json({code:'CLIENT_NOT_FOUND'});return;}res.json({client});}
+    catch(error){if(error instanceof SubscriptionConflict){res.status(409).json({code:'SUBSCRIPTION_CONFLICT'});return;}if(error instanceof SubscriptionRuleRejected){res.status(400).json({code:'SUBSCRIPTION_RULE_REJECTED'});return;}throw error;}
   });
   router.patch('/clients/:id/status', async (req, res) => {
     const id = z.string().regex(/^[a-f0-9]{24}$/i).safeParse(req.params.id);

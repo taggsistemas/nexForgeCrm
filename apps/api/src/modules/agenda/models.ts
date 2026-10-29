@@ -3,7 +3,7 @@ import {activityTypes,activityStatuses} from '../../../../../packages/contracts/
 import {agendaTimeZones,recurrenceFrequencies} from '../../../../../packages/contracts/src/agenda.js';
 const scope={tenantId:{type:Schema.Types.ObjectId,required:true,immutable:true},companyId:{type:Schema.Types.ObjectId,required:true,immutable:true}};
 const options={timestamps:true,versionKey:false,strict:'throw'} as const;
-const activitySchema=new Schema({...scope,visitPlanId:{type:Schema.Types.ObjectId,immutable:true},visitPlanItemId:{type:Schema.Types.ObjectId,immutable:true},durationMinutes:{type:Number,min:15,max:480},partyId:{type:Schema.Types.ObjectId,required:true,immutable:true},title:{type:String,required:true,maxlength:160},type:{type:String,enum:[...activityTypes],required:true},status:{type:String,enum:[...activityStatuses],default:'pendente'},dueAt:{type:Date,required:true},completedAt:{type:Date,default:null},notes:{type:String,default:'',maxlength:3000},seriesId:{type:Schema.Types.ObjectId,immutable:true},occurrenceIndex:{type:Number,immutable:true},version:{type:Number,default:0,required:true}},options);
+const activitySchema=new Schema({...scope,offlineCapturedAt:{type:Date,immutable:true},offlineOperationId:{type:String,immutable:true},fieldState:{type:String,enum:['none','in_progress','completed','interrupted','completed_offline'],default:'none'},visitPlanId:{type:Schema.Types.ObjectId,immutable:true},visitPlanItemId:{type:Schema.Types.ObjectId,immutable:true},durationMinutes:{type:Number,min:15,max:480},partyId:{type:Schema.Types.ObjectId,required:true,immutable:true},title:{type:String,required:true,maxlength:160},type:{type:String,enum:[...activityTypes],required:true},status:{type:String,enum:[...activityStatuses],default:'pendente'},dueAt:{type:Date,required:true},completedAt:{type:Date,default:null},notes:{type:String,default:'',maxlength:3000},seriesId:{type:Schema.Types.ObjectId,immutable:true},occurrenceIndex:{type:Number,immutable:true},version:{type:Number,default:0,required:true}},options);
 activitySchema.index({tenantId:1,companyId:1,dueAt:1});
 activitySchema.index({tenantId:1,companyId:1,seriesId:1,status:1,dueAt:1});
 activitySchema.index({tenantId:1,companyId:1,visitPlanItemId:1},{unique:true,partialFilterExpression:{visitPlanItemId:{$type:'objectId'}}});
@@ -15,3 +15,4 @@ const auditSchema=new Schema({...scope,actorId:{type:Schema.Types.ObjectId,requi
 auditSchema.index({tenantId:1,companyId:1,createdAt:-1});
 export const AgendaAudit=model('CrmAgendaAudit',auditSchema);
 export async function initializeAgendaModels(){await Promise.all([AgendaActivity.init(),AgendaSeries.init(),AgendaAudit.init()]);}
+

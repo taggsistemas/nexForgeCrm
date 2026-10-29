@@ -33,7 +33,7 @@ try {
     delete env.MONGODB_URI;
     console.info('MongoDB de testes pronto. Executando integração real; o .env da aplicação não é carregado.');
     const code=await new Promise((resolveCode,reject)=>{
-      child=spawn(process.execPath,[resolve(root,'node_modules/vitest/vitest.mjs'),'run','tests/integration/identity-mongo.test.ts','tests/integration/platform-mongo.test.ts','tests/integration/administration-mongo.test.ts','tests/integration/relationships-mongo.test.ts','tests/integration/account-security-mongo.test.ts','tests/integration/opportunities-mongo.test.ts','tests/integration/agenda-mongo.test.ts','tests/integration/territories-mongo.test.ts'],{cwd:root,env,stdio:'inherit',windowsHide:true});
+      child=spawn(process.execPath,[resolve(root,'node_modules/vitest/vitest.mjs'),'run','tests/integration/identity-mongo.test.ts','tests/integration/platform-mongo.test.ts','tests/integration/administration-mongo.test.ts','tests/integration/relationships-mongo.test.ts','tests/integration/account-security-mongo.test.ts','tests/integration/opportunities-mongo.test.ts','tests/integration/agenda-mongo.test.ts','tests/integration/territories-mongo.test.ts','tests/integration/field-visits-mongo.test.ts','tests/integration/licensing-mongo.test.ts','tests/integration/offline-mongo.test.ts'],{cwd:root,env,stdio:'inherit',windowsHide:true});
       child.once('error',reject); child.once('exit',code=>resolveCode(code ?? 1));
     });
     process.exitCode=Number(code);
@@ -45,3 +45,4 @@ try {
   await stop();
   console.info('Ambiente MongoDB temporário encerrado.');
 }
+

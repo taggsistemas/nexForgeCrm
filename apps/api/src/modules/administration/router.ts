@@ -1,3 +1,4 @@
+import {LicenseLimitReached} from '../licensing/input.js';
 import {Router} from 'express';
 import {ZodError} from 'zod';
 import type {IdentityService} from '../identity/service.js';
@@ -21,6 +22,7 @@ export function createAdministrationRouter(identity:IdentityService,origin:strin
     if(!user){res.status(404).json({code:'NOT_FOUND'});return;}res.json({user});
   });
   router.use((error:unknown,_req:unknown,res:import('express').Response,next:import('express').NextFunction)=>{
+    if(error instanceof LicenseLimitReached){res.status(409).json({code:'LICENSE_LIMIT_REACHED'});return;}
     if(error instanceof AdministrationDenied){res.status(403).json({code:'ACCESS_DENIED'});return;}
     if(error instanceof AdministrationConflict){res.status(409).json({code:'USER_CONFLICT'});return;}
     if(error instanceof ZodError||error instanceof AdministrationInputError){res.status(400).json({code:'INVALID_INPUT'});return;}

@@ -1,76 +1,33 @@
 import {test,expect} from '@playwright/test';
 import {privacyPolicy} from '../../packages/contracts/src/privacy';
-const company='a'.repeat(24),user='b'.repeat(24),id='c'.repeat(24),contactId='d'.repeat(24);
-const account={user:{id:user,name:'Vendedor',email:'seller@example.invalid'},tenant:{name:'Empresa Teste'},companies:[{id:company,name:'Empresa Teste'}],permissions:['company:read','lead:read','lead:write','customer:read','customer:write','contact:read','contact:write'],security:{mustChangePassword:false,privacyAcceptanceRequired:false}};
-const record={id,kind:'lead',name:'Acme',legalName:'Acme Ltda',taxId:'11222333000181',stateRegistration:'ISENTO',email:'acme@example.invalid',phone:'42999999999',customerType:'outro',stage:'novo',address:{postalCode:'85010000',street:'Rua Teste',number:'100',complement:'',neighborhood:'Centro',city:'Guarapuava',state:'PR',country:'Brasil'},ownerId:user,notes:'',version:0,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-test('lead intake is minimal and qualification completes the scoped pipeline',async({page})=>{
- let created=false,converted=false,contact=false,partyPayload:Record<string,unknown>|undefined,qualifiedPayload:Record<string,unknown>|undefined,contactPayload:Record<string,unknown>|undefined;
- let current={...record,contactName:'Ana Compras',legalName:'',taxId:'',stage:'novo'};
- await page.route('**/api/v1/auth/session',route=>route.fulfill({json:account}));
+const company='a'.repeat(24),user='b'.repeat(24),id='c'.repeat(24),contactId='d'.repeat(24),reviewer='e'.repeat(24);
+const account={user:{id:user,name:'Vendedor',email:'seller@example.invalid'},tenant:{name:'Empresa Teste'},companies:[{id:company,name:'Empresa Teste'}],permissions:['company:read','lead:read','lead:write','customer:read','customer:write','contact:read','contact:write','qualification:edit','qualification:submit'],security:{mustChangePassword:false,privacyAcceptanceRequired:false}};
+const record={id,kind:'lead',name:'Acme',contactName:'Ana Compras',legalName:'',taxId:'',stateRegistration:'',email:'acme@example.invalid',phone:'42999999999',customerType:'outro',stage:'novo',address:{postalCode:'',street:'',number:'',complement:'',neighborhood:'',city:'',state:'',country:'Brasil'},ownerId:user,notes:'',version:0,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),qualification:{state:'none',revision:0,reviewReason:'',approvedAt:null,approvedBy:null,registrationStatus:'nao_aplicavel',commercial:{creditLimitCents:0,paymentMethods:[] as string[],paymentTermDays:[] as number[]}}};
+test('minimal intake, administrative return, resubmission and approval preserve the same customer identity',async({page})=>{
+ let admin=false,created=false,current:any={...record},submission:any=null,partyPayload:any=null,draftPayload:any=null;const events:any[]=[];
+ await page.route('**/api/v1/auth/session',route=>route.fulfill({json:admin?{...account,user:{id:reviewer,name:'Administrativo',email:'admin@example.invalid'},permissions:[...account.permissions,'qualification:approve']}:account}));
  await page.route('https://viacep.com.br/ws/85010000/json/',route=>route.fulfill({json:{logradouro:'Rua Teste',bairro:'Centro',localidade:'Guarapuava',uf:'PR'}}));
  await page.route('**/api/v1/companies/*/crm/**',async route=>{
-  const url=new URL(route.request().url()),path=url.pathname,method=route.request().method();
+  const req=route.request(),url=new URL(req.url()),path=url.pathname,method=req.method();
   if(path.endsWith('/owners'))return route.fulfill({json:{items:[{id:user,name:'Vendedor'}]}});
-  if(path.endsWith('/references'))return route.fulfill({json:{items:created?[{id,name:'Acme',kind:converted?'customer':'lead'}]:[]}});
-  if(path.endsWith('/convert')){converted=true;return route.fulfill({json:{record:{...current,kind:'customer',customerType:'atacado',version:2}}});}
-  if(path.endsWith('/leads/'+id)&&method==='PATCH'){qualifiedPayload=route.request().postDataJSON();current={...record,...qualifiedPayload,contactName:'Ana Compras',stage:'qualificado',version:1} as typeof current;return route.fulfill({json:{record:current}});}
-  if(path.endsWith('/contacts')&&method==='POST'){contactPayload=route.request().postDataJSON();contact=true;return route.fulfill({status:201,json:{record:{id:contactId,partyId:id,name:'Contato Teste',email:'contact@example.invalid',phone:'',position:'Compras',notes:'',ownerId:user,version:0,createdAt:record.createdAt,updatedAt:record.updatedAt}}});}
-  if(path.endsWith('/contacts'))return route.fulfill({json:{items:contact?[{id:contactId,partyId:id,name:'Contato Teste',email:'contact@example.invalid',phone:'',position:'Compras',notes:'',ownerId:user,version:0,createdAt:record.createdAt,updatedAt:record.updatedAt}]:[],total:contact?1:0,page:1,pageSize:20}});
-  if(path.endsWith('/leads')&&method==='POST'){partyPayload=route.request().postDataJSON();created=true;return route.fulfill({status:201,json:{record:current}});}
-  if(path.endsWith('/leads')){const items=created&&!converted&&(!url.searchParams.has('stage')||url.searchParams.get('stage')===current.stage)?[current]:[];return route.fulfill({json:{items,total:items.length,page:1,pageSize:20}});}
-  if(path.endsWith('/customers'))return route.fulfill({json:{items:converted?[{...current,kind:'customer',customerType:'atacado',version:2}]:[],total:converted?1:0,page:1,pageSize:20}});
+  if(path.endsWith('/qualification/submit')){current={...current,version:current.version+1,qualification:{...current.qualification,state:'submitted',revision:current.qualification.revision+1,reviewReason:''}};submission={snapshot:structuredClone(current),stale:false};events.push({action:'submitted',reason:'',at:new Date().toISOString(),actor:'Usuário autorizado'});return route.fulfill({json:{record:current}});}
+  if(path.endsWith('/qualification/return')){expect(admin).toBe(true);const data=req.postDataJSON();current={...current,version:current.version+1,qualification:{...current.qualification,state:'revision',reviewReason:data.reason}};events.push({action:'returned',reason:data.reason,at:new Date().toISOString(),actor:'Usuário autorizado'});return route.fulfill({json:{record:current}});}
+  if(path.endsWith('/qualification/approve')){expect(admin).toBe(true);expect(req.postDataJSON()).toEqual({version:current.version});current={...current,kind:'customer',stage:'qualificado',version:current.version+1,qualification:{...current.qualification,state:'approved',approvedAt:new Date().toISOString(),approvedBy:reviewer}};return route.fulfill({json:{record:current}});}
+  if(path.endsWith('/qualification')){
+   if(method==='PATCH'){draftPayload=req.postDataJSON();current={...current,...draftPayload,version:current.version+1,qualification:{...current.qualification,state:current.qualification.state==='revision'?'revision':'draft',registrationStatus:draftPayload.registrationStatus,commercial:draftPayload.commercial}};return route.fulfill({json:{record:current}});}
+   return route.fulfill({json:{record:current,submission,history:events,canApprove:admin}});
+  }
+  if(path.endsWith('/leads')&&method==='POST'){partyPayload=req.postDataJSON();created=true;return route.fulfill({status:201,json:{record:current}});}
+  if(path.endsWith('/leads')||path.endsWith('/customers')){const kind=path.endsWith('/leads')?'lead':'customer',items=created&&current.kind===kind&&(!url.searchParams.has('stage')||url.searchParams.get('stage')===current.stage)?[current]:[];return route.fulfill({json:{items,total:items.length,page:1,pageSize:20}});}
   return route.fulfill({status:404,json:{}});
  });
- await page.goto('/');
- if(test.info().project.name==='mobile')await page.getByRole('button',{name:'Abrir ou fechar menu'}).click();
- await page.getByRole('navigation').getByRole('button',{name:'Pipeline comercial'}).click();
- await expect(page.getByRole('region',{name:'Novo',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'+ Novo lead'}).click();
- const modal=page.getByRole('dialog');
- await modal.getByLabel('Nome da empresa',{exact:true}).fill('Acme');
- await modal.getByLabel('Nome do contato principal').fill('Ana Compras');
- await modal.getByLabel('Telefone com DDD').fill('42999999999');
- await modal.getByLabel('E-mail',{exact:true}).fill('acme@example.invalid');
- await expect(modal.getByLabel('CNPJ',{exact:true})).toHaveCount(0);
- await expect(modal.getByLabel('Razão social / nome completo')).toHaveCount(0);
- await expect(modal.getByLabel('CEP',{exact:true})).not.toBeVisible();
- await modal.getByRole('button',{name:'Salvar cadastro'}).click();
- expect(partyPayload).toMatchObject({name:'Acme',contactName:'Ana Compras',ownerId:user});
- expect(partyPayload).not.toHaveProperty('taxId');expect(partyPayload).not.toHaveProperty('tenantId');
- const newColumn=page.getByRole('region',{name:'Novo',exact:true});
- await expect(newColumn).toContainText('Acme');
- await expect(page.getByRole('button',{name:'Converter',exact:true})).toHaveCount(0);
- await newColumn.getByRole('button',{name:'Qualificar',exact:true}).click();
- await modal.getByLabel('Razão social / nome completo').fill('Acme Ltda');
- await modal.getByLabel('CNPJ',{exact:true}).fill('11222333000181');
- await expect(modal.getByLabel('CNPJ',{exact:true})).toHaveValue('11.222.333/0001-81');
- await modal.getByLabel('CEP',{exact:true}).fill('85010000');
- await expect(modal.getByLabel('Cidade',{exact:true})).toHaveValue('Guarapuava');
- await modal.getByLabel('Número',{exact:true}).fill('100');
- await page.screenshot({path:'artifacts/qualification-modal-'+test.info().project.name+'.png',fullPage:true});
- await modal.getByRole('button',{name:'Salvar cadastro'}).click();
- expect(qualifiedPayload).toMatchObject({stage:'qualificado',version:0,contactName:'Ana Compras'});
- const qualifiedColumn=page.getByRole('region',{name:'Qualificado',exact:true});
- await expect(qualifiedColumn).toContainText('Acme');
- await expect(newColumn).not.toContainText('Acme');
- await page.screenshot({path:'artifacts/lead-pipeline-'+test.info().project.name+'.png',fullPage:true});
- await qualifiedColumn.getByRole('button',{name:'Contatos',exact:true}).click();
- await page.getByRole('button',{name:'+ Novo contato'}).click();
- await modal.getByLabel('Nome do contato',{exact:true}).fill('Contato Teste');
- await modal.getByLabel('E-mail',{exact:true}).fill('contact@example.invalid');
- await modal.getByLabel('Cargo / função').fill('Compras');
- await modal.getByRole('button',{name:'Salvar cadastro'}).click();
- await expect(page.getByRole('table')).toContainText('Contato Teste');
- expect(contactPayload).not.toHaveProperty('ownerId');
- await page.getByRole('tab',{name:'Leads',exact:true}).click();
- await page.getByRole('button',{name:'Converter',exact:true}).click();
- await modal.getByLabel('Tipo de cliente').selectOption('atacado');
- await modal.getByRole('button',{name:'Confirmar conversão'}).click();
- await expect(page.getByRole('tab',{name:'Clientes',exact:true})).toHaveAttribute('aria-selected','true');
- await expect(page.getByRole('table')).toContainText('atacado');
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ async function navigate(){await page.goto('/');if(test.info().project.name==='mobile')await page.getByRole('button',{name:'Abrir ou fechar menu'}).click();await page.getByRole('navigation').getByRole('button',{name:'Pipeline comercial'}).click();}
+ await navigate();await page.getByRole('button',{name:'+ Novo lead',exact:true}).click();const initial=page.getByRole('dialog');await initial.getByLabel('Nome da empresa',{exact:true}).fill('Acme');await initial.getByLabel('Nome do contato principal').fill('Ana Compras');await initial.getByLabel('Telefone com DDD').fill('42999999999');await initial.getByLabel('E-mail',{exact:true}).fill('acme@example.invalid');await expect(initial.getByLabel('CNPJ',{exact:true})).toHaveCount(0);await expect(initial.getByRole('combobox',{name:'Etapa do lead'}).getByRole('option',{name:'Qualificado',exact:true})).toHaveCount(0);await initial.getByRole('button',{name:'Salvar cadastro'}).click();expect(partyPayload).not.toHaveProperty('taxId');expect(partyPayload).not.toHaveProperty('commercial');
+ const modal=page.getByRole('dialog',{name:'Qualificação comercial',exact:true});await page.getByRole('button',{name:'Qualificar',exact:true}).click();await modal.getByLabel('Razão social / nome completo',{exact:true}).fill('Acme Ltda');await modal.getByLabel('CNPJ',{exact:true}).fill('11222333000181');await modal.getByRole('combobox',{name:'Situação da IE',exact:true}).selectOption('isento');await modal.getByLabel('CEP',{exact:true}).fill('85010000');await modal.getByLabel('Número',{exact:true}).click();await expect(modal.getByLabel('Cidade',{exact:true})).toHaveValue('Guarapuava');await modal.getByLabel('Número',{exact:true}).fill('100');await modal.getByLabel('Limite de crédito (R$)',{exact:true}).fill('1500,00');await modal.getByLabel('Prazos em dias (0 = à vista; ex.: 30,60)',{exact:true}).fill('30,60');await modal.getByRole('checkbox',{name:'Boleto',exact:true}).check();await modal.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(modal.getByRole('status').last()).toContainText('Rascunho salvo');expect(draftPayload.commercial).toEqual({creditLimitCents:150000,paymentMethods:['boleto'],paymentTermDays:[30,60]});expect(draftPayload).not.toHaveProperty('approvedBy');await modal.getByRole('button',{name:'Enviar para análise',exact:true}).click();await expect(modal.getByLabel('Razão social / nome completo')).toBeDisabled();await expect(modal.getByRole('button',{name:'Aprovar e tornar cliente'})).toHaveCount(0);await modal.getByRole('button',{name:'Fechar qualificação',exact:true}).click();
+ admin=true;await navigate();await page.getByRole('button',{name:'Analisar qualificação',exact:true}).click();await modal.getByLabel('Motivo da devolução',{exact:true}).fill('Confirmar número do endereço');await modal.getByRole('button',{name:'Devolver para revisão',exact:true}).click();await expect(modal).toContainText('Revisão solicitada');await modal.getByRole('button',{name:'Fechar qualificação',exact:true}).click();
+ admin=false;await navigate();await page.getByRole('button',{name:'Qualificar',exact:true}).click();await expect(modal).toContainText('Confirmar número do endereço');await modal.getByLabel('Número',{exact:true}).fill('101');await modal.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await modal.getByRole('button',{name:'Enviar para análise',exact:true}).click();await expect(modal.getByLabel('Razão social / nome completo')).toBeDisabled();await modal.getByRole('button',{name:'Fechar qualificação',exact:true}).click();
+ admin=true;await navigate();await page.getByRole('button',{name:'Analisar qualificação',exact:true}).click();await page.screenshot({path:'artifacts/qualification-review-'+test.info().project.name+'.png',fullPage:true});await modal.getByRole('button',{name:'Aprovar e tornar cliente',exact:true}).click();await expect(modal).toContainText('Aprovada');await modal.getByRole('button',{name:'Fechar qualificação',exact:true}).click();await page.getByRole('tab',{name:'Clientes',exact:true}).click();await expect(page.getByRole('table')).toContainText('Acme');await expect(page.getByRole('table')).toContainText('Aprovada');await expect(page.getByRole('button',{name:'+ Novo cliente'})).toHaveCount(0);expect(current.id).toBe(id);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
-
 test('temporary password and privacy onboarding are modal gates before the dashboard',async({page})=>{
  let logged=true,changed=false,accepted=false;
  await page.route('**/api/v1/auth/session',route=>route.fulfill(logged?{json:{...account,security:{mustChangePassword:!changed,privacyAcceptanceRequired:!accepted}}}:{status:401,json:{code:'AUTHENTICATION_REQUIRED'}}));

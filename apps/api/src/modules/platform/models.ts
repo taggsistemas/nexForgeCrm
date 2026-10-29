@@ -18,9 +18,10 @@ sessionSchema.index({ tokenHash: 1 }, { unique: true });
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 export const PlatformSession = model('PlatformSession', sessionSchema);
 const auditSchema = new Schema({
+  subscriptionBefore:{type:Schema.Types.Mixed},subscriptionAfter:{type:Schema.Types.Mixed},
   adminId: { type: Schema.Types.ObjectId, required: true, ref: 'PlatformAdmin' },
   tenantId: { type: Schema.Types.ObjectId, required: true, ref: 'Tenant' },
-  action: { type: String, enum: ['client.created', 'client.activated', 'client.suspended'], required: true },
+  action: { type: String, enum: ['client.created', 'client.activated', 'client.suspended','client.subscription.updated'], required: true },
 }, options);
 auditSchema.index({ tenantId: 1, createdAt: -1 });
 export const PlatformAudit = model('PlatformAudit', auditSchema);

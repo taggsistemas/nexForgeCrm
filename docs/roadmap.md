@@ -1,13 +1,19 @@
-# Etapas
-0. Fundação: monorepo, GitHub, CI, documentação, Graphify e builds verificados.
-1. Plataforma: autenticação, tenants, empresas, vínculos, perfis, permissões.
-2. CRM: leads, clientes, contatos, carteiras e oportunidades.
-3. Agenda: atividades, recorrências e planejamento em todos os períodos.
-4. Campo: rotas, visitas, check-in/out, localização e sincronização offline.
-5. Comercial: catálogo, propostas, pedidos e aprovações.
-6. Gestão: metas, comissões, forecast e central gerencial.
-7. ERP opcional: contratos, adaptadores e reconciliação.
-8. Piloto: acessibilidade, desempenho, backup/restauração e validação móvel.
+# Etapas — ordem revisada
+
+Regras detalhadas e auditoria do que existe: [commercial-rules-review.md](commercial-rules-review.md). Esta ordem substitui a numeração inicial; os registros de incrementos abaixo são históricos.
+
+0. Fundação e plataforma independente, segurança, tenants e sessões.
+1. Relacionamento, pipeline e oportunidades.
+2. Agenda, carteiras, regiões, planejamento e execução online de visitas.
+
+**Pré-requisito antes do offline:** lead mínimo, qualificação completa submetida à análise administrativa, revisão com motivo, aprovação/conversão atômica, crédito/pagamento e política explícita de clientes existentes. Implementado; sem migração automática, com regularização por revisão. Ver lead-qualification.md.
+
+3. Operação offline: carteira criptografada, atividades/visitas agendadas e espontâneas, idempotência e revisão de conflitos implementadas. Ver offline.md. Homologação em aparelhos reais e finalização da instalação PWA seguem pendentes.
+4. Catálogo e tabelas de preços: produtos/serviços, unidades, caixas/kits/peso variável, fiscal, prazos e abrangências comerciais. Ainda pendente.
+5. Propostas/pedidos, aprovação comercial e status operacionais. Ainda pendente.
+6. Metas globais/regionais/individuais, comissões, forecast e central gerencial. Ainda pendente.
+7. Integração opcional ERP, contratos e visão federada dos grafos. Ainda pendente.
+8. Piloto e homologação: implantação HTTPS, Android/iPhone reais, backup/restauração, acessibilidade e monitoramento.
 
 ## Aceite da fundação
 - Build e typecheck aprovados.
@@ -57,3 +63,10 @@ Próximo incremento: planejamento semanal/mensal/trimestral/semestral de visitas
 ## Incremento entregue: regiões, carteiras e planos de visitas
 Regiões por UF/cidades; carteiras de vendedor com transferências transacionais; planos semanais/mensais/trimestrais/semestrais em rascunho e publicação de visitas na agenda. Permissões por empresa/carteira/equipe, prevenção de sobreposição dentro do plano, versões e auditoria. Ver territories.md.
 Próxima etapa: rotas diárias e operação em campo (check-in/out e resultados); depois sincronização offline. Geocodificação e otimização ainda precisam de definição de provedor/contrato.
+
+## Incremento entregue: roteiro diário e execução em campo
+Roteiro cronológico de visitas diretas da agenda/planos publicados, localização pontual autorizada no check-in/out, resultado/relato/próximos passos, atendimento único por usuário e interrupção justificada. Acompanhamento por carteira/equipe atual. Ver field-visits.md. Otimização viária, geocodificação, execução de atividades vinculadas a oportunidades e sincronização offline continuam futuras.
+
+## Plataforma: trial e licenças
+Trial opcional de 30 dias no cadastro, plano padrão de 25 licenças, adicionais e projeção de valores configuráveis, controle concorrente no backend e olho de senha nos formulários. Ver subscriptions.md. Offline continua como próxima etapa, condicionado a expiração, sessão única e autorização atual na sincronização.
+

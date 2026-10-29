@@ -1,3 +1,6 @@
+import {createOfflineRouter} from './modules/offline/router.js';
+import {SubscriptionExpired} from './modules/licensing/input.js';
+import {createFieldVisitRouter} from './modules/field-visits/router.js';
 import {createTerritoryRouter} from './modules/territories/router.js';
 import {createAgendaRouter} from './modules/agenda/router.js';
 import {createOpportunityRouter} from './modules/opportunities/router.js';
@@ -33,6 +36,8 @@ export function createApp(options: { origin: string; databaseReady: () => boolea
     app.use('/api/v1/auth',createAccountSecurityRouter(options.identity,options.origin,options.recoveryMailer,options.privacyContact));
     app.use('/api/v1/companies/:companyId/crm',createRelationshipRouter(options.identity,options.origin));
     app.use('/api/v1/companies/:companyId/opportunities',createOpportunityRouter(options.identity,options.origin));
+    app.use('/api/v1/companies/:companyId/field-visits',createFieldVisitRouter(options.identity,options.origin));
+    app.use('/api/v1/companies/:companyId/offline',createOfflineRouter(options.identity,options.origin));
     app.use('/api/v1/companies/:companyId/agenda',createAgendaRouter(options.identity,options.origin));
     app.use('/api/v1/companies/:companyId/territories',createTerritoryRouter(options.identity,options.origin));
     app.use('/api/v1/admin', createAdministrationRouter(options.identity,options.origin));
@@ -42,9 +47,11 @@ export function createApp(options: { origin: string; databaseReady: () => boolea
   app.use('/api/v1', (_req, res) => { res.set('Cache-Control', 'no-store').status(401).json({ code: 'AUTHENTICATION_REQUIRED' }); });
   app.use((_req, res) => { res.status(404).json({ code: 'NOT_FOUND' }); });
   app.use((error: { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    if(error instanceof SubscriptionExpired){res.status(403).json({code:'TRIAL_EXPIRED'});return;}
     if(error instanceof AccountRestricted){res.status(403).json({code:error.code});return;}
     const status = error.status === 413 ? 413 : error.status === 400 ? 400 : 500;
     res.status(status).json({ code: status === 500 ? 'INTERNAL_ERROR' : 'INVALID_REQUEST' });
   });
   return app;
 }
+

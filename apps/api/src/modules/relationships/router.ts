@@ -1,3 +1,5 @@
+import {qualificationWorkflow} from './qualification-workflow.js';
+import {QualificationWorkflowRequired,QualificationSelfApproval} from './qualification-input.js';
 import {PortfolioTransferRequired} from '../territories/errors.js';
 import {QualificationRequired} from './qualification.js';
 import {Router} from 'express';
@@ -19,6 +21,11 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
   router.post('/'+path+'/:id/archive',authorizeCompany(identity,write),async(req,res)=>res.json(await relationshipService.archive(scope(res),String(req.params.companyId),kind,String(req.params.id),req.body)));
  }
  router.post('/leads/:id/convert',authorizeCompany(identity,'lead:write'),async(req,res)=>res.json({record:await relationshipService.convert(scope(res),String(req.params.companyId),String(req.params.id),req.body)}));
+ router.get('/parties/:id/qualification',authorizeCompany(identity,'qualification:edit'),async(req,res)=>res.json(await qualificationWorkflow.detail(scope(res),String(req.params.companyId),String(req.params.id))));
+ router.patch('/parties/:id/qualification',authorizeCompany(identity,'qualification:edit'),async(req,res)=>res.json(await qualificationWorkflow.save(scope(res),String(req.params.companyId),String(req.params.id),req.body)));
+ router.post('/parties/:id/qualification/submit',authorizeCompany(identity,'qualification:submit'),async(req,res)=>res.json(await qualificationWorkflow.submit(scope(res),String(req.params.companyId),String(req.params.id),req.body)));
+ router.post('/parties/:id/qualification/approve',authorizeCompany(identity,'qualification:approve'),async(req,res)=>res.json(await qualificationWorkflow.decide(scope(res),String(req.params.companyId),String(req.params.id),'approve',req.body)));
+ router.post('/parties/:id/qualification/return',authorizeCompany(identity,'qualification:approve'),async(req,res)=>res.json(await qualificationWorkflow.decide(scope(res),String(req.params.companyId),String(req.params.id),'return',req.body)));
  router.get('/references',authorizeCompany(identity,'contact:read'),async(req,res)=>res.json(await relationshipService.references(scope(res),String(req.params.companyId),req.query)));
  router.get('/owners',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await relationshipService.owners(scope(res),String(req.params.companyId))));
  router.get('/parties/:partyId/contacts',authorizeCompany(identity,'contact:read'),async(req,res)=>res.json(await relationshipService.contacts(scope(res),String(req.params.companyId),String(req.params.partyId),req.query)));
@@ -26,6 +33,8 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
  router.patch('/parties/:partyId/contacts/:id',authorizeCompany(identity,'contact:write'),async(req,res)=>res.json({record:await relationshipService.updateContact(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)}));
  router.post('/parties/:partyId/contacts/:id/archive',authorizeCompany(identity,'contact:write'),async(req,res)=>res.json({record:await relationshipService.updateContact(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body,true)}));
  router.use((error:unknown,_req:unknown,res:import('express').Response,next:import('express').NextFunction)=>{
+  if(error instanceof QualificationSelfApproval){res.status(403).json({code:'SELF_APPROVAL_REJECTED'});return;}
+  if(error instanceof QualificationWorkflowRequired){res.status(400).json({code:'QUALIFICATION_WORKFLOW_REQUIRED'});return;}
   if(error instanceof PortfolioTransferRequired){res.status(400).json({code:'PORTFOLIO_TRANSFER_REQUIRED'});return;}
   if(error instanceof QualificationRequired){res.status(400).json({code:'LEAD_QUALIFICATION_REQUIRED'});return;}
   if(error instanceof RecordNotFound){res.status(404).json({code:'NOT_FOUND'});return;}

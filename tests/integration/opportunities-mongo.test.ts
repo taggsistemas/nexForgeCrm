@@ -1,3 +1,4 @@
+import {seedRelationship} from '../fixtures/relationships.js';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import mongoose from 'mongoose';
 import {randomUUID} from 'node:crypto';
@@ -37,9 +38,9 @@ describe.skipIf(!uri)('opportunities: live parent authorization, lifecycle, acti
  },30000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('inherits scope from the current party and rejects foreign references, ownership and tenant injection',async()=>{
-  const party=await relationshipService.create(s1.context,company,'customer',{name:'Customer One'});
-  const foreign=await relationshipService.create(b.context,companyB,'customer',{name:'Foreign'});
-  const lead=await relationshipService.create(s1.context,company,'lead',{name:'Unqualified'});
+  const party=await seedRelationship(s1.context,company,'customer',{name:'Customer One'});
+  const foreign=await seedRelationship(b.context,companyB,'customer',{name:'Foreign'});
+  const lead=await seedRelationship(s1.context,company,'lead',{name:'Unqualified'});
   const badLead=await request(app).post(base()).set(headers(s1)).send(input(lead.id));expect(badLead.status).toBe(400);expect(badLead.body.code).toBe('LEAD_QUALIFICATION_REQUIRED');
   expect((await request(app).post(base()).set(headers(s1)).send(input(foreign.id))).status).toBe(404);
   for(const extra of [{tenantId:b.context.tenantId},{ownerId:s2.context.userId},{currency:'USD'},{stage:'ganha'},{title:{$ne:null}}])expect((await request(app).post(base()).set(headers(s1)).send({...input(party.id),...extra})).status).toBe(400);
@@ -67,7 +68,7 @@ describe.skipIf(!uri)('opportunities: live parent authorization, lifecycle, acti
   expect(await Opportunity.exists({_id:id})).toBeTruthy();
  },30000);
  it('enforces optimistic edits, terminal closure, loss reason, server timestamps and activity versioning',async()=>{
-  const party=await relationshipService.create(s1.context,company,'customer',{name:'Lifecycle'});
+  const party=await seedRelationship(s1.context,company,'customer',{name:'Lifecycle'});
   const row=await opportunityService.create(s1.context,company,input(party.id,'Lifecycle Offer')),path=base()+'/'+row.id;
   expect((await request(app).patch(path).set(headers(s1)).send({version:0,closedAt:'2020-01-01'})).status).toBe(400);
   expect((await request(app).patch(path).set(headers(s1)).send({version:0,stage:'perdida'})).status).toBe(400);
@@ -82,7 +83,7 @@ describe.skipIf(!uri)('opportunities: live parent authorization, lifecycle, acti
   const complete=await request(app).patch(activityPath).set(headers(s1)).send({version:0,status:'concluida'});
   expect(complete.status).toBe(200);expect(complete.body.record.completedAt).toBeTruthy();
   expect((await request(app).patch(activityPath).set(headers(s1)).send({version:0,title:'stale'})).status).toBe(409);
-  const otherParty=await relationshipService.create(s1.context,company,'customer',{name:'Other'});
+  const otherParty=await seedRelationship(s1.context,company,'customer',{name:'Other'});
   const other=await opportunityService.create(s1.context,company,input(otherParty.id));
   expect((await request(app).patch(base()+'/'+other.id+'/activities/'+activity.body.record.id).set(headers(s1)).send({version:1,status:'cancelada'})).status).toBe(404);
   const close=await request(app).patch(path).set(headers(s1)).send({version:1,stage:'perdida',lossReason:'Prazo incompatível'});
@@ -97,7 +98,7 @@ describe.skipIf(!uri)('opportunities: live parent authorization, lifecycle, acti
   expect(await OpportunityHistory.countDocuments({opportunityId:row.id})).toBeGreaterThanOrEqual(5);
  },30000);
  it('serializes new activities against concurrent closure',async()=>{
-  const party=await relationshipService.create(s1.context,company,'customer',{name:'Concurrency'});
+  const party=await seedRelationship(s1.context,company,'customer',{name:'Concurrency'});
   for(let attempt=0;attempt<3;attempt++){
    const row=await opportunityService.create(s1.context,company,input(party.id,'Concurrent '+attempt)),path=base()+'/'+row.id;
    const [closure,activity]=await Promise.all([request(app).patch(path).set(headers(s1)).send({version:0,stage:'ganha'}),request(app).post(path+'/activities').set(headers(s1)).send({title:'Concurrent task',type:'tarefa',dueAt:'2027-06-01T15:00:00Z'})]);
@@ -107,7 +108,7 @@ describe.skipIf(!uri)('opportunities: live parent authorization, lifecycle, acti
   }
  },30000);
  it('paginates and escapes search, and respects denied permissions and closed-stage filters',async()=>{
-  const party=await relationshipService.create(s2.context,company,'customer',{name:'Pages'});
+  const party=await seedRelationship(s2.context,company,'customer',{name:'Pages'});
   await Opportunity.insertMany(Array.from({length:21},(_,index)=>({...input(party.id,'Paged literal .* '+index),tenantId:a.context.tenantId,companyId:company,stage:'proposta'})));
   const first=await request(app).get(base()+'?search='+encodeURIComponent('literal .*')+'&stage=proposta').set(headers(s2));
   expect(first.status).toBe(200);expect(first.body.total).toBe(21);expect(first.body.items).toHaveLength(20);

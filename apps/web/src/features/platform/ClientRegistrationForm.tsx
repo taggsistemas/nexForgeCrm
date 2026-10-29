@@ -1,3 +1,5 @@
+import {SubscriptionFields} from './SubscriptionFields';
+import {PasswordInput} from '../../components/PasswordInput';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { brazilStates, digits, maskTaxId, maskPhone, maskPostalCode, maskStateRegistration, normalizeTaxId, validTaxId } from '../../../../../packages/contracts/src/customer';
 const initial = { taxId: '', stateRegistration: '', phone: '', postalCode: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: 'PR', country: 'Brasil' };
@@ -82,9 +84,10 @@ export function ClientRegistrationForm({ onSubmit, busy, error }: { onSubmit: (e
     <fieldset disabled={busy}><legend>Administrador do sistema</legend><div className="master-grid">
       <label>Nome do administrador<input name="adminName" required maxLength={120} autoComplete="off"/></label>
       <label>E-mail do administrador<input name="adminEmail" type="email" required maxLength={254} autoComplete="off" onBlur={event => { event.target.value = event.target.value.trim().toLowerCase(); }}/></label>
-      <label>Senha temporária<input name="adminPassword" type="password" required minLength={12} maxLength={1024} autoComplete="new-password"/><small>Mínimo de 12 caracteres. Troca obrigatória no primeiro acesso.</small></label>
-      <label>Confirmar senha<input name="confirmPassword" type="password" required minLength={12} maxLength={1024} autoComplete="new-password"/></label>
+      <label>Senha temporária<PasswordInput name="adminPassword" required minLength={12} maxLength={1024} autoComplete="new-password"/><small>Mínimo de 12 caracteres. Troca obrigatória no primeiro acesso.</small></label>
+      <label>Confirmar senha<PasswordInput name="confirmPassword" required minLength={12} maxLength={1024} autoComplete="new-password"/></label>
     </div></fieldset>
+    <fieldset disabled={busy}><SubscriptionFields/></fieldset>
     <fieldset disabled={busy}><legend>Período do contrato</legend><div className="master-grid">
       <label>Início do contrato<input name="contractStart" type="date" required min="1900-01-01" max="9999-12-31" onChange={event => { const end = event.currentTarget.form?.elements.namedItem('contractEnd') as HTMLInputElement; end?.setCustomValidity(''); }}/></label>
       <label>Fim do contrato<input name="contractEnd" type="date" required min="1900-01-01" max="9999-12-31" onChange={event => event.target.setCustomValidity('')}/></label>

@@ -3,14 +3,14 @@ import type {AccessContext} from '../../../../../packages/contracts/src/index.js
 import type {PartyKind,PropertyView} from '../../../../../packages/contracts/src/relationships.js';
 import {AccessDenied} from '../../infrastructure/access.js';
 import {Region} from '../territories/models.js';
-import {Contact,Party,Property} from './models.js';
+import {Contact,Equipment,Party,Property} from './models.js';
 import {addressInput,objectId,propertyCreateInput,propertyListInput,propertyUpdateInput,versionInput} from './input.js';
 import {audit,InvalidReference,parent,RecordConflict,RecordNotFound} from './service.js';
 const nameKey=(name:string)=>name.normalize('NFD').replace(/[̀-ͯ]/g,'').toLocaleLowerCase('pt-BR').replace(/\s+/g,' ').trim();
 const literal=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 async function transact<T>(fn:(session:mongoose.ClientSession)=>Promise<T>){try{return await mongoose.connection.transaction(fn);}catch(error){if((error as {code?:number}).code===11000)throw new RecordConflict();throw error;}}
 /** Authorizes the live parent Party; writes also need the write permission of its current kind. */
-async function party(ctx:AccessContext,companyId:string,partyId:string,write:boolean,session?:mongoose.ClientSession){
+export async function authorizedParty(ctx:AccessContext,companyId:string,partyId:string,write:boolean,session?:mongoose.ClientSession){
  const row=await parent(ctx,companyId,partyId,ctx.permissions.includes('lead:read')?'lead:read':'customer:read',session);
  if(write&&!ctx.permissions.includes(((row.kind as PartyKind)==='lead'?'lead:write':'customer:write')))throw new AccessDenied();
  if(session)await Party.updateOne({_id:row._id,tenantId:ctx.tenantId,companyId,archived:false},{$inc:{propertyRevision:1}},{session});
@@ -34,9 +34,11 @@ function changes(before:Record<string,unknown>,after:Record<string,unknown>){
  const a=pick(before),b=pick(after);
  return (Object.keys(a) as (keyof typeof a)[]).filter(key=>text(a[key])!==text(b[key])).map(key=>({field:key==='name'?'propertyName':key==='city'?'propertyCity':key==='regionId'?'propertyRegionId':'propertyCoordinates',before:text(a[key]),after:text(b[key])}));
 }
+/** Equipment must be moved or archived first, so the installed base never points to an archived property. */
+export class PropertyHasEquipment extends Error {}
 export const propertyService={
  async list(ctx:AccessContext,companyId:string,partyId:string,raw:unknown){
-  const record=await party(ctx,companyId,partyId,false),input=propertyListInput.parse(raw);
+  const record=await authorizedParty(ctx,companyId,partyId,false),input=propertyListInput.parse(raw);
   const filter={tenantId:ctx.tenantId,companyId,partyId:record._id,archived:false,...(input.search?{name:{$regex:literal(input.search),$options:'i'}}:{})};
   const [rows,total]=await Promise.all([Property.find(filter).sort({name:1,_id:1}).skip((input.page-1)*20).limit(20),Property.countDocuments(filter)]);
   return {items:await views(ctx,companyId,rows),total,page:input.page,pageSize:20};
@@ -44,7 +46,7 @@ export const propertyService={
  async create(ctx:AccessContext,companyId:string,partyId:string,raw:unknown){
   const input=propertyCreateInput.parse(raw);
   return transact(async session=>{
-   const record=await party(ctx,companyId,partyId,true,session);await assertReferences(ctx,companyId,record._id,input,null,session);
+   const record=await authorizedParty(ctx,companyId,partyId,true,session);await assertReferences(ctx,companyId,record._id,input,null,session);
    const [row]=await Property.create([{...input,nameKey:nameKey(input.name),tenantId:ctx.tenantId,companyId,partyId:record._id}],{session});
    await audit(ctx,companyId,row!._id,'property.created',session,undefined,changes({},row!.toObject()));
    return (await views(ctx,companyId,[row!]))[0]!;
@@ -54,7 +56,7 @@ export const propertyService={
   objectId.parse(id);const parsed=propertyUpdateInput.parse(raw),{version}=parsed;
   const input:Record<string,unknown>=Object.fromEntries(Object.entries(parsed).filter(([key])=>key!=='version'&&Object.hasOwn(raw as object,key)));
   return transact(async session=>{
-   const record=await party(ctx,companyId,partyId,true,session);
+   const record=await authorizedParty(ctx,companyId,partyId,true,session);
    const old=await Property.findOne({_id:id,tenantId:ctx.tenantId,companyId,partyId:record._id,archived:false}).session(session);if(!old)throw new RecordNotFound();
    await assertReferences(ctx,companyId,record._id,input as {regionId?:string|null;contactIds?:string[]},old,session);
    if(Object.hasOwn(input,'address'))input.address=addressInput.parse({...old.toObject().address,...input.address as Record<string,unknown>});
@@ -68,7 +70,8 @@ export const propertyService={
  async archive(ctx:AccessContext,companyId:string,partyId:string,id:string,raw:unknown){
   objectId.parse(id);const {version}=versionInput.parse(raw);
   return transact(async session=>{
-   const record=await party(ctx,companyId,partyId,true,session);
+   const record=await authorizedParty(ctx,companyId,partyId,true,session);
+   if(await Equipment.exists({tenantId:ctx.tenantId,companyId,partyId:record._id,propertyId:id,archived:false}).session(session))throw new PropertyHasEquipment();
    const row=await Property.findOneAndUpdate({_id:id,tenantId:ctx.tenantId,companyId,partyId:record._id,archived:false,version},{$set:{archived:true},$inc:{version:1}},{new:true,session});
    if(!row){if(await Property.exists({_id:id,tenantId:ctx.tenantId,companyId,partyId:record._id,archived:false}).session(session))throw new RecordConflict();throw new RecordNotFound();}
    await audit(ctx,companyId,row._id,'property.archived',session);return {id};

@@ -1,6 +1,6 @@
 import {qualificationStates,registrationStatuses,paymentMethods} from '../../../../../packages/contracts/src/qualification.js';
 import {Schema,model} from 'mongoose';
-import {customerTypes,leadStages,partyListKinds,contactRoles,contactChannels} from '../../../../../packages/contracts/src/relationships.js';
+import {customerTypes,leadStages,partyListKinds,contactRoles,contactChannels,equipmentStatuses} from '../../../../../packages/contracts/src/relationships.js';
 const address=new Schema({postalCode:String,street:String,number:String,complement:String,neighborhood:String,city:String,state:String,country:String},{_id:false,versionKey:false,strict:'throw'});
 const scope={tenantId:{type:Schema.Types.ObjectId,ref:'Tenant',required:true,immutable:true},companyId:{type:Schema.Types.ObjectId,ref:'Company',required:true,immutable:true},ownerId:{type:Schema.Types.ObjectId,ref:'User',required:true},archived:{type:Boolean,default:false},version:{type:Number,default:0,required:true}};
 const options={timestamps:true,strict:'throw',versionKey:false} as const;
@@ -17,7 +17,7 @@ const contactSchema=new Schema({...scope,partyId:{type:Schema.Types.ObjectId,ref
 contactSchema.index({tenantId:1,companyId:1,partyId:1,archived:1,ownerId:1,createdAt:-1});
 export const Contact=model('CrmContact',contactSchema);
 const change=new Schema({field:{type:String,required:true,maxlength:40},before:{type:String,default:'',maxlength:300},after:{type:String,default:'',maxlength:300}},{_id:false,strict:'throw',versionKey:false});
-const auditSchema=new Schema({changes:{type:[change],default:undefined},previousStage:{type:String,enum:[...leadStages]},nextStage:{type:String,enum:[...leadStages]},tenantId:{type:Schema.Types.ObjectId,required:true},companyId:{type:Schema.Types.ObjectId,required:true},actorId:{type:Schema.Types.ObjectId,required:true},entityId:{type:Schema.Types.ObjectId,required:true},action:{type:String,enum:['lead.created','customer.created','party.updated','party.archived','lead.converted','customer.regularized','lead.stage_changed','contact.created','contact.updated','contact.archived','list.created','list.updated','property.created','property.updated','property.archived'],required:true}},options);
+const auditSchema=new Schema({changes:{type:[change],default:undefined},previousStage:{type:String,enum:[...leadStages]},nextStage:{type:String,enum:[...leadStages]},tenantId:{type:Schema.Types.ObjectId,required:true},companyId:{type:Schema.Types.ObjectId,required:true},actorId:{type:Schema.Types.ObjectId,required:true},entityId:{type:Schema.Types.ObjectId,required:true},action:{type:String,enum:['lead.created','customer.created','party.updated','party.archived','lead.converted','customer.regularized','lead.stage_changed','contact.created','contact.updated','contact.archived','list.created','list.updated','property.created','property.updated','property.archived','equipment.created','equipment.updated','equipment.archived'],required:true}},options);
 auditSchema.index({tenantId:1,companyId:1,createdAt:-1});
 export const RelationshipAudit=model('RelationshipAudit',auditSchema);
 const qualificationScope={tenantId:{type:Schema.Types.ObjectId,required:true,immutable:true},companyId:{type:Schema.Types.ObjectId,required:true,immutable:true},partyId:{type:Schema.Types.ObjectId,required:true,immutable:true}};
@@ -36,6 +36,12 @@ const propertySchema=new Schema({tenantId:{type:Schema.Types.ObjectId,required:t
 propertySchema.index({tenantId:1,companyId:1,partyId:1,nameKey:1},{unique:true,partialFilterExpression:{archived:false}});
 propertySchema.index({tenantId:1,companyId:1,regionId:1,archived:1});
 export const Property=model('CrmProperty',propertySchema);
+const day={type:String,default:null,match:/^\d{4}-\d{2}-\d{2}$/};
+// Installed base: authorized through the live parent Party, like properties. serialKey is the normalized serial for uniqueness.
+const equipmentSchema=new Schema({tenantId:{type:Schema.Types.ObjectId,required:true,immutable:true},companyId:{type:Schema.Types.ObjectId,required:true,immutable:true},partyId:{type:Schema.Types.ObjectId,ref:'CrmParty',required:true,immutable:true},propertyId:{type:Schema.Types.ObjectId,ref:'CrmProperty',required:true},categoryId:{type:Schema.Types.ObjectId,default:null},brand:{type:String,required:true,maxlength:80},model:{type:String,required:true,maxlength:120},serialNumber:{type:String,default:'',maxlength:80},serialKey:{type:String,default:'',maxlength:80},status:{type:String,enum:[...equipmentStatuses],default:'em_operacao'},installedAt:day,warrantyUntil:day,supplier:{type:String,default:'',maxlength:120},notes:{type:String,default:'',maxlength:2000},archived:{type:Boolean,default:false},version:{type:Number,default:0}},options);
+equipmentSchema.index({tenantId:1,companyId:1,serialKey:1},{unique:true,name:'company_serial_unique',partialFilterExpression:{serialKey:{$gt:''},archived:false}});
+equipmentSchema.index({tenantId:1,companyId:1,partyId:1,propertyId:1,archived:1});
+export const Equipment=model('CrmEquipment',equipmentSchema);
 /** Startup must not fail while legacy duplicate documents await review; the service also checks availability. */
 async function initializeParty(){try{await Party.init();}catch(error){if((error as {code?:number}).code!==11000)throw error;console.warn('TAX_ID_DUPLICATES_PENDING: execute npm run db:tax-ids para revisar documentos duplicados no grupo.');}}
-export async function initializeRelationshipModels(){await Promise.all([initializeParty(),PartyListOption.init(),Property.init(),Contact.init(),RelationshipAudit.init(),QualificationSubmission.init(),QualificationAudit.init()]);}
+export async function initializeRelationshipModels(){await Promise.all([initializeParty(),PartyListOption.init(),Property.init(),Equipment.init(),Contact.init(),RelationshipAudit.init(),QualificationSubmission.init(),QualificationAudit.init()]);}

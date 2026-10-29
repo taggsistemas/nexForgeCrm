@@ -1651,6 +1651,30 @@
       "kind": "test",
       "source": "tests/unit/properties.test.ts",
       "symbol": "property inputs"
+    },
+    {
+      "id": "crm:relationships:equipment",
+      "kind": "service",
+      "source": "apps/api/src/modules/relationships/equipment.ts",
+      "symbol": "equipmentService"
+    },
+    {
+      "id": "crm:relationships:equipment-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/PartyEquipment.tsx",
+      "symbol": "PartyEquipment"
+    },
+    {
+      "id": "crm:relationships:equipment-test",
+      "kind": "test",
+      "source": "tests/integration/equipment-mongo.test.ts",
+      "symbol": "installed base"
+    },
+    {
+      "id": "crm:relationships:equipment-unit",
+      "kind": "test",
+      "source": "tests/unit/equipment.test.ts",
+      "symbol": "installed base inputs"
     }
   ],
   "edges": [
@@ -3366,6 +3390,36 @@
     },
     {
       "from": "crm:relationships:properties-unit",
+      "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:equipment",
+      "to": "apps/api/src/modules/relationships/properties.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:equipment",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:http",
+      "to": "apps/api/src/modules/relationships/equipment.ts",
+      "kind": "exposes"
+    },
+    {
+      "from": "crm:relationships:record-ui",
+      "to": "apps/web/src/features/relationships/PartyEquipment.tsx",
+      "kind": "renders"
+    },
+    {
+      "from": "crm:relationships:equipment-test",
+      "to": "apps/api/src/modules/relationships/equipment.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:equipment-unit",
       "to": "apps/api/src/modules/relationships/input.ts",
       "kind": "tests"
     }

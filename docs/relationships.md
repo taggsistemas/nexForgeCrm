@@ -89,3 +89,11 @@ Ver lead-qualification.md. PartyView inclui contactName (contato principal resum
 - **Coordenadas** são digitadas no cadastro, limitadas a ±90/±180 e arredondadas a 6 casas. Não são capturadas do aparelho e não comprovam presença.
 - Edição com versão otimista; criação, alteração (nome, município, território, coordenadas) e arquivamento entram no histórico da ficha com nome do território.
 - Na ficha do cliente: aba Propriedades com lista e modal de edição. A coordenação técnica ainda filtra atendimentos pela carteira; usar o território da propriedade nessa fila faz parte da etapa de chamados.
+
+## Parque instalado (etapa 5 — 29/10/2026)
+
+- Equipamento pertence a uma propriedade ativa do mesmo cliente/lead: marca, modelo, categoria (lista configurável "Categoria de equipamento"), número de série, situação (em operação, parado, em manutenção, retirado), instalação, garantia, fornecedor/assistência e observações. Datas são de calendário; garantia não termina antes da instalação.
+- **Série única por empresa** entre equipamentos ativos, comparando sem maiúsculas, espaços e separadores ("TQ-500/77" = "tq 50077"). O serviço verifica antes de gravar e o índice `company_serial_unique` garante no banco; resposta 409 `SERIAL_ALREADY_REGISTERED` sem revelar o cliente. Série vazia é permitida e não conflita; arquivar libera a série. Outra empresa do grupo pode ter a mesma série.
+- **Autorização** pelo cliente atual, como nas propriedades. Mover o equipamento para outra propriedade do mesmo cliente exige versão e fica no histórico. Arquivar a propriedade é bloqueado enquanto houver equipamento ativo nela (409 `PROPERTY_HAS_EQUIPMENT`); arquivar o cliente arquiva seus equipamentos.
+- **Linha do tempo** do equipamento com cadastro e alterações (propriedade, categoria, série, situação, datas e fornecedor) com nomes resolvidos. Visitas, chamados, OS e peças entram nas etapas seguintes. Eventos também aparecem no histórico da ficha.
+- Listas novas são semeadas por tipo: empresas que já tinham listas recebem a categoria de equipamento na primeira leitura.

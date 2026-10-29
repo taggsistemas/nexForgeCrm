@@ -1,7 +1,7 @@
 import {qualificationStates} from '../../../../../packages/contracts/src/qualification.js';
 import {z} from 'zod';
 import {brazilStates,digits,normalizeTaxId,normalizeStateRegistration,validTaxId} from '../../../../../packages/contracts/src/customer.js';
-import {customerTypes,leadStages,partyListKinds,contactRoles,contactChannels} from '../../../../../packages/contracts/src/relationships.js';
+import {customerTypes,leadStages,partyListKinds,contactRoles,contactChannels,equipmentStatuses} from '../../../../../packages/contracts/src/relationships.js';
 export const objectId=z.string().regex(/^[a-f0-9]{24}$/i).transform(value=>value.toLowerCase());
 const optionalText=(max:number)=>z.string().trim().max(max).default('');
 const email=optionalText(254).refine(value=>!value||z.email().safeParse(value).success).transform(value=>value.toLowerCase());
@@ -48,3 +48,10 @@ const propertyFields={name:z.string().trim().min(1).max(120),regionId:objectId.n
 export const propertyCreateInput=z.object(propertyFields).strict();
 export const propertyUpdateInput=z.object({...propertyFields,address:addressPatch.optional()}).partial().extend({version:z.number().int().min(0)}).strict();
 export const propertyListInput=z.object({page:z.coerce.number().int().min(1).max(10000).default(1),search:z.string().trim().max(80).default('')}).strict();
+const equipmentFields={propertyId:objectId,categoryId:objectId.nullable().default(null),brand:z.string().trim().min(1).max(80),model:z.string().trim().min(1).max(120),serialNumber:z.string().trim().max(80).default(''),status:z.enum(equipmentStatuses).default('em_operacao'),installedAt:calendarDate.nullable().default(null),warrantyUntil:calendarDate.nullable().default(null),supplier:optionalText(120),notes:optionalText(2000)};
+const warrantyAfterInstall=(value:{installedAt?:string|null;warrantyUntil?:string|null})=>!value.installedAt||!value.warrantyUntil||value.warrantyUntil>=value.installedAt;
+export const equipmentCreateInput=z.object(equipmentFields).strict().refine(warrantyAfterInstall,{path:['warrantyUntil']});
+export const equipmentUpdateInput=z.object(equipmentFields).partial().extend({version:z.number().int().min(0)}).strict();
+export const equipmentListInput=z.object({page:z.coerce.number().int().min(1).max(10000).default(1),search:z.string().trim().max(80).default(''),propertyId:objectId.optional()}).strict();
+/** Serial comparison ignores case, spaces and separators so "AB-12 3" and "ab123" are the same equipment. */
+export const serialKey=(value:string)=>value.normalize('NFKC').toUpperCase().replace(/[^A-Z0-9]/g,'');

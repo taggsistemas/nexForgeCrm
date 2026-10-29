@@ -282,3 +282,9 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Nova suíte `properties-mongo` (3 casos reais): várias propriedades, escopo de carteira e outro vendedor/tenant/origem recusados, Auditoria só lê; região de outra empresa, contato de outro cliente, nome duplicado e coordenadas inválidas recusados; região inativa mantida só quando inalterada; conflito de versão; transferência e arquivamento do cliente; histórico com nome do território. Corrigido durante o teste: IDs de território gravados entre aspas no histórico.
 - Corrigido no componente Modal: Esc em modal aninhado fechava também o modal pai.
 - `npm run check`: aprovado, 171 Vitest, build, grafo declarado (275 nós/343 arestas, não Graphify AST). `npm run test:db`: 66/66. `npm run test:layout`: 109 aprovados, 2 ignorados. E2E local: 78/78.
+
+## Etapa 5 — parque instalado (29/10/2026)
+
+- Equipamentos por propriedade com categoria configurável, série única por empresa (normalizada), situação, datas, fornecedor, versão, auditoria e linha do tempo; propriedade com equipamento ativo não pode ser arquivada.
+- Nova suíte `equipment-mongo` (3 casos reais): semeadura da nova lista em empresa existente, propriedade de outro cliente e categoria de outra empresa recusadas, garantia antes da instalação recusada, escopo de vendedor/tenant, Auditoria só lê, bloqueio de arquivamento da propriedade; série duplicada com variações (409 sem vazamento e índice), mesma série em outra empresa permitida, séries vazias, arquivamento libera; mudança de propriedade/situação com versão, linha do tempo nomeada, histórico da ficha e arquivamento do cliente.
+- `npm run check`: aprovado, 174 Vitest, build, grafo declarado (279 nós/349 arestas, não Graphify AST). `npm run test:db`: 69/69. `npm run test:layout`: 112 aprovados, 2 ignorados. E2E local: 78/78.

@@ -10,8 +10,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 2. Completar perfis e permissões | Implementada; homologação de uso pendente | Direção (aprovações), Coordenação Técnica, Auditoria e matriz de ações/escopos |
 | 3. Evoluir clientes e contatos | Implementada; homologação de uso pendente | Documento único no grupo, listas configuráveis, próxima ação, responsável técnico, papéis/consentimento e ficha com histórico |
 | 4. Propriedades/locais | Implementada; homologação de uso pendente | Vários locais por cliente e vínculos autorizados |
-| 5. Parque instalado | Próxima | Equipamentos, série, instalação, garantia e histórico |
-| 6. Oportunidades e propostas | Pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
+| 5. Parque instalado | Implementada; homologação de uso pendente | Equipamentos, série, instalação, garantia e histórico |
+| 6. Oportunidades e propostas | Próxima | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
 | 7. Agenda e visitas | Pendente | Adaptar ao local/equipamento e uniformizar filtros |
 | 8. Chamados e triagem | Pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
 | 9. OS básica | Pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
@@ -94,11 +94,24 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Usar o território da propriedade na fila da Coordenação Técnica (etapa 8, chamados).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 5. Parque instalado
+## Etapa 5 — parque instalado
 
-- [ ] Equipamento por propriedade: marca, modelo, categoria, série, situação, instalação, garantia, fornecedor e observações.
-- [ ] Série única por empresa quando informada.
-- [ ] Ficha e linha do tempo do equipamento.
+- [x] Equipamento por propriedade ativa do mesmo cliente: marca, modelo, categoria configurável, série, situação, instalação, garantia, fornecedor/assistência e observações.
+- [x] Série única por empresa entre equipamentos ativos, sem diferenciar maiúsculas, espaços e separadores; índice `company_serial_unique`; 409 sem revelar o cliente.
+- [x] Autorização pelo cliente atual; mover entre propriedades com versão; propriedade com equipamento ativo não pode ser arquivada; arquivar cliente arquiva equipamentos.
+- [x] Linha do tempo do equipamento com nomes resolvidos; eventos também no histórico da ficha.
+- [x] Aba Equipamentos na ficha com filtro por propriedade, modal de cadastro e modal de linha do tempo.
+- [x] Listas configuráveis passam a ser semeadas por tipo (empresas existentes recebem a nova lista).
+- [x] Testes: 3 cenários MongoDB, 3 unitários e cenário de layout em três tamanhos.
+- [x] Verificação completa: check (174 Vitest), MongoDB 69/69, layout 112 aprovados e 2 ignorados, E2E 78/78.
+- [ ] Anexos, alertas de garantia e manutenção prevista (RF-EQP-004/005, fase P1).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 6. Oportunidades e propostas
+
+- [ ] Vincular oportunidades a propriedade e equipamento; origem e probabilidade.
+- [ ] Configuração de etapas do funil.
+- [ ] Propostas com versões, itens de produtos/serviços, quantidades, preços, validade e status, sem contabilizar proposta como receita.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

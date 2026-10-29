@@ -9,7 +9,8 @@ import type {IdentityService} from '../identity/service.js';
 import {authorizeCompany,type AuthorizedCompany} from '../../infrastructure/authorization.js';
 import {AccessDenied} from '../../infrastructure/access.js';
 import {relationshipService,RecordNotFound,RecordConflict,InvalidReference,DocumentAlreadyRegistered} from './service.js';
-import {propertyService} from './properties.js';
+import {propertyService,PropertyHasEquipment} from './properties.js';
+import {equipmentService,SerialAlreadyRegistered} from './equipment.js';
 import {partyLists,InvalidListOption,ListOptionNotFound,ListVersionConflict} from './lists.js';
 import type {PartyKind} from '../../../../../packages/contracts/src/relationships.js';
 import type {Permission} from '../../../../../packages/contracts/src/index.js';
@@ -40,6 +41,11 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
  router.post('/parties/:partyId/properties',authorizeCompany(identity,'company:read'),async(req,res)=>res.status(201).json({record:await propertyService.create(scope(res),String(req.params.companyId),String(req.params.partyId),req.body)}));
  router.patch('/parties/:partyId/properties/:id',authorizeCompany(identity,'company:read'),async(req,res)=>res.json({record:await propertyService.update(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)}));
  router.post('/parties/:partyId/properties/:id/archive',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await propertyService.archive(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)));
+ router.get('/parties/:partyId/equipment',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await equipmentService.list(scope(res),String(req.params.companyId),String(req.params.partyId),req.query)));
+ router.post('/parties/:partyId/equipment',authorizeCompany(identity,'company:read'),async(req,res)=>res.status(201).json({record:await equipmentService.create(scope(res),String(req.params.companyId),String(req.params.partyId),req.body)}));
+ router.patch('/parties/:partyId/equipment/:id',authorizeCompany(identity,'company:read'),async(req,res)=>res.json({record:await equipmentService.update(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)}));
+ router.post('/parties/:partyId/equipment/:id/archive',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await equipmentService.archive(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)));
+ router.get('/parties/:partyId/equipment/:id/timeline',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await equipmentService.timeline(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id))));
  router.get('/owners',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await relationshipService.owners(scope(res),String(req.params.companyId))));
  router.get('/parties/:partyId/contacts',authorizeCompany(identity,'contact:read'),async(req,res)=>res.json(await relationshipService.contacts(scope(res),String(req.params.companyId),String(req.params.partyId),req.query)));
  router.post('/parties/:partyId/contacts',authorizeCompany(identity,'contact:write'),async(req,res)=>res.status(201).json({record:await relationshipService.createContact(scope(res),String(req.params.companyId),String(req.params.partyId),req.body)}));
@@ -51,6 +57,8 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
   if(error instanceof PortfolioTransferRequired){res.status(400).json({code:'PORTFOLIO_TRANSFER_REQUIRED'});return;}
   if(error instanceof QualificationRequired){res.status(400).json({code:'LEAD_QUALIFICATION_REQUIRED'});return;}
   if(error instanceof DocumentAlreadyRegistered){res.status(409).json({code:'DOCUMENT_ALREADY_REGISTERED'});return;}
+  if(error instanceof SerialAlreadyRegistered){res.status(409).json({code:'SERIAL_ALREADY_REGISTERED'});return;}
+  if(error instanceof PropertyHasEquipment){res.status(409).json({code:'PROPERTY_HAS_EQUIPMENT'});return;}
   if(error instanceof InvalidListOption){res.status(400).json({code:'INVALID_LIST_OPTION'});return;}
   if(error instanceof RecordNotFound||error instanceof ListOptionNotFound){res.status(404).json({code:'NOT_FOUND'});return;}
   if(error instanceof ListVersionConflict){res.status(409).json({code:'RECORD_CONFLICT'});return;}

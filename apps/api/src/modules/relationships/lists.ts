@@ -12,11 +12,12 @@ export const classificationKeys=Object.keys(fieldKinds) as (keyof typeof fieldKi
 const labelKey=(label:string)=>label.normalize('NFD').replace(/[̀-ͯ]/g,'').toLocaleLowerCase('pt-BR').replace(/\s+/g,' ').trim();
 function view(row:InstanceType<typeof PartyListOption>):PartyListOptionView{return {id:String(row._id),kind:row.kind as PartyListKind,label:row.label,active:row.active,order:row.order,version:row.version};}
 async function transact<T>(fn:(session:mongoose.ClientSession)=>Promise<T>){try{return await mongoose.connection.transaction(fn);}catch(error){if((error as {code?:number}).code===11000)throw new InvalidListOption();throw error;}}
-/** Idempotent per company: the unique labelKey index absorbs concurrent first reads. */
+/** Idempotent per company and kind: lists added later are seeded once; the unique labelKey index absorbs concurrent reads. */
 async function seedDefaults(tenantId:string,companyId:string){
- if(await PartyListOption.exists({tenantId,companyId}))return;
+ const existing=new Set((await PartyListOption.distinct('kind',{tenantId,companyId})).map(String)),missing=partyListKinds.filter(kind=>!existing.has(kind));
+ if(!missing.length)return;
  const tenant=new mongoose.Types.ObjectId(tenantId),company=new mongoose.Types.ObjectId(companyId);
- const rows=partyListKinds.flatMap(kind=>defaultPartyListOptions[kind].map((label,order)=>({kind,label,labelKey:labelKey(label),order})));
+ const rows=missing.flatMap(kind=>defaultPartyListOptions[kind].map((label,order)=>({kind,label,labelKey:labelKey(label),order})));
  await PartyListOption.bulkWrite(rows.map(row=>({updateOne:{filter:{tenantId:tenant,companyId:company,kind:row.kind,labelKey:row.labelKey},update:{$setOnInsert:{label:row.label,order:row.order}},upsert:true}})),{ordered:false}).catch(error=>{if((error as {code?:number}).code!==11000)throw error;});
 }
 /**

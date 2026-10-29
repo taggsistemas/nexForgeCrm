@@ -1,0 +1,107 @@
+import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import mongoose from 'mongoose';
+import {randomUUID} from 'node:crypto';
+import request from 'supertest';
+import {createApp} from '../../apps/api/src/app.js';
+import {initializeClientModels,platformClients} from '../../apps/api/src/modules/platform/clients.js';
+import {PlatformAdmin} from '../../apps/api/src/modules/platform/models.js';
+import {AdministrationAudit} from '../../apps/api/src/modules/administration/models.js';
+import {administrationService} from '../../apps/api/src/modules/administration/service.js';
+import {identityService} from '../../apps/api/src/modules/identity/service.js';
+import {hashPassword} from '../../apps/api/src/modules/identity/security.js';
+import {Company,Membership} from '../../apps/api/src/modules/identity/models.js';
+import {relationshipService} from '../../apps/api/src/modules/relationships/service.js';
+import {qualificationWorkflow} from '../../apps/api/src/modules/relationships/qualification-workflow.js';
+import {partyLists} from '../../apps/api/src/modules/relationships/lists.js';
+import {reviewTaxIds} from '../../apps/api/src/modules/relationships/tax-id-review.js';
+import {initializeRelationshipModels,Party,Contact,PartyListOption} from '../../apps/api/src/modules/relationships/models.js';
+import {initializeAccountSecurityModels} from '../../apps/api/src/modules/account-security/models.js';
+import {customerRegistrationFixture} from '../fixtures/customer.js';
+import {prepareAccount} from '../fixtures/ready-account.js';
+import {seedRelationship} from '../fixtures/relationships.js';
+type Login=NonNullable<Awaited<ReturnType<typeof identityService.login>>>;
+const uri=process.env.MONGODB_TEST_URI,database='nexforge_crm_test_'+randomUUID().replaceAll('-',''),origin='http://localhost:5173',password='customer-profile-password';
+let admin:Login,other:Login,seller:Login,manager:Login,auditor:Login,technician:Login,company:string,secondCompany:string;
+const app=createApp({origin,databaseReady:()=>true,identity:identityService}),headers=(login:Login)=>({Origin:origin,Cookie:'nf_session='+login.token});
+const complete=(version:number,taxId:string)=>({version,contactName:'Ana Compras',legalName:'Fazenda Teste Ltda',taxId,registrationStatus:'isento',email:'contact@example.invalid',phone:'42999999999',customerType:'atacado',address:{postalCode:'84165000',street:'Rua Teste',number:'100',neighborhood:'Centro',city:'Castro',state:'PR',country:'Brasil'},commercial:{creditLimitCents:100000,paymentMethods:['pix'],paymentTermDays:[30]}});
+async function lead(login:Login,companyId:string,name:string,extra:Record<string,unknown>={}){return relationshipService.create(login.context,companyId,'lead',{name,phone:'42999999999',...extra});}
+async function options(login:Login,companyId:string){const {items}=await partyLists.list(login.context,companyId);return (kind:string,label:string)=>items.find(row=>row.kind===kind&&row.label===label)!;}
+describe.skipIf(!uri)('customer profile: classification lists, group documents, technical owner, consent and history',()=>{
+ beforeAll(async()=>{
+  await mongoose.connect(uri!,{dbName:database,serverSelectionTimeoutMS:10000});await Promise.all([initializeClientModels(),initializeRelationshipModels(),initializeAccountSecurityModels(),AdministrationAudit.init(),PlatformAdmin.init()]);
+  const master=await PlatformAdmin.create({name:'Master',email:'profile-master@example.invalid',passwordHash:await hashPassword(password)});
+  const tenant=async(name:string)=>{const c=await platformClients.create({...customerRegistrationFixture,name,slug:name,companyName:name,adminName:name,adminEmail:name+'@example.invalid',adminPassword:password},String(master._id));await prepareAccount(c.admin!.email);return c.admin!.email;};
+  const adminEmail=await tenant('profile-a'),otherEmail=await tenant('profile-b');
+  let login=(await identityService.login(adminEmail,password))!;company=login.context.companyIds[0]!;
+  secondCompany=String((await Company.create({tenantId:login.context.tenantId,name:'Unidade Carambeí'}))._id);
+  await Membership.updateOne({tenantId:login.context.tenantId,userId:login.context.userId},{$push:{companyIds:secondCompany}});
+  admin=(await identityService.login(adminEmail,password))!;other=(await identityService.login(otherEmail,password))!;
+  const user=async(name:string,profileKey:string)=>{const row=await administrationService.create(admin.context,{name,email:name+'@example.invalid',password,profileKey,companyIds:[company]});await prepareAccount(row.email);return (await identityService.login(row.email,password))!;};
+  seller=await user('profile-seller','seller');manager=await user('profile-manager','manager');auditor=await user('profile-auditor','auditor');technician=await user('profile-technician','technician');
+  login=admin;void login;
+ },60000);
+ afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
+ it('seeds editable lists per company, restricts management and validates live options on records',async()=>{
+  const pick=await options(seller,company);expect(pick('origin','Indicação')).toBeDefined();expect(pick('potential','Alto')).toBeDefined();
+  expect(await PartyListOption.countDocuments({tenantId:admin.context.tenantId,companyId:company})).toBe((await partyLists.list(admin.context,company)).items.length);
+  await expect(partyLists.create(seller.context,company,{kind:'origin',label:'Rádio'})).rejects.toThrow();await expect(partyLists.create(auditor.context,company,{kind:'origin',label:'Rádio'})).rejects.toThrow();
+  const radio=await partyLists.create(manager.context,company,{kind:'origin',label:'Rádio'});await expect(partyLists.create(manager.context,company,{kind:'origin',label:'radio'})).rejects.toThrow();
+  const foreign=(await options(admin,secondCompany))('segment','Agricultura');
+  await expect(lead(seller,company,'Origem de outra empresa',{segmentId:foreign.id})).rejects.toThrow();await expect(lead(seller,company,'Tipo trocado',{segmentId:radio.id})).rejects.toThrow();
+  const row=await lead(seller,company,'Fazenda Classificada',{originId:radio.id,segmentId:pick('segment','Pecuária leiteira').id,nextActionDate:'2030-01-10',nextActionDescription:'Levar proposta de ordenha'});
+  expect(row.originId).toBe(radio.id);expect(row.nextAction).toEqual({date:'2030-01-10',description:'Levar proposta de ordenha'});
+  const inactive=await partyLists.update(manager.context,company,radio.id,{active:false,version:radio.version});
+  const kept=await relationshipService.update(seller.context,company,'lead',row.id,{version:row.version,originId:radio.id,nextActionDescription:'Revisar proposta'});expect(kept.originId).toBe(radio.id);
+  const other=await lead(seller,company,'Nova origem');await expect(relationshipService.update(seller.context,company,'lead',other.id,{version:other.version,originId:inactive.id})).rejects.toThrow();
+  await expect(lead(seller,company,'Data inválida',{nextActionDate:'2030-02-30'})).rejects.toThrow();
+  const http=await request(app).post('/api/v1/companies/'+company+'/crm/lists').set(headers(seller)).send({kind:'origin',label:'Outdoor'});expect(http.status).toBe(403);
+ },30000);
+ it('keeps one active document per group across companies, frees archived ones and allows other tenants',async()=>{
+  const first=await lead(admin,company,'Fazenda Castro');await qualificationWorkflow.save(admin.context,company,first.id,complete(first.version,'11444777000161'));
+  const second=await lead(admin,secondCompany,'Fazenda Carambeí');
+  const http=await request(app).patch('/api/v1/companies/'+secondCompany+'/crm/parties/'+second.id+'/qualification').set(headers(admin)).send(complete(second.version,'11.444.777/0001-61'));
+  expect(http.status).toBe(409);expect(http.body.code).toBe('DOCUMENT_ALREADY_REGISTERED');expect(JSON.stringify(http.body)).not.toContain('Castro');
+  await expect(Party.create({tenantId:admin.context.tenantId,companyId:secondCompany,ownerId:admin.context.userId,kind:'lead',name:'Bypass',taxId:'11444777000161',address:{country:'Brasil'}})).rejects.toMatchObject({code:11000});
+  const foreign=await lead(other,other.context.companyIds[0]!,'Outro grupo');await qualificationWorkflow.save(other.context,other.context.companyIds[0]!,foreign.id,complete(foreign.version,'11444777000161'));
+  const current=(await Party.findById(first.id))!;await relationshipService.archive(admin.context,company,'lead',first.id,{version:current.version});
+  const saved=await qualificationWorkflow.save(admin.context,secondCompany,second.id,complete(second.version,'11444777000161'));expect(saved.record.taxId).toBe('11444777000161');
+ },30000);
+ it('reports legacy duplicates by internal ID only and builds the group index after people resolve them',async()=>{
+  await Party.collection.dropIndex('tenant_tax_id_unique');
+  await Party.collection.createIndex({tenantId:1,companyId:1,taxId:1},{unique:true,partialFilterExpression:{taxId:{$gt:''},archived:false}});
+  const base={tenantId:new mongoose.Types.ObjectId(admin.context.tenantId),ownerId:new mongoose.Types.ObjectId(admin.context.userId),kind:'customer',archived:false,taxId:'52998224725',address:{country:'Brasil'},version:0};
+  const inserted=await Party.collection.insertMany([{...base,companyId:new mongoose.Types.ObjectId(company),name:'Legado A'},{...base,companyId:new mongoose.Types.ObjectId(secondCompany),name:'Legado B'}]);
+  const ids=Object.values(inserted.insertedIds).map(String).sort();
+  const pending=await reviewTaxIds(true);expect(pending.applied).toBe(false);expect(pending.duplicates).toEqual([{tenantId:admin.context.tenantId,partyIds:ids}]);expect(JSON.stringify(pending)).not.toContain('52998224725');expect(JSON.stringify(pending)).not.toContain('Legado');
+  await Party.collection.updateOne({_id:inserted.insertedIds[1]},{$set:{archived:true}});
+  const done=await reviewTaxIds(true);expect(done).toEqual({duplicates:[],applied:true});
+  const names=(await Party.collection.indexes()).map(index=>index.name);expect(names).toContain('tenant_tax_id_unique');expect(names).not.toContain('tenantId_1_companyId_1_taxId_1');
+ },30000);
+ it('assigns only live technical staff as technical owner and shows critical history with names',async()=>{
+  const row=await seedRelationship(manager.context,company,'customer',{name:'Fazenda Técnica'});
+  await expect(relationshipService.update(manager.context,company,'lead',row.id,{version:row.version,technicalOwnerId:technician.context.userId})).rejects.toThrow();
+  await expect(relationshipService.update(manager.context,company,'customer',row.id,{version:row.version,technicalOwnerId:seller.context.userId})).rejects.toThrow();
+  const pick=await options(manager,company);
+  const updated=await relationshipService.update(manager.context,company,'customer',row.id,{version:row.version,technicalOwnerId:technician.context.userId,classificationId:pick('classification','A').id,ownerId:seller.context.userId});
+  expect(updated.technicalOwnerId).toBe(technician.context.userId);
+  expect((await relationshipService.technicalOwners(manager.context,company)).items.map(item=>item.id)).toEqual([technician.context.userId]);
+  await expect(relationshipService.technicalOwners(auditor.context,company)).rejects.toThrow();
+  const {items}=await relationshipService.history(auditor.context,company,row.id);
+  const changed=items.find(item=>item.action==='party.updated')!;
+  expect(changed.changes).toEqual(expect.arrayContaining([{field:'technicalOwnerId',before:'',after:'profile-technician'},{field:'classificationId',before:'',after:'A'},{field:'ownerId',before:'profile-manager',after:'profile-seller'}]));
+  expect(changed.actor).toContain('profile-manager');
+  await expect(relationshipService.history(other.context,company,row.id)).rejects.toThrow();
+  const technicianView=await request(app).get('/api/v1/companies/'+company+'/crm/parties/'+row.id+'/history').set(headers(technician));expect([403,404]).toContain(technicianView.status);
+ },30000);
+ it('records contact roles, channel and consent with server time and actor; client timestamps are rejected',async()=>{
+  const row=await lead(seller,company,'Fazenda Contatos');
+  await expect(relationshipService.createContact(seller.context,company,row.id,{name:'Carlos',roles:['decisor'],communicationConsent:true,consentAt:'2000-01-01T00:00:00Z'})).rejects.toThrow();
+  const before=Date.now(),contact=await relationshipService.createContact(seller.context,company,row.id,{name:'Carlos',roles:['decisor','compras'],preferredChannel:'whatsapp',communicationConsent:true});
+  expect(contact.roles).toEqual(['decisor','compras']);expect(contact.preferredChannel).toBe('whatsapp');expect(contact.communicationConsent.granted).toBe(true);expect(Date.parse(contact.communicationConsent.at!)).toBeGreaterThanOrEqual(before-1000);
+  expect(String((await Contact.findById(contact.id))!.consentBy)).toBe(seller.context.userId);
+  await expect(relationshipService.createContact(seller.context,company,row.id,{name:'Duplicado',roles:['decisor','decisor']})).rejects.toThrow();
+  const withdrawn=await relationshipService.updateContact(seller.context,company,row.id,contact.id,{version:contact.version,communicationConsent:false});expect(withdrawn.communicationConsent.granted).toBe(false);
+  const history=(await relationshipService.history(seller.context,company,row.id)).items;
+  expect(history.some(item=>item.action==='contact.updated'&&item.changes.some(change=>change.field==='communicationConsent'&&change.after==='false'))).toBe(true);
+ },30000);
+});

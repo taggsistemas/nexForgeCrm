@@ -267,3 +267,11 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - `npx playwright test --config playwright.local.config.ts` (E2E com API simulada): primeira execução completa neste projeto. Rodada inicial com build anterior: 74/78; após novo build com o ajuste acima, 78/78 aprovados (desktop e celular).
 - Estado final: `npm run check` aprovado (164 Vitest), `npm run test:db` 58/58, `npm run test:layout` 103 aprovados e 2 ignorados (menu móvel em desktop), E2E 78/78.
 - Homologação humana dos perfis pendente.
+
+## Etapa 3 — clientes e contatos (29/10/2026)
+
+- CPF/CNPJ único por grupo com verificação no serviço e índice `tenant_tax_id_unique`; listas configuráveis por empresa (`list:manage`); próxima ação; responsável técnico; papéis/canal/consentimento de contatos com data e autor do servidor; histórico antes/depois; ficha em abas. Comando `db:tax-ids` para duplicados legados (só IDs).
+- Nova suíte `customer-profile-mongo` (5 casos reais): listas e permissões, opção de outra empresa/tipo/inativa, documento entre empresas do mesmo grupo (409 sem vazamento, bloqueio no índice, outro tenant permitido, arquivamento libera), revisão de duplicados legados e troca de índice, responsável técnico e histórico com nomes, consentimento com horário do servidor e recusa de timestamp do cliente.
+- `npm run check`: aprovado, 168 Vitest (4 unitários novos), build e grafo declarado (271 nós/337 arestas, não Graphify AST).
+- `npm run test:db`: 63/63. `npm run test:layout`: 106 aprovados, 2 ignorados (inclui ficha do cliente em três tamanhos; capturas sintéticas conferidas). E2E local: 78/78.
+- Pendente: executar `db:tax-ids` no banco real antes de publicar; homologação com usuários.

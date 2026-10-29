@@ -9,7 +9,8 @@
     "start": "node dist/apps/api/src/server.js",
     "bootstrap": "tsx --env-file-if-exists=../../.env src/modules/identity/bootstrap.ts",
     "master:bootstrap": "tsx --env-file-if-exists=../../.env src/modules/platform/bootstrap.ts",
-    "db:diagnose": "tsx --env-file-if-exists=../../.env src/modules/platform/diagnose.ts"
+    "db:diagnose": "tsx --env-file-if-exists=../../.env src/modules/platform/diagnose.ts",
+    "db:tax-ids": "tsx --env-file-if-exists=../../.env src/modules/relationships/tax-ids.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

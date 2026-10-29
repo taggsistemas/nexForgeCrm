@@ -72,6 +72,7 @@ Vite preview serve apenas para conferir o build, não como servidor definitivo.
 4. Nenhuma resposta /api é cacheada pelo CDN ou pelo service worker.
 5. Cadastro de um cliente de homologação grava empresa e administrador.
 6. Consulta de CEP funciona no navegador com HTTPS.
+7. Bancos criados antes da etapa 3: executar npm run db:tax-ids com a MONGODB_URI do CRM. Havendo duplicados, revisar os IDs listados; sem duplicados, executar npm run db:tax-ids -- --apply. Ver relationships.md.
 
 O cadastro master já existente permanece se a URI apontar para o mesmo banco do
 CRM. Não executar bootstrap novamente sem necessidade. ERP permanece separado.

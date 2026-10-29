@@ -346,3 +346,13 @@ button:disabled,.nf-shell button:disabled,.nf-login button:disabled{cursor:not-a
 .nf-section-heading,.master-section-heading{gap:14px}
 @media(max-width:800px){.nf-panel,.master-card{padding:14px}.nf-form-section,.nf-modal .nf-form-section{padding:14px}.nf-catalog-list>li,.nf-technical .nf-field-stops>li{padding:14px}}
 .nf-admin-grid>.nf-field-wide{grid-column:1/-1}
+/* Etapa 3: ficha do cliente, papéis de contato e listas configuráveis */
+.nf-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.nf-form-section>legend{font-size:13px;font-weight:600;padding:0 4px}
+.nf-check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 16px}
+.nf-record-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--nf-border)}.nf-history-entry>p:not(.nf-history-actor){font-size:13px;margin:6px 0 0}
+.nf-record-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:0}
+.nf-record-summary>div{padding:10px 12px;border:1px solid var(--nf-border);border-radius:10px;background:var(--nf-surface2);min-width:0}
+.nf-record-summary dt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--nf-muted);margin-bottom:4px}
+.nf-record-summary dd{margin:0;overflow-wrap:anywhere}
+@media(max-width:520px){.nf-record-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.nf-record-summary>div{padding:8px 10px}}

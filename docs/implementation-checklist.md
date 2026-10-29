@@ -8,8 +8,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | --- | --- | --- |
 | 1. Padronizar telas e modais | Implementada; homologação de uso pendente | Padrão visual compartilhado, navegação, formulários, listas, feedback e responsividade |
 | 2. Completar perfis e permissões | Implementada; homologação de uso pendente | Direção (aprovações), Coordenação Técnica, Auditoria e matriz de ações/escopos |
-| 3. Evoluir clientes e contatos | Próxima | Origem, segmento, potencial, próxima ação, papéis e preferências |
-| 4. Propriedades/locais | Pendente | Vários locais por cliente e vínculos autorizados |
+| 3. Evoluir clientes e contatos | Implementada; homologação de uso pendente | Documento único no grupo, listas configuráveis, próxima ação, responsável técnico, papéis/consentimento e ficha com histórico |
+| 4. Propriedades/locais | Próxima | Vários locais por cliente e vínculos autorizados |
 | 5. Parque instalado | Pendente | Equipamentos, série, instalação, garantia e histórico |
 | 6. Oportunidades e propostas | Pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
 | 7. Agenda e visitas | Pendente | Adaptar ao local/equipamento e uniformizar filtros |
@@ -62,13 +62,30 @@ Decisões de Giovanni (29/10/2026): somente a Coordenação Técnica distribui a
 - [ ] Financeiro e Estoque: definir com os respectivos módulos.
 - [ ] Homologar perfis com usuários reais do piloto.
 
-## Próxima etapa — 3. Evoluir clientes e contatos
+## Etapa 3 — clientes e contatos
 
-- [ ] Unicidade de CPF/CNPJ no tenant (hoje por empresa), com verificação prévia de duplicados existentes e decisão sobre clientes atendidos por mais de uma empresa do grupo.
-- [ ] Origem, segmento, classificação, potencial e próxima ação com listas configuráveis por empresa.
-- [ ] Papéis e preferências/consentimentos de contatos.
-- [ ] Responsável técnico e histórico de troca de responsável.
-- [ ] Ficha do cliente em abas, preservando qualificação/aprovação.
+Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do grupo; o CPF/CNPJ ativo é único no grupo inteiro.
+
+- [x] CPF/CNPJ único no grupo (tenant): verificação no serviço antes de gravar e índice `tenant_tax_id_unique`; resposta 409 sem revelar o cadastro existente; arquivar libera o documento.
+- [x] Comando `npm run db:tax-ids` lista duplicados existentes só por ID interno; `-- --apply` cria o índice por grupo e remove o antigo apenas sem duplicados. A API inicia com aviso se houver pendência.
+- [x] Origem, segmento, classificação e potencial em listas configuráveis por empresa, com valores iniciais, renomear/desativar e preservação de opções inativas já usadas.
+- [x] Permissão `list:manage` para Administrador, Gerencial e Administrativo de vendas.
+- [x] Próxima ação (data e descrição) em leads e clientes; cadastro inicial de lead continua mínimo.
+- [x] Responsável técnico em clientes, restrito a Técnico/Coordenação Técnica ativos da empresa, sem conceder acesso comercial.
+- [x] Papéis, canal preferido e autorização de comunicação dos contatos, com data e autor gravados pelo servidor.
+- [x] Histórico com antes/depois de nome, documento, IE, responsáveis, classificação e tipo; inclui contatos e qualificação, com nomes resolvidos no tenant.
+- [x] Ficha do cliente em abas (Resumo, Contatos, Histórico), preservando qualificação/aprovação e edição nos modais existentes.
+- [x] Testes: 5 cenários MongoDB novos, 4 unitários novos e cenário de layout da ficha em três tamanhos.
+- [x] Verificação completa: check (168 Vitest), MongoDB 63/63, layout 106 aprovados e 2 ignorados, E2E 78/78.
+- [ ] Executar `npm run db:tax-ids` no banco real antes de publicar.
+- [ ] Homologar listas iniciais e ficha com usuários do piloto.
+
+## Próxima etapa — 4. Propriedades e locais de atendimento
+
+- [ ] Vários locais por cliente, com identificação, endereço, município, território, contatos e coordenadas opcionais.
+- [ ] Território como atributo da propriedade (Castro/Carambeí), independente da carteira do vendedor.
+- [ ] Nome "Propriedade" no cenário agro, com estrutura reutilizável.
+- [ ] Aba Propriedades na ficha do cliente.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

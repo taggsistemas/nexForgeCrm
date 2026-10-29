@@ -4,7 +4,7 @@ import type {AccessContext,Permission} from '../../../../../packages/contracts/s
 import {companyScope,AccessDenied} from '../../infrastructure/access.js';
 import {commercialFilter} from '../identity/profile-access.js';
 import {Party,QualificationSubmission,QualificationAudit,RelationshipAudit} from './models.js';
-import {partyView,RecordNotFound,RecordConflict} from './service.js';
+import {partyView,RecordNotFound,RecordConflict,assertTaxIdAvailable,criticalChanges,audit as relationshipAudit} from './service.js';
 import {objectId,addressInput} from './input.js';
 import {assertLeadQualified,QualificationRequired} from './qualification.js';
 import {commercialInput,qualificationDraftInput,qualificationActionInput,qualificationReturnInput,QualificationWorkflowRequired,QualificationSelfApproval} from './qualification-input.js';
@@ -34,7 +34,9 @@ export const qualificationWorkflow={
    if(input.address)changes.address=addressInput.parse({...row.toObject().address,...input.address});
    if(changes.registrationStatus==='isento')changes.stateRegistration='ISENTO';if(changes.registrationStatus==='nao_aplicavel')changes.stateRegistration='';
    if(!Boolean(changes.phone??row.phone)&&!Boolean(changes.email??row.email))throw new QualificationRequired();
-   row.set({...changes,qualificationState:row.qualificationState==='revision'?'revision':'draft',version:row.version+1});await row.save({session});await audit(ctx,company,id,'draft_saved',session);return {record:partyView(row)};
+   if(changes.taxId!==undefined&&changes.taxId!==row.taxId)await assertTaxIdAvailable(ctx,changes.taxId,row._id,session);const before=row.toObject();
+   row.set({...changes,qualificationState:row.qualificationState==='revision'?'revision':'draft',version:row.version+1});await row.save({session});await audit(ctx,company,id,'draft_saved',session);
+   const critical=criticalChanges(before,row.toObject());if(critical.length)await relationshipAudit(ctx,company,row._id,'party.updated',session,undefined,critical);return {record:partyView(row)};
   });
  },
  async submit(ctx:AccessContext,company:string,id:string,raw:unknown){

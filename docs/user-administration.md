@@ -25,8 +25,8 @@ validados no banco a cada autenticação; "próprio" = ownerId/atribuição do u
 |---|---|---|---|---|---|
 | Administrador do sistema | Empresa | Tudo | Tudo, inclusive usuários e perfis | Tudo, inclusive distribuição técnica | Outro tenant |
 | Direção | Empresa | Comercial, financeiro do cliente (crédito/pagamento), técnico, relatórios | Nada operacional | Qualificação com crédito, propostas e pedidos | Criar/editar leads, clientes, agenda; distribuir atendimentos; pacote offline |
-| Gerencial | Empresa | Comercial, técnico (consulta), relatórios | Operação comercial, regiões, carteiras, equipes, catálogo | Qualificação, propostas, pedidos | Distribuir atendimentos técnicos; administrar identidades |
-| Administrativo de vendas | Empresa | Comercial | Operação comercial, carteiras, catálogo | Qualificação | Comissões; atendimentos técnicos; propostas/pedidos |
+| Gerencial | Empresa | Comercial, técnico (consulta), relatórios | Operação comercial, regiões, carteiras, equipes, catálogo, listas do cadastro | Qualificação, propostas, pedidos | Distribuir atendimentos técnicos; administrar identidades |
+| Administrativo de vendas | Empresa | Comercial | Operação comercial, carteiras, catálogo, listas do cadastro | Qualificação | Comissões; atendimentos técnicos; propostas/pedidos |
 | Supervisor | Equipe comercial | Própria carteira e vendedores vinculados; técnicos vinculados nas regiões | Operação da equipe, carteiras | — | Aprovar; distribuir atendimentos |
 | Vendedor | Próprio | Própria carteira | Leads, clientes, contatos, oportunidades, agenda, visitas, offline | Enviar qualificação | Aprovar; ver outras carteiras |
 | Coordenação Técnica | Equipe técnica + regiões | Atendimentos dos técnicos vinculados; clientes aprovados das regiões | Agendar atendimentos | Cancelar/interromper atendimentos da equipe | Carteira comercial, crédito, catálogo, executar atendimento |

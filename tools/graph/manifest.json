@@ -1579,6 +1579,54 @@
       "kind": "specification",
       "source": "docs/implementation-checklist.md",
       "symbol": "Plano de programação e checklist"
+    },
+    {
+      "id": "crm:relationships:lists",
+      "kind": "service",
+      "source": "apps/api/src/modules/relationships/lists.ts",
+      "symbol": "partyLists"
+    },
+    {
+      "id": "crm:relationships:tax-id-review",
+      "kind": "migration",
+      "source": "apps/api/src/modules/relationships/tax-id-review.ts",
+      "symbol": "reviewTaxIds"
+    },
+    {
+      "id": "crm:relationships:tax-id-cli",
+      "kind": "command",
+      "source": "apps/api/src/modules/relationships/tax-ids.ts",
+      "symbol": "reviewTaxIds"
+    },
+    {
+      "id": "crm:relationships:record-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/PartyRecord.tsx",
+      "symbol": "PartyRecord"
+    },
+    {
+      "id": "crm:relationships:lists-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/PartyLists.tsx",
+      "symbol": "PartyListSettings"
+    },
+    {
+      "id": "crm:relationships:web-api",
+      "kind": "client",
+      "source": "apps/web/src/features/relationships/api.ts",
+      "symbol": "relationshipApi"
+    },
+    {
+      "id": "crm:relationships:profile-test",
+      "kind": "test",
+      "source": "tests/integration/customer-profile-mongo.test.ts",
+      "symbol": "customer profile"
+    },
+    {
+      "id": "crm:relationships:profile-unit",
+      "kind": "test",
+      "source": "tests/unit/customer-profile.test.ts",
+      "symbol": "stage three customer profile inputs"
     }
   ],
   "edges": [
@@ -3206,6 +3254,66 @@
       "from": "crm:plan:implementation",
       "to": "docs/ux-layout.md",
       "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:lists",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:service",
+      "to": "apps/api/src/modules/relationships/lists.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:http",
+      "to": "apps/api/src/modules/relationships/lists.ts",
+      "kind": "exposes"
+    },
+    {
+      "from": "crm:relationships:tax-id-cli",
+      "to": "apps/api/src/modules/relationships/tax-id-review.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:tax-id-review",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:ui",
+      "to": "apps/web/src/features/relationships/PartyRecord.tsx",
+      "kind": "renders"
+    },
+    {
+      "from": "crm:relationships:ui",
+      "to": "apps/web/src/features/relationships/PartyLists.tsx",
+      "kind": "renders"
+    },
+    {
+      "from": "crm:relationships:record-ui",
+      "to": "apps/web/src/features/relationships/api.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:profile-test",
+      "to": "apps/api/src/modules/relationships/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:profile-test",
+      "to": "apps/api/src/modules/relationships/lists.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:profile-test",
+      "to": "apps/api/src/modules/relationships/tax-id-review.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:profile-unit",
+      "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "tests"
     }
   ]
 }

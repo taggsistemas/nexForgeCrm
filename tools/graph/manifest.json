@@ -1795,6 +1795,30 @@
       "kind": "test",
       "source": "tests/unit/work-orders.test.ts",
       "symbol": "work order inputs"
+    },
+    {
+      "id": "crm:technical:parts-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/technical/WorkOrderParts.tsx",
+      "symbol": "WorkOrderParts"
+    },
+    {
+      "id": "crm:technical:parts-test",
+      "kind": "test",
+      "source": "tests/integration/work-order-parts-mongo.test.ts",
+      "symbol": "work order parts"
+    },
+    {
+      "id": "crm:technical:parts-unit",
+      "kind": "test",
+      "source": "tests/unit/work-order-parts.test.ts",
+      "symbol": "work order part ledger inputs"
+    },
+    {
+      "id": "crm:technical:parts-e2e",
+      "kind": "test",
+      "source": "tests/e2e/work-order-parts.spec.ts",
+      "symbol": "assigned technician registers a part"
     }
   ],
   "edges": [
@@ -3702,6 +3726,26 @@
       "from": "crm:tickets:service",
       "to": "apps/api/src/modules/technical/models.ts",
       "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:parts-ui",
+      "to": "apps/web/src/features/technical/TechnicalWorkspace.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:technical:parts-test",
+      "to": "apps/api/src/modules/technical/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:technical:parts-unit",
+      "to": "packages/contracts/src/technical.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:technical:parts-e2e",
+      "to": "apps/web/src/features/technical/WorkOrderParts.tsx",
+      "kind": "tests"
     }
   ]
 }

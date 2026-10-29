@@ -315,3 +315,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Nova suíte `work-orders-mongo` (3 casos reais); suíte técnica adaptada (propriedade obrigatória e território da propriedade). Testes unitários e E2E técnicos atualizados para conclusão com diagnóstico, solução e horas.
 - Primeira rodada: `relationships-mongo` estourou 30 s no beforeAll sob carga paralela (6 usuários com hash de senha desde a etapa 2; sozinha leva 9,7 s) e um caso de layout ficou 38 min parado por congelamento do ambiente (limite de 20 s; isolado passa em menos de 1 s). Ajustado o limite do beforeAll para 90 s, como nas suítes novas; sem mudança de produção.
 - Rodada final: `npm run check` aprovado, 188 Vitest, grafo declarado (299 nós/381 arestas, não Graphify AST). `npm run test:db`: 83/83. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 82/82.
+
+## Etapa 10 — peças utilizadas (29/10/2026)
+
+- Lançamentos imutáveis de consumo/devolução de produtos do catálogo na OS, saldo em milésimos inteiros, devolução limitada ao saldo, serialização por OS, preço de referência congelado e visível só com catalog:read, sem estoque ou cobrança.
+- Nova suíte `work-order-parts-mongo` (3 casos reais): lançamento só durante/após execução pelo técnico atribuído, casas decimais, serviço/produto inativo recusados, devolução acima do saldo recusada, outro técnico e OS pendente recusados, preço forjado recusado (400); preço só para Gerencial; sem alteração de horas faturáveis/catálogo; devoluções concorrentes (uma vence), lançamento da coordenação após conclusão e bloqueio após encerramento.
+- Novo E2E de peças (desktop/celular); componente tolerante a resposta inesperada após falha detectada no E2E técnico.
+- `npm run check`: aprovado, 190 Vitest, grafo declarado (303 nós/385 arestas, não Graphify AST). `npm run test:db`: 86/86. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 84/84.

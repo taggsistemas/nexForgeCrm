@@ -9,6 +9,7 @@ export function WorkOrderList({companyId,query,title}:{companyId:string;query:Re
   {!rows.length?<p className="nf-muted">Nenhuma ordem de serviço registrada.</p>:<ul className="nf-property-list">{rows.map(row=><li key={row.id}><div><strong>{row.number||'Atendimento'} · {row.title}</strong><span className="nf-badge">{row.closedAt?'Encerrada':technicalStateNames[row.state]}</span></div>
    <small>{new Date(row.startAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'})} · {row.technicianName}{row.returnOfNumber?' · retorno de '+row.returnOfNumber:''}</small>
    {row.diagnosis&&<p>Diagnóstico: {row.diagnosis}</p>}{row.solution&&<p>Solução: {row.solution}</p>}
+   {row.parts?.length>0&&<small>Peças: {row.parts.map(part=>part.net.replace('.',',')+' '+part.unit+' '+part.description).join(' · ')}</small>}
    {row.laborMinutes!==null&&<small>Horas trabalhadas {formatMinutes(row.laborMinutes)} · deslocamento {formatMinutes(row.travelMinutes)} · faturáveis {formatMinutes(row.billableMinutes)}</small>}</li>)}</ul>}
  </section>;
 }

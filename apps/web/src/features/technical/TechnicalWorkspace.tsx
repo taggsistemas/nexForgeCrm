@@ -5,6 +5,7 @@ import {businessDateTimeInput} from '../../../../../packages/contracts/src/busin
 import {dateParts} from '../../../../../packages/contracts/src/agenda';
 import {formatMinutes,technicalStateNames,workOrderOriginNames,type TechnicalWorkView} from '../../../../../packages/contracts/src/technical';
 import type {TicketView} from '../../../../../packages/contracts/src/tickets';
+import {WorkOrderParts} from './WorkOrderParts';
 type Account={companies:{id:string;name:string}[];permissions?:string[]};
 type Option={id:string;name:string;propertyId?:string};
 type Editor='new'|'detail'|'check-in'|'check-out'|'cancel'|'interrupt'|'close';
@@ -33,7 +34,7 @@ async function position(){
  if(!isSecureContext||!navigator.geolocation)throw Error('A localização precisa de HTTPS e permissão do navegador.');
  return new Promise<{latitude:number;longitude:number;accuracy:number}>((resolve,reject)=>navigator.geolocation.getCurrentPosition(value=>resolve({latitude:value.coords.latitude,longitude:value.coords.longitude,accuracy:value.coords.accuracy}),()=>reject(Error('Localização não autorizada ou indisponível. Nenhum atendimento foi registrado.')),{enableHighAccuracy:true,maximumAge:0,timeout:15000}));
 }
-const actionNames:Record<string,string>={'technical.created':'OS aberta','technical.check-in':'Check-in registrado','technical.check-out':'Execução concluída','technical.cancel':'OS cancelada','technical.interrupt':'Atendimento interrompido','technical.close':'OS encerrada pela coordenação'};
+const actionNames:Record<string,string>={'technical.created':'OS aberta','technical.check-in':'Check-in registrado','technical.check-out':'Execução concluída','technical.cancel':'OS cancelada','technical.interrupt':'Atendimento interrompido','technical.close':'OS encerrada pela coordenação','technical.part':'Peça registrada'};
 const titles:Record<Editor,string>={new:'Nova ordem de serviço',detail:'Ordem de serviço',['check-in']:'Check-in técnico','check-out':'Concluir execução da OS',cancel:'Cancelar OS',interrupt:'Interromper atendimento',close:'Encerrar OS'};
 /** Work orders: technicians execute only their own; coordination schedules, closes and authorizes billable hours. */
 export function TechnicalWorkspace({account}:{account:Account}){
@@ -119,6 +120,7 @@ export function TechnicalWorkspace({account}:{account:Account}){
     {record.checkedInAt&&<p>Entrada registrada: {format(record.checkedInAt)}</p>}{record.checkedOutAt&&<p>Saída registrada: {format(record.checkedOutAt)}</p>}{record.interruptedAt&&<p>Interrupção: {format(record.interruptedAt)} (não representa checkout geolocalizado)</p>}
     <LocationPoint position={record.checkIn} label="Posição de entrada"/><LocationPoint position={record.checkOut} label="Posição de saída"/>
     <p className="nf-field-hint">Posições pontuais informadas pelo aparelho, sem comprovação física nem acompanhamento em tempo real.</p>{record.notes&&<p>{record.notes}</p>}
+    <WorkOrderParts company={company} workId={record.id} canRegister={record.canRegisterParts} onChanged={()=>setRefresh(value=>value+1)}/>
     <HistoryTimeline title="Histórico da OS" events={history}/></>:
    <form className="nf-form" onSubmit={submit}><fieldset disabled={busy}>
     {editor==='new'?<>

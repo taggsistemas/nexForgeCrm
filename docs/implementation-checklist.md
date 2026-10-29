@@ -15,8 +15,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 7. Agenda e visitas | Implementada; homologação de uso pendente | Adaptar ao local/equipamento e uniformizar filtros |
 | 8. Chamados e triagem | Implementada; homologação de uso pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
 | 9. OS básica | Implementada; homologação de uso pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
-| 10. Peças utilizadas | Próxima | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
-| 11. Dashboards | Pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
+| 10. Peças utilizadas | Implementada; homologação de uso pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
+| 11. Dashboards | Próxima | Visões por perfil e indicadores territoriais comerciais/técnicos |
 | 12. Homologação e piloto | Pendente | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
 
 ## Etapa 1 — checklist de implementação
@@ -161,11 +161,23 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Evidências, fotos, checklist, assinatura e PDF da OS (RF-OS-005/006, fase P1).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 10. Peças utilizadas
+## Etapa 10 — peças utilizadas
 
-- [ ] Selecionar peças do catálogo na OS com quantidade e devolução.
-- [ ] Referências de preço/custo apenas quando autorizadas; sem baixa de estoque nem cobrança automática.
-- [ ] Histórico das peças na OS e na linha do tempo do equipamento.
+- [x] Lançamentos imutáveis de consumo e devolução de produtos ativos do catálogo, nas casas decimais do produto; saldo por peça sem ponto flutuante.
+- [x] Devolução limitada ao saldo; lançamentos concorrentes serializados por OS.
+- [x] Técnico atribuído (durante/após execução) e coordenação lançam até o encerramento; depois, somente leitura.
+- [x] Preço de referência congelado no servidor e exibido só a quem tem `catalog:read`; sem baixa de estoque nem cobrança.
+- [x] Peças no detalhe da OS (resumo e lançamentos), no chamado e na linha do tempo do equipamento.
+- [x] Testes: 3 cenários MongoDB, 2 unitários e E2E em desktop e celular.
+- [x] Verificação completa: check (190 Vitest), MongoDB 86/86, layout 115 aprovados e 2 ignorados, E2E 84/84.
+- [ ] Estoque, reservas e custos (RF-EST, fase P1).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 11. Dashboards
+
+- [ ] Visões comercial, técnica e gerencial com filtros padronizados (território, responsável, período).
+- [ ] Indicadores: carteira, próximas ações, visitas, oportunidades, propostas, chamados críticos, tempo de resposta, OS e reincidência, com definições documentadas.
+- [ ] Respeitar o escopo de cada perfil antes dos totais; exportação CSV.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

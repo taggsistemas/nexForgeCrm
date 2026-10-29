@@ -44,3 +44,11 @@ API base `/api/v1/companies/:companyId/technical`: GET/POST `/`, GET `/options`,
 - **Retorno pela mesma falha**: a OS pode apontar uma OS concluída do mesmo cliente; a original aparece na OS nova.
 - Chamado não pode ser resolvido com OS pendente ou em andamento (OPEN_WORK_ORDER).
 - GET `/technical/orders?ticketId|partyId|equipmentId` lista OS no mesmo escopo técnico; usada no detalhe do chamado e na linha do tempo do equipamento. POST `/technical/:id/close` encerra.
+
+## Peças utilizadas na OS (etapa 10 — 29/10/2026)
+
+- Lançamentos imutáveis por OS: **consumo** ou **devolução** de um produto ativo do catálogo (serviços não), com quantidade nas casas decimais do produto. Correções são devoluções; nada é apagado. Saldo por peça = consumido − devolvido; devolução acima do saldo é recusada. Quantidades são somadas em milésimos inteiros, sem ponto flutuante.
+- Quem lança: técnico atribuído durante a execução ou após a conclusão, e Coordenação/Administrador; após o encerramento da OS, somente leitura. Lançamentos são serializados por OS (concorrência não supera o saldo).
+- Código, descrição e unidade ficam congelados no lançamento. O servidor guarda o preço de referência da tabela do cliente no momento do lançamento; ele só aparece para perfis com `catalog:read` (técnico e coordenação não veem preço).
+- **Não** há baixa de estoque, reserva, custo ou cobrança; o registro serve à rastreabilidade (RF-OS-003). Estoque e custos ficam para a fase P1.
+- API: GET/POST `/technical/:id/parts`, GET `/technical/:id/parts/options` (catálogo para quem pode lançar). Resumo de peças aparece no detalhe da OS, no chamado e na linha do tempo do equipamento.

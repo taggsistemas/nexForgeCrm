@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import type {AccessContext} from '../../../../../packages/contracts/src/index.js';
-import type {TechnicalWorkView} from '../../../../../packages/contracts/src/technical.js';
+import {milliToQuantity,quantityToMilli,type TechnicalWorkView,type WorkOrderPartSummary,type WorkOrderPartView} from '../../../../../packages/contracts/src/technical.js';
+import {decimalQuantityValid} from '../../../../../packages/contracts/src/catalog.js';
+import {catalogService} from '../catalog/service.js';
 import {elapsedMinutes} from '../../../../../packages/contracts/src/tickets.js';
 import {companyScope,AccessDenied} from '../../infrastructure/access.js';
 import {auditActorNames,auditActorLabel} from '../../infrastructure/audit-actors.js';
@@ -17,8 +19,8 @@ import {RecordNotFound,RecordConflict} from '../relationships/service.js';
 import {objectId} from '../relationships/input.js';
 import {dayBoundary,wallTimeToInstant} from '../agenda/recurrence.js';
 import {addCalendarDays} from '../../../../../packages/contracts/src/agenda.js';
-import {TechnicalWork,TechnicalAudit,WorkOrderSequence} from './models.js';
-import {technicalOptionsInput,technicalListInput,technicalCreateInput,technicalCheckIn,technicalCheckOut,technicalClose,technicalOrdersInput,technicalReason,TechnicalRuleRejected} from './input.js';
+import {TechnicalWork,TechnicalAudit,WorkOrderSequence,WorkOrderPart} from './models.js';
+import {technicalOptionsInput,technicalListInput,technicalCreateInput,technicalCheckIn,technicalCheckOut,technicalClose,technicalOrdersInput,technicalReason,workOrderPartInput,workOrderPartOptionsInput,TechnicalRuleRejected} from './input.js';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 const literal=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 async function transact<T>(fn:(session:mongoose.ClientSession)=>Promise<T>){try{return await mongoose.connection.transaction(fn);}catch(error){if((error as {code?:number}).code===11000)throw new RecordConflict();throw error;}}
@@ -62,6 +64,26 @@ async function load(ctx:AccessContext,company:string,id:string,session?:mongoose
  const row=await TechnicalWork.findOne({_id:id,tenantId:ctx.tenantId,companyId:company}).session(session??null),party=await Party.findOne({_id:visible.party._id,tenantId:ctx.tenantId,companyId:company,archived:false}).session(session??null);
  if(!row||!party)throw new RecordNotFound();return {row,party};
 }
+/** Parts may be registered while executing or after execution until coordination closes the work order. */
+function canRegisterParts(ctx:AccessContext,row:InstanceType<typeof TechnicalWork>,canManage:boolean){
+ if(row.closedAt||!['in_progress','completed'].includes(row.state))return false;
+ return canManage||String(row.technicianId)===ctx.userId&&ctx.permissions.includes('technical:write');
+}
+/** Net quantities per product from the immutable ledger; reference totals only for catalog readers. */
+async function partsSummary(ctx:AccessContext,row:InstanceType<typeof TechnicalWork>,session?:mongoose.ClientSession):Promise<WorkOrderPartSummary[]>{
+ const entries=await WorkOrderPart.find({tenantId:ctx.tenantId,companyId:row.companyId,workId:row._id}).sort({createdAt:1,_id:1}).session(session??null);
+ const prices=ctx.permissions.includes('catalog:read'),groups=new Map<string,{entry:InstanceType<typeof WorkOrderPart>;consumed:number;returned:number;cents:number;priced:boolean}>();
+ for(const entry of entries){const key=String(entry.productId),group=groups.get(key)??{entry,consumed:0,returned:0,cents:0,priced:true};const sign=entry.kind==='consumo'?1:-1;
+  if(entry.kind==='consumo')group.consumed+=entry.quantityMilli;else group.returned+=entry.quantityMilli;
+  if(entry.referencePriceCents===null||entry.referencePriceCents===undefined)group.priced=false;else group.cents+=sign*entry.quantityMilli*entry.referencePriceCents/1000;groups.set(key,group);}
+ return [...groups.values()].map(({entry,consumed,returned,cents,priced})=>({productId:String(entry.productId),code:entry.code,description:entry.description,unit:entry.unit,consumed:milliToQuantity(consumed,entry.quantityDecimals),returned:milliToQuantity(returned,entry.quantityDecimals),net:milliToQuantity(consumed-returned,entry.quantityDecimals),referenceTotalCents:prices&&priced?Math.round(cents):null}));
+}
+/** Server-side reference price snapshot for the work order's own customer. The actor never sees it without catalog:read. */
+async function referencePrice(ctx:AccessContext,company:string,party:InstanceType<typeof Party>,productId:string){
+ // Internal read on an already authorized customer: resolve needs catalog/customer read at company level, which technicians lack.
+ const internal:AccessContext={...ctx,permissions:[...new Set([...ctx.permissions,'catalog:read','customer:read'] as const)],dataAccess:{...ctx.dataAccess!,visibility:'company',supervisedUserIds:[]}};
+ try{return (await catalogService.resolve(internal,company,{customerId:String(party._id),productId})).price?.priceCents??null;}catch{return null;}
+}
 async function view(ctx:AccessContext,row:InstanceType<typeof TechnicalWork>,party:InstanceType<typeof Party>):Promise<TechnicalWorkView>{
  const company=String(row.companyId);
  const [techNames,service,names,ticket,original]=await Promise.all([auditActorNames(ctx.tenantId,[String(row.technicianId)]),CatalogProduct.findOne({_id:row.serviceId,tenantId:ctx.tenantId,companyId:row.companyId}).select('description'),locationNames(ctx,company,[{propertyId:row.propertyId,equipmentId:row.equipmentId}]),row.ticketId?Ticket.findOne({_id:row.ticketId,tenantId:ctx.tenantId,companyId:row.companyId}).select('number'):null,row.returnOfWorkId?TechnicalWork.findOne({_id:row.returnOfWorkId,tenantId:ctx.tenantId,companyId:row.companyId}).select('number'):null]);
@@ -69,6 +91,7 @@ async function view(ctx:AccessContext,row:InstanceType<typeof TechnicalWork>,par
  const canManage=(!ctx.dataAccess?.technicalManagementVisibility||ctx.dataAccess.technicalManagementVisibility===ctx.dataAccess.visibility)&&ctx.permissions.includes('technical:manage')&&['company','team'].includes(ctx.dataAccess?.visibility??'');
  return {id:String(row._id),partyId:String(row.partyId),partyName:party.name,address:property?.address||[party.address?.street,party.address?.number,party.address?.city,party.address?.state].filter(Boolean).join(', '),serviceId:String(row.serviceId),serviceName:service?.description??'Serviço indisponível',technicianId:String(row.technicianId),technicianName:techNames.get(String(row.technicianId))??'Técnico indisponível',title:row.title,startAt:row.startAt.toISOString(),endAt:row.endAt.toISOString(),notes:row.notes,state:row.state,version:row.version,result:row.result,reason:row.reason,checkedInAt:row.checkedInAt?.toISOString()??null,checkedOutAt:row.checkedOutAt?.toISOString()??null,interruptedAt:row.interruptedAt?.toISOString()??null,checkIn:pos(row.checkIn),checkOut:pos(row.checkOut),canExecute:String(row.technicianId)===ctx.userId&&ctx.permissions.includes('technical:write'),canManage,
   number:row.number??'',origin:(row.origin??'manual') as TechnicalWorkView['origin'],ticketId:row.ticketId?String(row.ticketId):null,ticketNumber:ticket?.number??'',propertyId:row.propertyId?String(row.propertyId):null,propertyName:property?.name??(row.propertyId?'Propriedade indisponível':''),regionName:property?.regionName??'',equipmentId:row.equipmentId?String(row.equipmentId):null,equipmentName:row.equipmentId?names.equipment.get(String(row.equipmentId))??'Equipamento indisponível':'',returnOfWorkId:row.returnOfWorkId?String(row.returnOfWorkId):null,returnOfNumber:original?.number??'',
+  parts:await partsSummary(ctx,row),canRegisterParts:canRegisterParts(ctx,row,canManage),
   diagnosis:row.diagnosis??'',solution:row.solution??'',attendanceMinutes:row.checkedInAt?elapsedMinutes(row.checkedInAt,row.checkedOutAt??null):null,laborMinutes:row.laborMinutes??null,travelMinutes:row.travelMinutes??null,travelKm:row.travelKm??null,billableMinutes:row.billableMinutes??null,closedAt:row.closedAt?.toISOString()??null,closingNote:row.closingNote??'',canClose:canManage&&row.state==='completed'&&!row.closedAt};
 }
 async function audit(ctx:AccessContext,company:string,id:unknown,action:string,session:mongoose.ClientSession,reason=''){await TechnicalAudit.create([{...companyScope(ctx,company,'technical:read'),workId:id,actorId:ctx.userId,action,reason}],{session});}
@@ -93,6 +116,37 @@ export const technicalService={
   const events=await TechnicalAudit.find({...companyScope(ctx,company,'technical:read'),workId:id}).sort({createdAt:-1,_id:-1}).limit(30);
   const names=await auditActorNames(ctx.tenantId,events.map(event=>String(event.actorId)));
   return {record:await view(ctx,row,party),history:events.map(event=>({action:event.action,actor:auditActorLabel(names,String(event.actorId),ctx.userId),at:event.createdAt.toISOString(),reason:event.reason}))};
+ },
+ async parts(ctx:AccessContext,company:string,id:string){
+  const {row}=await load(ctx,company,id);
+  const entries=await WorkOrderPart.find({tenantId:ctx.tenantId,companyId:company,workId:row._id}).sort({createdAt:-1,_id:-1}).limit(500);
+  const names=await auditActorNames(ctx.tenantId,entries.map(entry=>String(entry.actorId))),prices=ctx.permissions.includes('catalog:read');
+  const items:WorkOrderPartView[]=entries.map(entry=>({id:String(entry._id),productId:String(entry.productId),code:entry.code,description:entry.description,unit:entry.unit,kind:entry.kind as WorkOrderPartView['kind'],quantity:milliToQuantity(entry.quantityMilli,entry.quantityDecimals),note:entry.note,actor:auditActorLabel(names,String(entry.actorId),ctx.userId),at:entry.createdAt.toISOString(),referencePriceCents:prices?entry.referencePriceCents??null:null}));
+  return {items,summary:await partsSummary(ctx,row)};
+ },
+ /** Catalog products for the parts editor, limited to people who may register parts on this work order. */
+ async partOptions(ctx:AccessContext,company:string,id:string,raw:unknown){
+  const {search}=workOrderPartOptionsInput.parse(raw),{row,party}=await load(ctx,company,id);
+  if(!canRegisterParts(ctx,row,(await view(ctx,row,party)).canManage))throw new AccessDenied();
+  const filter=search?{$or:[{description:{$regex:literal(search),$options:'i'}},{code:{$regex:literal(search),$options:'i'}},{manufacturerSku:{$regex:literal(search),$options:'i'}}]}:{};
+  const rows=await CatalogProduct.find({tenantId:ctx.tenantId,companyId:company,kind:'product',active:true,...filter}).select('code description unit quantityDecimals').sort({description:1}).limit(30);
+  return {items:rows.map(product=>({id:String(product._id),code:product.code,description:product.description,unit:product.unit,quantityDecimals:product.quantityDecimals}))};
+ },
+ async addPart(ctx:AccessContext,company:string,id:string,raw:unknown){
+  const input=workOrderPartInput.parse(raw);
+  return transact(async session=>{
+   const {row,party}=await load(ctx,company,id,session);
+   const canManage=(await view(ctx,row,party)).canManage;if(!canRegisterParts(ctx,row,canManage))throw new AccessDenied();
+   // Serializes ledger writes per work order without touching the version used by execution actions.
+   await TechnicalWork.updateOne({_id:row._id,tenantId:ctx.tenantId,companyId:company},{$inc:{partsRevision:1}},{session});
+   const product=await CatalogProduct.findOne({_id:input.productId,tenantId:ctx.tenantId,companyId:company,kind:'product',active:true}).session(session);if(!product)throw new TechnicalRuleRejected();
+   if(!decimalQuantityValid(input.quantity,product.quantityDecimals))throw new TechnicalRuleRejected();
+   const quantityMilli=quantityToMilli(input.quantity);
+   if(input.kind==='devolucao'){const net=(await WorkOrderPart.find({tenantId:ctx.tenantId,companyId:company,workId:row._id,productId:product._id}).session(session)).reduce((sum,entry)=>sum+(entry.kind==='consumo'?entry.quantityMilli:-entry.quantityMilli),0);if(quantityMilli>net)throw new TechnicalRuleRejected();}
+   const [entry]=await WorkOrderPart.create([{tenantId:ctx.tenantId,companyId:company,workId:row._id,productId:product._id,code:product.code,description:product.description,unit:product.unit,quantityDecimals:product.quantityDecimals,kind:input.kind,quantityMilli,note:input.note,actorId:ctx.userId,referencePriceCents:await referencePrice(ctx,company,party,String(product._id))}],{session});
+   await audit(ctx,company,row._id,'technical.part',session,(input.kind==='consumo'?'Consumo':'Devolução')+' de '+input.quantity+' '+product.unit+' — '+product.code+' '+product.description);
+   return {id:String(entry!._id)};
+  });
  },
  async options(ctx:AccessContext,company:string,raw:unknown){
   ctx=technicalManagementContext(ctx);const scope=manager(ctx,company),{search,page,partyId}=technicalOptionsInput.parse(raw),authority=await technicalTeamAuthority(ctx,company);

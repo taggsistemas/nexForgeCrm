@@ -72,7 +72,7 @@ export function PartyEquipment({companyId,record,lists,canWrite}:{companyId:stri
    {timeline&&<section className="nf-history"><div className="nf-history-heading"><h3>Atendimentos no equipamento</h3></div><PartyAttendances companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/></section>}
    {timeline&&<EquipmentTickets companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/>}
    {timeline&&<WorkOrderList companyId={companyId} query={{partyId:record.id,equipmentId:timeline.row.id}} title="Ordens de serviço do equipamento"/>}
-   <p className="nf-field-hint">Peças utilizadas passam a aparecer aqui na próxima etapa.</p>
+   <p className="nf-field-hint">Peças utilizadas aparecem em cada ordem de serviço.</p>
   </Modal>
  </>;
 }

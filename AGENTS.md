@@ -50,3 +50,5 @@
 - Tickets require a property of the live Party; queue scope follows profile (company, coordination territory by property region, commercial portfolio, or assigned technician) before counts. Only coordination/administrator triage. Opening, first response, resolution and cancellation instants come from the server; only the agreed deadline is typed. Assignment history is immutable; closing requires a solution.
 
 - Work orders come from a ticket or scheduled maintenance on a property of the live Party; territory is the property region. Keep attendance time (server check-in/out), reported labor/travel and billable hours (authorized only at coordination closing) separate. A ticket cannot be resolved while linked work orders are open.
+
+- Work order parts are an immutable consumption/return ledger of active catalog products with integer-thousandth balances; returns never exceed the net. Only the assigned technician or coordination writes, until closing. Reference prices are server snapshots shown only to catalog readers. Never move stock or bill from this ledger.

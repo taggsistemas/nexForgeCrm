@@ -9,8 +9,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 1. Padronizar telas e modais | Implementada; homologação de uso pendente | Padrão visual compartilhado, navegação, formulários, listas, feedback e responsividade |
 | 2. Completar perfis e permissões | Implementada; homologação de uso pendente | Direção (aprovações), Coordenação Técnica, Auditoria e matriz de ações/escopos |
 | 3. Evoluir clientes e contatos | Implementada; homologação de uso pendente | Documento único no grupo, listas configuráveis, próxima ação, responsável técnico, papéis/consentimento e ficha com histórico |
-| 4. Propriedades/locais | Próxima | Vários locais por cliente e vínculos autorizados |
-| 5. Parque instalado | Pendente | Equipamentos, série, instalação, garantia e histórico |
+| 4. Propriedades/locais | Implementada; homologação de uso pendente | Vários locais por cliente e vínculos autorizados |
+| 5. Parque instalado | Próxima | Equipamentos, série, instalação, garantia e histórico |
 | 6. Oportunidades e propostas | Pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
 | 7. Agenda e visitas | Pendente | Adaptar ao local/equipamento e uniformizar filtros |
 | 8. Chamados e triagem | Pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
@@ -80,12 +80,25 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Executar `npm run db:tax-ids` no banco real antes de publicar.
 - [ ] Homologar listas iniciais e ficha com usuários do piloto.
 
-## Próxima etapa — 4. Propriedades e locais de atendimento
+## Etapa 4 — propriedades e locais de atendimento
 
-- [ ] Vários locais por cliente, com identificação, endereço, município, território, contatos e coordenadas opcionais.
-- [ ] Território como atributo da propriedade (Castro/Carambeí), independente da carteira do vendedor.
-- [ ] Nome "Propriedade" no cenário agro, com estrutura reutilizável.
-- [ ] Aba Propriedades na ficha do cliente.
+- [x] Vários locais por cliente ou lead, com nome único entre os ativos do cliente, endereço/município, território, contatos e coordenadas opcionais.
+- [x] Território como Região da própria propriedade (Castro/Carambeí), independente da carteira; região ativa da mesma empresa para novas atribuições.
+- [x] Autorização sempre pelo cliente atual (sem responsável copiado); transferência e arquivamento do cliente refletem nas propriedades.
+- [x] Contatos vinculados restritos aos contatos ativos do mesmo cliente.
+- [x] Coordenadas digitadas, limitadas e arredondadas; não usam o GPS do aparelho nem comprovam presença.
+- [x] Versão otimista, auditoria e eventos no histórico da ficha com nome do território.
+- [x] Aba Propriedades na ficha e modal de edição aninhado; corrigido Esc em modais aninhados (fechava também a ficha).
+- [x] Testes: 3 cenários MongoDB, 3 unitários e cenário de layout em três tamanhos.
+- [x] Verificação completa: check (171 Vitest), MongoDB 66/66, layout 109 aprovados e 2 ignorados, E2E 78/78.
+- [ ] Usar o território da propriedade na fila da Coordenação Técnica (etapa 8, chamados).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 5. Parque instalado
+
+- [ ] Equipamento por propriedade: marca, modelo, categoria, série, situação, instalação, garantia, fornecedor e observações.
+- [ ] Série única por empresa quando informada.
+- [ ] Ficha e linha do tempo do equipamento.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

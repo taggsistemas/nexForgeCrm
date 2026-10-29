@@ -79,3 +79,13 @@ Ver lead-qualification.md. PartyView inclui contactName (contato principal resum
 - **Responsável técnico.** Somente clientes; apenas usuários ativos da empresa com perfil Técnico ou Coordenação Técnica. É informativo: não concede ao técnico acesso à carteira comercial.
 - **Contatos.** Papéis (decisor, compras, financeiro, técnico, proprietário, operação, outro), canal preferido e autorização de comunicação comercial. Data e autor da autorização ou retirada são gravados pelo servidor; o navegador só informa concedido ou não.
 - **Histórico.** Alterações de nome, razão social, documento, IE, responsáveis, classificação e tipo gravam antes/depois. A ficha (Resumo, Contatos, Histórico) mostra eventos do cadastro, dos contatos e da qualificação com nomes atuais; IDs de usuários e opções são resolvidos apenas dentro do tenant. Transferências de carteira continuam registradas no histórico de Carteiras.
+
+## Propriedades e locais de atendimento (etapa 4 — 29/10/2026)
+
+- Um lead ou cliente pode ter várias propriedades independentes ("Propriedade" no agro; a estrutura serve a qualquer local de atendimento). Cada uma tem nome único entre as ativas do mesmo cliente, território, endereço com município, contatos vinculados, coordenadas opcionais e observações.
+- **Território** é a Região da própria propriedade (ex.: Castro, Carambeí), escolhida entre as regiões ativas da mesma empresa. Não depende da carteira do vendedor. Uma região desativada depois continua na propriedade até ser trocada; novas atribuições exigem região ativa.
+- **Autorização pelo cliente vivo.** A propriedade não copia responsável: toda leitura e escrita autoriza antes o lead/cliente atual (empresa, carteira, equipe). Transferir o cliente transfere o acesso às propriedades; arquivar o cliente arquiva as propriedades. Gravar exige permissão de escrita do tipo atual (lead ou cliente); Auditoria e Direção apenas consultam.
+- **Contatos** precisam ser contatos ativos do mesmo cliente.
+- **Coordenadas** são digitadas no cadastro, limitadas a ±90/±180 e arredondadas a 6 casas. Não são capturadas do aparelho e não comprovam presença.
+- Edição com versão otimista; criação, alteração (nome, município, território, coordenadas) e arquivamento entram no histórico da ficha com nome do território.
+- Na ficha do cliente: aba Propriedades com lista e modal de edição. A coordenação técnica ainda filtra atendimentos pela carteira; usar o território da propriedade nessa fila faz parte da etapa de chamados.

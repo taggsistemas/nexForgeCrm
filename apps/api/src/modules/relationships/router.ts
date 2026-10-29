@@ -9,6 +9,7 @@ import type {IdentityService} from '../identity/service.js';
 import {authorizeCompany,type AuthorizedCompany} from '../../infrastructure/authorization.js';
 import {AccessDenied} from '../../infrastructure/access.js';
 import {relationshipService,RecordNotFound,RecordConflict,InvalidReference,DocumentAlreadyRegistered} from './service.js';
+import {propertyService} from './properties.js';
 import {partyLists,InvalidListOption,ListOptionNotFound,ListVersionConflict} from './lists.js';
 import type {PartyKind} from '../../../../../packages/contracts/src/relationships.js';
 import type {Permission} from '../../../../../packages/contracts/src/index.js';
@@ -35,6 +36,10 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
  router.patch('/lists/:id',authorizeCompany(identity,'list:manage'),async(req,res)=>res.json({record:await partyLists.update(scope(res),String(req.params.companyId),String(req.params.id),req.body)}));
  router.get('/parties/:id/history',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await relationshipService.history(scope(res),String(req.params.companyId),String(req.params.id))));
  router.get('/technical-owners',authorizeCompany(identity,'customer:write'),async(req,res)=>res.json(await relationshipService.technicalOwners(scope(res),String(req.params.companyId))));
+ router.get('/parties/:partyId/properties',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await propertyService.list(scope(res),String(req.params.companyId),String(req.params.partyId),req.query)));
+ router.post('/parties/:partyId/properties',authorizeCompany(identity,'company:read'),async(req,res)=>res.status(201).json({record:await propertyService.create(scope(res),String(req.params.companyId),String(req.params.partyId),req.body)}));
+ router.patch('/parties/:partyId/properties/:id',authorizeCompany(identity,'company:read'),async(req,res)=>res.json({record:await propertyService.update(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)}));
+ router.post('/parties/:partyId/properties/:id/archive',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await propertyService.archive(scope(res),String(req.params.companyId),String(req.params.partyId),String(req.params.id),req.body)));
  router.get('/owners',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await relationshipService.owners(scope(res),String(req.params.companyId))));
  router.get('/parties/:partyId/contacts',authorizeCompany(identity,'contact:read'),async(req,res)=>res.json(await relationshipService.contacts(scope(res),String(req.params.companyId),String(req.params.partyId),req.query)));
  router.post('/parties/:partyId/contacts',authorizeCompany(identity,'contact:write'),async(req,res)=>res.status(201).json({record:await relationshipService.createContact(scope(res),String(req.params.companyId),String(req.params.partyId),req.body)}));

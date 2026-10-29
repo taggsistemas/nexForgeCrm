@@ -1627,6 +1627,30 @@
       "kind": "test",
       "source": "tests/unit/customer-profile.test.ts",
       "symbol": "stage three customer profile inputs"
+    },
+    {
+      "id": "crm:relationships:properties",
+      "kind": "service",
+      "source": "apps/api/src/modules/relationships/properties.ts",
+      "symbol": "propertyService"
+    },
+    {
+      "id": "crm:relationships:properties-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/PartyProperties.tsx",
+      "symbol": "PartyProperties"
+    },
+    {
+      "id": "crm:relationships:properties-test",
+      "kind": "test",
+      "source": "tests/integration/properties-mongo.test.ts",
+      "symbol": "properties: live parent authorization"
+    },
+    {
+      "id": "crm:relationships:properties-unit",
+      "kind": "test",
+      "source": "tests/unit/properties.test.ts",
+      "symbol": "property inputs"
     }
   ],
   "edges": [
@@ -3312,6 +3336,36 @@
     },
     {
       "from": "crm:relationships:profile-unit",
+      "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:properties",
+      "to": "apps/api/src/modules/relationships/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:properties",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:http",
+      "to": "apps/api/src/modules/relationships/properties.ts",
+      "kind": "exposes"
+    },
+    {
+      "from": "crm:relationships:record-ui",
+      "to": "apps/web/src/features/relationships/PartyProperties.tsx",
+      "kind": "renders"
+    },
+    {
+      "from": "crm:relationships:properties-test",
+      "to": "apps/api/src/modules/relationships/properties.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:properties-unit",
       "to": "apps/api/src/modules/relationships/input.ts",
       "kind": "tests"
     }

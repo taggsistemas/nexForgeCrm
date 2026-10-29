@@ -1,0 +1,88 @@
+import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import mongoose from 'mongoose';
+import {randomUUID} from 'node:crypto';
+import request from 'supertest';
+import {createApp} from '../../apps/api/src/app.js';
+import {initializeClientModels,platformClients} from '../../apps/api/src/modules/platform/clients.js';
+import {PlatformAdmin} from '../../apps/api/src/modules/platform/models.js';
+import {AdministrationAudit} from '../../apps/api/src/modules/administration/models.js';
+import {administrationService} from '../../apps/api/src/modules/administration/service.js';
+import {identityService} from '../../apps/api/src/modules/identity/service.js';
+import {hashPassword} from '../../apps/api/src/modules/identity/security.js';
+import {Company,Membership} from '../../apps/api/src/modules/identity/models.js';
+import {relationshipService} from '../../apps/api/src/modules/relationships/service.js';
+import {propertyService} from '../../apps/api/src/modules/relationships/properties.js';
+import {initializeRelationshipModels,Property} from '../../apps/api/src/modules/relationships/models.js';
+import {initializeTerritoryModels,Region} from '../../apps/api/src/modules/territories/models.js';
+import {initializeAccountSecurityModels} from '../../apps/api/src/modules/account-security/models.js';
+import {customerRegistrationFixture} from '../fixtures/customer.js';
+import {prepareAccount} from '../fixtures/ready-account.js';
+type Login=NonNullable<Awaited<ReturnType<typeof identityService.login>>>;
+const uri=process.env.MONGODB_TEST_URI,database='nexforge_crm_test_'+randomUUID().replaceAll('-',''),origin='http://localhost:5173',password='properties-test-password';
+let admin:Login,foreign:Login,seller:Login,otherSeller:Login,manager:Login,auditor:Login,company:string,secondCompany:string,castro:string,carambei:string,elsewhere:string;
+const app=createApp({origin,databaseReady:()=>true,identity:identityService}),headers=(login:Login)=>({Origin:origin,Cookie:'nf_session='+login.token});
+const farm=(extra:Record<string,unknown>={})=>({name:'Sítio Boa Vista',regionId:castro,address:{street:'Estrada do Pinheiro',number:'km 4',city:'Castro',state:'PR',country:'Brasil'},coordinates:{latitude:-24.7912345678,longitude:-50.0112346},...extra});
+describe.skipIf(!uri)('properties: live parent authorization, territory, contacts, versions and history',()=>{
+ beforeAll(async()=>{
+  await mongoose.connect(uri!,{dbName:database,serverSelectionTimeoutMS:10000});await Promise.all([initializeClientModels(),initializeRelationshipModels(),initializeTerritoryModels(),initializeAccountSecurityModels(),AdministrationAudit.init(),PlatformAdmin.init()]);
+  const master=await PlatformAdmin.create({name:'Master',email:'properties-master@example.invalid',passwordHash:await hashPassword(password)});
+  const tenant=async(name:string)=>{const c=await platformClients.create({...customerRegistrationFixture,name,slug:name,companyName:name,adminName:name,adminEmail:name+'@example.invalid',adminPassword:password},String(master._id));await prepareAccount(c.admin!.email);return c.admin!.email;};
+  const adminEmail=await tenant('properties-a'),foreignEmail=await tenant('properties-b');
+  const first=(await identityService.login(adminEmail,password))!;company=first.context.companyIds[0]!;
+  secondCompany=String((await Company.create({tenantId:first.context.tenantId,name:'Unidade B'}))._id);await Membership.updateOne({tenantId:first.context.tenantId,userId:first.context.userId},{$push:{companyIds:secondCompany}});
+  admin=(await identityService.login(adminEmail,password))!;foreign=(await identityService.login(foreignEmail,password))!;
+  const region=async(companyId:string,name:string)=>String((await Region.create({tenantId:admin.context.tenantId,companyId,name,nameKey:name.toLowerCase()}))._id);
+  castro=await region(company,'Castro');carambei=await region(company,'Carambeí');elsewhere=await region(secondCompany,'Outra unidade');
+  const user=async(name:string,profileKey:string)=>{const row=await administrationService.create(admin.context,{name,email:name+'@example.invalid',password,profileKey,companyIds:[company]});await prepareAccount(row.email);return (await identityService.login(row.email,password))!;};
+  seller=await user('properties-seller','seller');otherSeller=await user('properties-other-seller','seller');manager=await user('properties-manager','manager');auditor=await user('properties-auditor','auditor');
+ },60000);
+ afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
+ it('creates several independent properties for a customer within the live portfolio scope only',async()=>{
+  const lead=await relationshipService.create(seller.context,company,'lead',{name:'Fazenda Multi',phone:'42999999999'});
+  const contact=await relationshipService.createContact(seller.context,company,lead.id,{name:'Gerente da ordenha'});
+  const first=await propertyService.create(seller.context,company,lead.id,farm({contactIds:[contact.id]}));
+  const second=await propertyService.create(seller.context,company,lead.id,farm({name:'Sítio Santa Clara',regionId:carambei,coordinates:null}));
+  expect(first).toMatchObject({regionName:'Castro',contactIds:[contact.id],coordinates:{latitude:-24.791235,longitude:-50.011235}});expect(second.regionName).toBe('Carambeí');
+  const listed=await propertyService.list(seller.context,company,lead.id,{});expect(listed.total).toBe(2);
+  expect((await propertyService.list(auditor.context,company,lead.id,{})).total).toBe(2);
+  await expect(propertyService.create(auditor.context,company,lead.id,farm({name:'Auditoria'}))).rejects.toThrow();
+  for(const outsider of [otherSeller])await expect(propertyService.list(outsider.context,company,lead.id,{})).rejects.toThrow();
+  await expect(propertyService.list(foreign.context,company,lead.id,{})).rejects.toThrow();
+  const http=await request(app).post('/api/v1/companies/'+company+'/crm/parties/'+lead.id+'/properties').set({...headers(seller),Origin:'https://evil.example'}).send(farm({name:'Origem falsa'}));expect(http.status).toBe(403);
+  const created=await request(app).post('/api/v1/companies/'+company+'/crm/parties/'+lead.id+'/properties').set(headers(seller)).send(farm({name:'Via HTTP',regionId:null}));expect(created.status).toBe(201);
+  const seen=await request(app).get('/api/v1/companies/'+company+'/crm/parties/'+lead.id+'/properties').set(headers(otherSeller));expect(seen.status).toBe(404);
+ },30000);
+ it('validates territory, contacts, names and coordinates against the same company and parent',async()=>{
+  const lead=await relationshipService.create(seller.context,company,'lead',{name:'Fazenda Validação',phone:'42999999999'}),other=await relationshipService.create(seller.context,company,'lead',{name:'Fazenda Vizinha',phone:'42999999999'});
+  const neighbour=await relationshipService.createContact(seller.context,company,other.id,{name:'Contato vizinho'});
+  await expect(propertyService.create(seller.context,company,lead.id,farm({regionId:elsewhere}))).rejects.toThrow();
+  await expect(propertyService.create(seller.context,company,lead.id,farm({contactIds:[neighbour.id]}))).rejects.toThrow();
+  for(const coordinates of [{latitude:91,longitude:0},{latitude:0,longitude:-181},{latitude:0}])await expect(propertyService.create(seller.context,company,lead.id,farm({coordinates}))).rejects.toThrow();
+  const row=await propertyService.create(seller.context,company,lead.id,farm());
+  await expect(propertyService.create(seller.context,company,lead.id,farm({name:'sitio  boa vista'}))).rejects.toThrow();
+  expect((await propertyService.create(seller.context,company,other.id,farm())).name).toBe('Sítio Boa Vista');
+  await Region.updateOne({_id:castro},{$set:{active:false}});
+  try{
+   const kept=await propertyService.update(seller.context,company,lead.id,row.id,{version:row.version,regionId:castro,notes:'Portão azul'});expect(kept.regionId).toBe(castro);
+   await expect(propertyService.create(seller.context,company,lead.id,farm({name:'Nova em região inativa'}))).rejects.toThrow();
+   await expect(propertyService.update(seller.context,company,lead.id,row.id,{version:row.version,notes:'Versão antiga'})).rejects.toThrow();
+   const moved=await propertyService.update(seller.context,company,lead.id,row.id,{version:kept.version,regionId:carambei,address:{city:'Carambeí'}});
+   expect(moved.regionName).toBe('Carambeí');expect(moved.address.street).toBe('Estrada do Pinheiro');
+   await propertyService.archive(seller.context,company,lead.id,row.id,{version:moved.version});
+   expect((await propertyService.create(seller.context,company,lead.id,farm({regionId:carambei}))).name).toBe('Sítio Boa Vista');
+  }finally{await Region.updateOne({_id:castro},{$set:{active:true}});}
+ },30000);
+ it('follows the live parent on transfer and archive, and records property history with territory names',async()=>{
+  const lead=await relationshipService.create(manager.context,company,'lead',{name:'Fazenda Transferida',phone:'42999999999',ownerId:seller.context.userId});
+  const row=await propertyService.create(seller.context,company,lead.id,farm());
+  await propertyService.update(seller.context,company,lead.id,row.id,{version:row.version,regionId:carambei});
+  const moved=await relationshipService.update(manager.context,company,'lead',lead.id,{version:lead.version,ownerId:otherSeller.context.userId});
+  await expect(propertyService.list(seller.context,company,lead.id,{})).rejects.toThrow();
+  expect((await propertyService.list(otherSeller.context,company,lead.id,{})).total).toBe(1);
+  const history=(await relationshipService.history(manager.context,company,lead.id)).items;
+  expect(history.find(item=>item.action==='property.updated')!.changes).toEqual([{field:'propertyRegionId',before:'Castro',after:'Carambeí'}]);
+  expect(history.some(item=>item.action==='property.created')).toBe(true);
+  await relationshipService.archive(manager.context,company,'lead',lead.id,{version:moved.version});
+  expect(await Property.countDocuments({partyId:lead.id,archived:false})).toBe(0);
+ },30000);
+});

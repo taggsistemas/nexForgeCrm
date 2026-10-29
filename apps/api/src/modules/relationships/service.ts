@@ -9,7 +9,8 @@ import type {AccessContext,Permission} from '../../../../../packages/contracts/s
 import type {PartyKind,PartyView,ContactView,PartyHistoryEntry} from '../../../../../packages/contracts/src/relationships.js';
 import {auditActorNames,auditActorLabel} from '../../infrastructure/audit-actors.js';
 import {assertListOptions,classificationKeys,partyLists} from './lists.js';
-import {Party,Contact,RelationshipAudit,QualificationAudit} from './models.js';
+import {Party,Contact,Property,RelationshipAudit,QualificationAudit} from './models.js';
+import {Region} from '../territories/models.js';
 import {User,Membership,Role} from '../identity/models.js';
 import {companyScope,AccessDenied} from '../../infrastructure/access.js';
 import {commercialFilter} from '../identity/profile-access.js';
@@ -60,7 +61,7 @@ async function ownedUser(context:AccessContext,companyId:string,requested:string
  if(!member||!user)throw new InvalidReference();
  return id;
 }
-async function parent(context:AccessContext,companyId:string,partyId:string,permission:Permission,session?:mongoose.ClientSession){
+export async function parent(context:AccessContext,companyId:string,partyId:string,permission:Permission,session?:mongoose.ClientSession){
  objectId.parse(partyId);
  const query=Party.findOne(commercialFilter(context,companyId,permission,{_id:partyId,archived:false}));
  if(session)query.session(session);
@@ -125,6 +126,7 @@ export const relationshipService={
    if(row.qualificationState==='submitted')throw new QualificationWorkflowRequired();
    if(await FieldExecution.exists({tenantId:context.tenantId,companyId,partyId:id,state:'in_progress'}).session(session)||await TechnicalWork.exists({tenantId:context.tenantId,companyId,partyId:id,state:'in_progress'}).session(session))throw new RecordConflict();
    await Contact.updateMany({tenantId:context.tenantId,companyId,partyId:row._id},{$set:{archived:true},$inc:{version:1}},{session});
+   await Property.updateMany({tenantId:context.tenantId,companyId,partyId:row._id,archived:false},{$set:{archived:true},$inc:{version:1}},{session});
    await audit(context,companyId,row._id,'party.archived',session);return {id};
   });
  },
@@ -180,12 +182,13 @@ export const relationshipService={
  },
  async history(context:AccessContext,companyId:string,partyId:string):Promise<{items:PartyHistoryEntry[]}>{
   const record=await parent(context,companyId,partyId,context.permissions.includes('lead:read')?'lead:read':'customer:read');
-  const contactIds=(await Contact.find({tenantId:context.tenantId,companyId,partyId:record._id}).select('_id').limit(500)).map(row=>row._id);
+  const [contacts,properties]=await Promise.all([Contact.find({tenantId:context.tenantId,companyId,partyId:record._id}).select('_id').limit(500),Property.find({tenantId:context.tenantId,companyId,partyId:record._id}).select('_id').limit(500)]);const contactIds=[...contacts,...properties].map(row=>row._id);
   const [events,qualification]=await Promise.all([RelationshipAudit.find({tenantId:context.tenantId,companyId,entityId:{$in:[record._id,...contactIds]}}).sort({createdAt:-1,_id:-1}).limit(50),QualificationAudit.find({tenantId:context.tenantId,companyId,partyId:record._id}).sort({createdAt:-1,_id:-1}).limit(50)]);
   const userFields=new Set(['ownerId','technicalOwnerId']),optionFields=new Set<string>(classificationKeys);
   const values=events.flatMap(event=>(event.changes??[]).flatMap(change=>[change.before,change.after].filter(Boolean).map(value=>({field:change.field,value}))));
+  const regionIds=values.filter(item=>item.field==='propertyRegionId'&&/^[a-f0-9]{24}$/i.test(item.value)).map(item=>item.value),regions=new Map((regionIds.length?await Region.find({tenantId:context.tenantId,companyId,_id:{$in:regionIds}}).select('name'):[]).map(row=>[String(row._id),row.name]));
   const [names,labels]=await Promise.all([auditActorNames(context.tenantId,[...events,...qualification].map(event=>String(event.actorId)).concat(values.filter(item=>userFields.has(item.field)).map(item=>item.value))),partyLists.labels(context,companyId,values.filter(item=>optionFields.has(item.field)).map(item=>item.value))]);
-  const show=(field:string,value:string)=>!value?'':userFields.has(field)?names.get(value)??'Usuário indisponível':optionFields.has(field)?labels.get(value)??'Opção indisponível':value;
+  const show=(field:string,value:string)=>!value?'':field==='propertyRegionId'?regions.get(value)??'Território indisponível':userFields.has(field)?names.get(value)??'Usuário indisponível':optionFields.has(field)?labels.get(value)??'Opção indisponível':value;
   const items=[...events.map(event=>({action:event.action,actor:auditActorLabel(names,String(event.actorId),context.userId),at:event.createdAt.toISOString(),reason:'',changes:(event.changes??[]).map(change=>({field:change.field,before:show(change.field,change.before),after:show(change.field,change.after)}))})),
    ...qualification.map(event=>({action:'qualification.'+event.action,actor:auditActorLabel(names,String(event.actorId),context.userId),at:event.createdAt.toISOString(),reason:event.reason??'',changes:[]}))];
   return {items:items.sort((a,b)=>b.at.localeCompare(a.at)).slice(0,50)};

@@ -275,3 +275,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - `npm run check`: aprovado, 168 Vitest (4 unitários novos), build e grafo declarado (271 nós/337 arestas, não Graphify AST).
 - `npm run test:db`: 63/63. `npm run test:layout`: 106 aprovados, 2 ignorados (inclui ficha do cliente em três tamanhos; capturas sintéticas conferidas). E2E local: 78/78.
 - Pendente: executar `db:tax-ids` no banco real antes de publicar; homologação com usuários.
+
+## Etapa 4 — propriedades (29/10/2026)
+
+- Propriedades por cliente/lead com território (Região da própria propriedade), endereço, contatos do mesmo cliente, coordenadas digitadas opcionais, versão e auditoria; autorização sempre pelo cliente atual.
+- Nova suíte `properties-mongo` (3 casos reais): várias propriedades, escopo de carteira e outro vendedor/tenant/origem recusados, Auditoria só lê; região de outra empresa, contato de outro cliente, nome duplicado e coordenadas inválidas recusados; região inativa mantida só quando inalterada; conflito de versão; transferência e arquivamento do cliente; histórico com nome do território. Corrigido durante o teste: IDs de território gravados entre aspas no histórico.
+- Corrigido no componente Modal: Esc em modal aninhado fechava também o modal pai.
+- `npm run check`: aprovado, 171 Vitest, build, grafo declarado (275 nós/343 arestas, não Graphify AST). `npm run test:db`: 66/66. `npm run test:layout`: 109 aprovados, 2 ignorados. E2E local: 78/78.

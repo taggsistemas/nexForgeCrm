@@ -27,3 +27,5 @@ export interface PartyView extends PartyClassification {
 export interface ContactView {id:string;partyId:string;name:string;email:string;phone:string;position:string;notes:string;roles:(typeof contactRoles[number])[];preferredChannel:typeof contactChannels[number]|'';communicationConsent:{granted:boolean;at:string|null};ownerId:string;version:number;createdAt:string;updatedAt:string}
 export interface PartyListOptionView {id:string;kind:PartyListKind;label:string;active:boolean;order:number;version:number}
 export interface PartyHistoryEntry {action:string;actor:string;at:string;reason:string;changes:{field:string;before:string;after:string}[]}
+/** Service location of a customer or lead ("Propriedade" in agribusiness). Territory is the property's own region, not the seller portfolio. */
+export interface PropertyView {id:string;partyId:string;name:string;regionId:string|null;regionName:string;address:{postalCode:string;street:string;number:string;complement:string;neighborhood:string;city:string;state:string;country:string};coordinates:{latitude:number;longitude:number}|null;contactIds:string[];notes:string;version:number;createdAt:string;updatedAt:string}

@@ -145,7 +145,7 @@ function actions(row:Row){return <div className="nf-crm-row-actions">{'kind'in r
    {error&&<p role="alert" className="nf-error">{error}</p>}<div className="nf-admin-actions"><button type="button" className="nf-secondary" disabled={busy} onClick={()=>{setEditor(null);setError('');}}>Cancelar</button><button className="nf-primary" disabled={busy}>{busy?'Salvando...':editor?.action==='archive'?'Confirmar arquivamento':editor?.action==='convert'?'Confirmar conversão':'Salvar cadastro'}</button></div>
    </fieldset></form>
   </Modal>
- <PartyRecord companyId={companyId} record={record} lists={lists} people={people} onClose={()=>setRecord(null)} onManageContacts={permissions.includes('contact:read')?row=>{setRecord(null);setParent({id:row.id,name:row.name,kind:row.kind});changeMode('contact');}:undefined}/>
+ <PartyRecord companyId={companyId} record={record} lists={lists} people={people} permissions={permissions} onClose={()=>setRecord(null)} onManageContacts={permissions.includes('contact:read')?row=>{setRecord(null);setParent({id:row.id,name:row.name,kind:row.kind});changeMode('contact');}:undefined}/>
  {permissions.includes('list:manage')&&<PartyListSettings companyId={companyId} open={listSettings} onClose={()=>setListSettings(false)} onChanged={()=>setListRefresh(value=>value+1)}/>}
  {qualificationId&&<QualificationModal company={companyId} id={qualificationId} permissions={permissions} onClose={()=>setQualificationId(null)} onChanged={()=>setRefresh(value=>value+1)}/>}
  </section>;

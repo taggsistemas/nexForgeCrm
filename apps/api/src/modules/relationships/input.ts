@@ -41,3 +41,10 @@ export const createLeadInput=z.object(intakeFields).strict().refine(value=>Boole
 export const updateLeadInput=z.object({...intakeFields,address:addressPatch.optional()}).partial().extend({version:z.number().int().min(0)}).strict();
 export const listOptionCreateInput=z.object({kind:z.enum(partyListKinds),label:z.string().trim().min(1).max(80),order:z.number().int().min(0).max(1000).default(0)}).strict();
 export const listOptionUpdateInput=z.object({label:z.string().trim().min(1).max(80).optional(),active:z.boolean().optional(),order:z.number().int().min(0).max(1000).optional(),version:z.number().int().min(0)}).strict();
+const coordinate=(limit:number)=>z.number().finite().min(-limit).max(limit).transform(value=>Math.round(value*1e6)/1e6);
+/** Typed coordinates of the property record; never treated as proof of presence. */
+const coordinatesInput=z.object({latitude:coordinate(90),longitude:coordinate(180)}).strict().nullable();
+const propertyFields={name:z.string().trim().min(1).max(120),regionId:objectId.nullable().default(null),address:addressInput.default({postalCode:'',street:'',number:'',complement:'',neighborhood:'',city:'',state:'',country:'Brasil'}),coordinates:coordinatesInput.default(null),contactIds:z.array(objectId).max(50).refine(values=>new Set(values).size===values.length).default([]),notes:optionalText(2000)};
+export const propertyCreateInput=z.object(propertyFields).strict();
+export const propertyUpdateInput=z.object({...propertyFields,address:addressPatch.optional()}).partial().extend({version:z.number().int().min(0)}).strict();
+export const propertyListInput=z.object({page:z.coerce.number().int().min(1).max(10000).default(1),search:z.string().trim().max(80).default('')}).strict();

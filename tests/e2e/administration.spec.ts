@@ -29,7 +29,7 @@ test('administrator registers a seller with company and role, then configures th
   await page.getByLabel('Acesso ativo').uncheck();
   await page.getByRole('button',{name:'Salvar alterações'}).click();
   await expect(page.getByRole('status').filter({hasText:'Usuário atualizado'})).toBeVisible();
-  expect(updated).toEqual({profileKey:'seller',active:false,supervisedUserIds:[]});
+  expect(updated).toEqual({profileKey:'seller',active:false,supervisedUserIds:[],regionIds:[],supervisorId:null});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('a replaced customer session returns to login when the application regains focus',async({page})=>{

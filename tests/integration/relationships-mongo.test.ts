@@ -1,3 +1,5 @@
+import {auditActorNames} from '../../apps/api/src/infrastructure/audit-actors.js';
+import {relationshipDashboard} from '../../apps/api/src/modules/relationships/dashboard.js';
 import {afterAll,beforeAll,describe,expect,it,vi} from 'vitest';
 import mongoose from 'mongoose';
 import {randomUUID} from 'node:crypto';
@@ -85,4 +87,8 @@ describe.skipIf(!uri)('relationships and reviewed qualification: real MongoDB au
   expect((await request(app).patch(path(legacy.id)).set(headers(b)).send(complete(0))).status).toBe(403);expect((await request(app).get(path(legacy.id)).set(headers(s2))).status).toBe(404);
   await qualificationWorkflow.save(s1.context,company,legacy.id,complete(0,'12345678909'));await qualificationWorkflow.submit(s1.context,company,legacy.id,{version:1});const done=await qualificationWorkflow.decide(sales.context,company,legacy.id,'approve',{version:2});expect(done.record.id).toBe(legacy.id);expect(done.record.kind).toBe('customer');expect(done.record.qualification!.state).toBe('approved');
  },30000);
+ it('aggregates monthly dashboard only after live owner tenant and company authorization',async()=>{const now=new Date('2030-01-15T12:00:00Z'),before=await relationshipDashboard(s1.context,company,{},now),stamp=new Date('2030-01-10T12:00:00Z'),base={tenantId:s1.context.tenantId,companyId:company,ownerId:s1.context.userId,kind:'lead',name:'Dashboard synthetic record',address:{country:'Brasil'},createdAt:stamp};await Party.create([{...base,qualificationState:'revision'},{...base,kind:'customer',qualificationState:'approved',approvedAt:stamp},{...base,ownerId:s2.context.userId},{...base,tenantId:b.context.tenantId,companyId:companyB,ownerId:b.context.userId},{...base,archived:true}]);const after=await relationshipDashboard(s1.context,company,{},now);expect(after.months[5]!.created-before.months[5]!.created).toBe(2);expect(after.months[5]!.approved-before.months[5]!.approved).toBe(1);await expect(relationshipDashboard(s1.context,companyB,{},now)).rejects.toThrow();},30000);
+
+ it('resolves audit names inside the tenant without exposing another tenant actor',async()=>{const names=await auditActorNames(a.context.tenantId,[a.context.userId,sales.context.userId,b.context.userId]);expect(names.get(a.context.userId)).toBe(a.view.user.name);expect(names.get(sales.context.userId)).toBe(sales.view.user.name);expect(names.has(b.context.userId)).toBe(false);});
+
 });

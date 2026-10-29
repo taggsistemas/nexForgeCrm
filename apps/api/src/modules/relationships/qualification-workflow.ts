@@ -1,3 +1,4 @@
+import {auditActorNames,auditActorLabel} from '../../infrastructure/audit-actors.js';
 import mongoose from 'mongoose';
 import type {AccessContext,Permission} from '../../../../../packages/contracts/src/index.js';
 import {companyScope,AccessDenied} from '../../infrastructure/access.js';
@@ -23,7 +24,8 @@ export const qualificationWorkflow={
  async detail(ctx:AccessContext,company:string,id:string){
   const row=await load(ctx,company,id,'qualification:edit'),filter={...companyScope(ctx,company,'qualification:edit'),partyId:id};
   const [submission,history]=await Promise.all([QualificationSubmission.findOne({...filter,revision:row.qualificationRevision}),QualificationAudit.find(filter).sort({createdAt:-1,_id:-1}).limit(20)]);
-  return {record:partyView(row),submission:submission?{id:String(submission._id),revision:submission.revision,submittedBy:String(submission.submittedBy),submittedAt:submission.createdAt.toISOString(),snapshot:submission.snapshot,stale:submission.partyVersion!==row.version}:null,history:history.map(event=>({action:event.action,reason:event.reason,at:event.createdAt.toISOString(),actor:event.actorId.toString()===ctx.userId?'Você':'Usuário autorizado'})),canApprove:ctx.permissions.includes('qualification:approve')&&row.qualificationState==='submitted'&&Boolean(submission)&&submission?.partyVersion===row.version&&submission?.submittedBy.toString()!==ctx.userId};
+  const actors=await auditActorNames(ctx.tenantId,history.map(event=>String(event.actorId)));
+  return {record:partyView(row),submission:submission?{id:String(submission._id),revision:submission.revision,submittedBy:String(submission.submittedBy),submittedAt:submission.createdAt.toISOString(),snapshot:submission.snapshot,stale:submission.partyVersion!==row.version}:null,history:history.map(event=>({action:event.action,reason:event.reason,at:event.createdAt.toISOString(),actor:auditActorLabel(actors,String(event.actorId),ctx.userId)})),canApprove:ctx.permissions.includes('qualification:approve')&&row.qualificationState==='submitted'&&Boolean(submission)&&submission?.partyVersion===row.version&&submission?.submittedBy.toString()!==ctx.userId};
  },
  async save(ctx:AccessContext,company:string,id:string,raw:unknown){
   const input=qualificationDraftInput.parse(raw);return transact(async session=>{

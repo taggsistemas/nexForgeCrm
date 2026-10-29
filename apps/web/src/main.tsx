@@ -11,3 +11,4 @@ try { document.documentElement.dataset.theme = localStorage.getItem('nf_theme') 
 const client = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 const isMaster = window.location.pathname.replace(/\/+$/, '') === '/taggmaster';
 createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}>{window.location.pathname==='/reset-password'?<ResetPasswordPage/>:isMaster ? <MasterPage/> : <App/>}</QueryClientProvider></React.StrictMode>);
+import './compact.css';

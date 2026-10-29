@@ -22,7 +22,8 @@
     "master:bootstrap": "npm run master:bootstrap -w @nexforge/api",
     "master:check": "npm run master:bootstrap -w @nexforge/api -- --check",
     "db:diagnose": "npm run db:diagnose -w @nexforge/api",
-    "test:db": "node tools/test-database.mjs"
+    "test:db": "node tools/test-database.mjs",
+    "test:layout": "playwright test --config playwright.layout.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

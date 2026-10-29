@@ -90,3 +90,6 @@ MONGODB_TEST_URI está ausente, as suítes reais são executadas por npm run tes
 
 ## Senha temporária e modais
 Criação/configuração usa modal. A senha cadastrada pelo administrador é temporária e a API bloqueia os módulos até troca no primeiro acesso. Alterar perfil não revela nem recupera senha. Recuperação pelo usuário exige serviço SMTP configurado; o TAGG Master tem autenticação e processo de recuperação separados.
+
+## Perfis, regiões e técnicos
+Cadastros de vendedor/técnico permitem escolher supervisor e regiões; supervisor define suas regiões e vendedores. Vínculos são validados por empresa/tenant e mantidos atomicamente com auditoria/capacidade. Técnico possui perfil separado e consome licença. Ver [technical-work.md](technical-work.md).

@@ -69,3 +69,5 @@ Trial, licenças e preços contratuais no TAGG Master: [docs/subscriptions.md](d
 ## Offline entregue
 Carteira protegida por senha local, fila de atividades/visitas, reenvio idempotente, conflitos e autorização atual na sincronização. Há limites de validade e escopo; ver [docs/offline.md](docs/offline.md) antes do piloto. Prepare online antes de usar sem rede. Catálogo/preços, propostas/pedidos e gestão seguem nos próximos incrementos.
 
+
+Interface compacta e testes de geometria: consulte docs/ux-layout.md. Execute `npm run test:layout` para verificar modais e responsividade em navegador real sem servidor HTTP; os fluxos completos continuam em `npm run test:e2e`.

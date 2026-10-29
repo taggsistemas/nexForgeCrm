@@ -1,3 +1,4 @@
+import {TechnicalWork} from '../technical/models.js';
 import {OfflineVisitReport} from '../offline/models.js';
 import {offlineReportView} from '../offline/service.js';
 import mongoose from 'mongoose';
@@ -59,6 +60,7 @@ export const fieldVisitService={
    if(activity.version!==input.version)throw new RecordConflict();
    if(activity.status!=='pendente'||activity.fieldState!=='none')throw new FieldVisitRuleRejected();
    await touch(ctx,company,activity,party,session);
+   if(await TechnicalWork.exists({technicianId:ctx.userId,state:'in_progress'}).session(session))throw new RecordConflict();
    if(await OfflineVisitReport.exists({userId:ctx.userId,observedInAt:{$lte:new Date()},observedOutAt:{$gt:new Date()}}).session(session))throw new FieldVisitRuleRejected();
    const [row]=await FieldExecution.create([{...scope(ctx,company,'visit:write'),activityId:id,partyId:party._id,actorId:ctx.userId,locationNoticeVersion:'1.0',state:'in_progress',checkedInAt:new Date(),checkIn:input.position}],{session});
    const changed=await AgendaActivity.updateOne({_id:id,...scope(ctx,company,'activity:write'),version:input.version,status:'pendente'},{$set:{fieldState:'in_progress'},$inc:{version:1}},{session});if(changed.modifiedCount!==1)throw new RecordConflict();

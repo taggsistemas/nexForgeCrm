@@ -53,7 +53,7 @@ roleSchema.index({ tenantId: 1, name: 1 }, { unique: true });
 roleSchema.index({ tenantId: 1, key: 1 }, {unique:true,partialFilterExpression:{key:{$type:'string'}}});
 export const Role = model('Role', roleSchema);
 const membershipSchema = new Schema({
-  commercialRevision:{type:Number,default:0},
+  commercialRevision:{type:Number,default:0},adminVersion:{type:Number,default:0},supervisorId:{type:Schema.Types.ObjectId,default:null},regionIds:[{type:Schema.Types.ObjectId}],
   userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
   tenantId: { type: Schema.Types.ObjectId, required: true, ref: 'Tenant' },
   companyIds: [{ type: Schema.Types.ObjectId, ref: 'Company' }],
@@ -64,6 +64,7 @@ const membershipSchema = new Schema({
   active: { type: Boolean, default: true },
 }, options);
 membershipSchema.index({ tenantId: 1, userId: 1 }, { unique: true });
+membershipSchema.index({tenantId:1,supervisorId:1,active:1});
 export const Membership = model('Membership', membershipSchema);
 const sessionSchema = new Schema({
   passwordVersion: {type:Number,default:0},

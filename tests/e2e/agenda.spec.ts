@@ -36,7 +36,7 @@ test('calendar views unify activities and manage recurring occurrences through m
  await page.getByRole('navigation').getByRole('button',{name:'Agenda e visitas'}).click();
  await page.getByLabel('Data de referência').fill('2026-10-28');
  const calendar=page.getByRole('grid',{name:'Calendário comercial'});
- await expect(calendar.getByRole('gridcell')).toHaveCount(7);
+ await expect(calendar.getByRole('gridcell')).toHaveCount(test.info().project.name==='mobile'?1:7);
  await expect(page.locator('.nf-agenda-list')).toContainText('Atividade já cadastrada');
  await page.getByRole('button',{name:'Mês',exact:true}).click();
  await expect(calendar.getByRole('gridcell')).toHaveCount(42);

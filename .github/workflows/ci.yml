@@ -29,6 +29,7 @@ jobs:
       - run: npm audit --audit-level=moderate
       - run: npm run check
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:layout
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: always()
@@ -38,4 +39,6 @@ jobs:
             artifacts/graph/
             artifacts/security*.json
             playwright-report/
+            test-results/
+            artifacts/ux/
             package-lock.json

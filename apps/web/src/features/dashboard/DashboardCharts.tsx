@@ -1,0 +1,29 @@
+import {useEffect,useId,useState} from 'react';
+import {chartMaximum,dashboardQualificationNames,type DashboardChartsData} from '../../../../../packages/contracts/src/dashboard';
+const colors=['#aeb7c8','#b7a5ff','#6254f3','#efa84c','#43b9a4'];
+function monthLabel(month:string){return new Date(month+'-15T12:00:00Z').toLocaleDateString('pt-BR',{month:'short',timeZone:'UTC'}).replace('.','');}
+export function ChartPanels({data,loading,error}:{data:DashboardChartsData|null;loading:boolean;error:string}){
+ const titleId=useId(),total=data?.qualification.reduce((sum,row)=>sum+row.total,0)??0,approved=data?.qualification.find(row=>row.state==='approved')?.total??0,percent=total?Math.round(approved/total*100):0;
+ const max=chartMaximum(data?.months.flatMap(row=>[row.created,row.approved])??[]);
+ let offset=0;
+ return <div className="nf-analytics-charts">
+  <section className="nf-analytics-panel nf-trend-panel" aria-labelledby={titleId}><div className="nf-analytics-heading"><div><h3 id={titleId}>Movimento de cadastros</h3><p>Últimos 6 meses · horário de São Paulo</p></div><span className="nf-analytics-tag">Mensal</span></div>
+   {loading?<p role="status" className="nf-chart-empty">Carregando gráfico…</p>:error?<p role="alert" className="nf-chart-empty">{error}</p>:!data?<p className="nf-chart-empty">Gráfico indisponível.</p>:<>
+    <div className="nf-chart-legend"><span><i style={{background:'#6254f3'}}/>Cadastros criados</span><span><i style={{background:'#c5cbd6'}}/>Clientes aprovados</span></div>
+    <svg className="nf-monthly-chart" viewBox="0 0 600 190" role="img" aria-label="Cadastros criados e clientes aprovados por mês. Os valores exatos estão na tabela abaixo.">
+     {[0,.5,1].map(step=><g key={step}><line x1="35" x2="590" y1={155-step*125} y2={155-step*125} stroke="currentColor" opacity=".12"/><text x="28" y={159-step*125} textAnchor="end" fill="currentColor" fontSize="11">{Math.round(max*step)}</text></g>)}
+     {data.months.map((row,index)=>{const x=62+index*91;return <g key={row.month}><title>{row.month+': '+row.created+' cadastros; '+row.approved+' aprovações'}</title><rect x={x} y={155-row.created/max*125} width="22" height={row.created/max*125} rx="4" fill="#6254f3"/><rect x={x+26} y={155-row.approved/max*125} width="22" height={row.approved/max*125} rx="4" fill="#c5cbd6"/><text x={x+24} y="180" textAnchor="middle" fill="currentColor" fontSize="12">{monthLabel(row.month)}</text></g>;})}
+    </svg>
+    {!data.months.some(row=>row.created||row.approved)&&<p className="nf-chart-note">Ainda não há movimento nos meses exibidos.</p>}
+    <details className="nf-chart-data"><summary>Ver valores do gráfico</summary><table><caption>Contagens mensais no acesso atual</caption><thead><tr><th>Mês</th><th>Cadastros criados</th><th>Clientes aprovados</th></tr></thead><tbody>{data.months.map(row=><tr key={row.month}><th>{row.month}</th><td>{row.created}</td><td>{row.approved}</td></tr>)}</tbody></table></details>
+   </>}
+  </section>
+  <section className="nf-analytics-panel nf-quality-panel" aria-label="Distribuição da qualificação"><div className="nf-analytics-heading"><div><h3>Qualidade da carteira</h3><p>Situação atual da qualificação</p></div></div>
+   {loading?<p className="nf-chart-empty">Carregando gráfico…</p>:error?<p className="nf-chart-empty">Dados indisponíveis</p>:!data?<p className="nf-chart-empty">Dados indisponíveis</p>:<>
+    <div className="nf-gauge"><svg viewBox="0 0 220 125" role="img" aria-label={total?percent+'% dos cadastros visíveis estão aprovados.':'Nenhum cadastro disponível.'}><path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="var(--nf-chart-track)" strokeWidth="22" pathLength="100"/>{total>0&&data.qualification.map((row,index)=>{const length=row.total/total*100,start=offset;offset+=length;return length?<path key={row.state} d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke={colors[index%colors.length]} strokeWidth="22" pathLength="100" strokeDasharray={length+' '+(100-length)} strokeDashoffset={-start}/>:null;})}<text x="110" y="93" textAnchor="middle" fill="currentColor" fontSize="30" fontWeight="700">{total?percent+'%':'—'}</text><text x="110" y="114" textAnchor="middle" fill="currentColor" fontSize="11">{total?'aprovados':'sem cadastros'}</text></svg></div>
+    <ul className="nf-quality-legend">{data.qualification.map((row,index)=><li key={row.state}><span><i style={{background:colors[index%colors.length]}}/>{dashboardQualificationNames[row.state]??row.state}</span><strong>{row.total}</strong></li>)}</ul>
+   </>}
+  </section>
+ </div>;
+}
+export function DashboardCharts({company,refreshKey=0}:{company:string;refreshKey?:number}){const [data,setData]=useState<DashboardChartsData|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');useEffect(()=>{const controller=new AbortController();let pending=false;async function refresh(){if(pending||!company||document.hidden)return;pending=true;try{const res=await fetch('/api/v1/companies/'+company+'/crm/dashboard',{signal:controller.signal,cache:'no-store',credentials:'same-origin'});if(!res.ok)throw Error('Não foi possível consultar os gráficos.');const value=await res.json();if(!Array.isArray(value.months)||value.months.length!==6||!Array.isArray(value.qualification))throw Error('Gráfico indisponível.');if(!controller.signal.aborted){setData(value);setError('');}}catch(cause){if(!controller.signal.aborted)setError((cause as Error).message);}finally{pending=false;if(!controller.signal.aborted)setLoading(false);}}setData(null);setLoading(true);setError('');void refresh();const timer=setInterval(refresh,15000);window.addEventListener('focus',refresh);return()=>{controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);};},[company,refreshKey]);return <ChartPanels data={data} loading={loading} error={error}/>;}

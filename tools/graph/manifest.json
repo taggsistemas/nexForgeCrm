@@ -461,8 +461,8 @@
     {
       "id": "crm:lead:pipeline-ui",
       "kind": "component",
-      "source": "apps/web/src/features/relationships/Relationships.tsx",
-      "symbol": "initialPipeline"
+      "source": "apps/web/src/features/dashboard/Dashboard.tsx",
+      "symbol": "Dashboard"
     },
     {
       "id": "crm:lead:qualification-test",
@@ -1357,6 +1357,216 @@
       "id": "crm:offline:e2e",
       "kind": "test",
       "symbol": "coldOffline"
+    },
+    {
+      "id": "crm:catalog:contract",
+      "source": "packages/contracts/src/catalog.ts",
+      "kind": "contract",
+      "symbol": "calculateRulePrice"
+    },
+    {
+      "id": "crm:catalog:input",
+      "source": "apps/api/src/modules/catalog/input.ts",
+      "kind": "validation",
+      "symbol": "productInput"
+    },
+    {
+      "id": "crm:catalog:product",
+      "source": "apps/api/src/modules/catalog/models.ts",
+      "kind": "models",
+      "symbol": "CatalogProduct"
+    },
+    {
+      "id": "crm:catalog:prices",
+      "source": "apps/api/src/modules/catalog/models.ts",
+      "kind": "models",
+      "symbol": "PriceTable"
+    },
+    {
+      "id": "crm:catalog:sequence",
+      "source": "apps/api/src/modules/catalog/models.ts",
+      "kind": "models",
+      "symbol": "CatalogSequence"
+    },
+    {
+      "id": "crm:catalog:audit",
+      "source": "apps/api/src/modules/catalog/models.ts",
+      "kind": "models",
+      "symbol": "CatalogAudit"
+    },
+    {
+      "id": "crm:catalog:service",
+      "source": "apps/api/src/modules/catalog/service.ts",
+      "kind": "service",
+      "symbol": "catalogService"
+    },
+    {
+      "id": "crm:catalog:http",
+      "source": "apps/api/src/modules/catalog/router.ts",
+      "kind": "endpoint-group",
+      "symbol": "createCatalogRouter"
+    },
+    {
+      "id": "crm:catalog:ui",
+      "source": "apps/web/src/features/catalog/Catalog.tsx",
+      "kind": "component",
+      "symbol": "Catalog"
+    },
+    {
+      "id": "crm:catalog:unit",
+      "source": "tests/unit/catalog.test.ts",
+      "kind": "test",
+      "symbol": "choosePrice"
+    },
+    {
+      "id": "crm:catalog:db",
+      "source": "tests/integration/catalog-mongo.test.ts",
+      "kind": "test",
+      "symbol": "catalogService"
+    },
+    {
+      "id": "crm:catalog:e2e",
+      "source": "tests/e2e/catalog-dashboard.spec.ts",
+      "kind": "test",
+      "symbol": "catalog modal"
+    },
+    {
+      "id": "crm:catalog:dashboard",
+      "source": "apps/web/src/features/dashboard/Dashboard.tsx",
+      "kind": "component",
+      "symbol": "Dashboard"
+    },
+    {
+      "id": "crm:catalog:time",
+      "source": "packages/contracts/src/business-time.ts",
+      "kind": "policy",
+      "symbol": "businessTimeZone"
+    },
+    {
+      "id": "crm:ux:compact",
+      "source": "apps/web/src/compact.css",
+      "kind": "style",
+      "symbol": ".nf-modal-content"
+    },
+    {
+      "id": "crm:ux:layout-tests",
+      "source": "tests/layout/compact.spec.ts",
+      "kind": "test",
+      "symbol": "long modal has one vertical scroll region"
+    },
+    {
+      "id": "crm:ux:layout-config",
+      "source": "playwright.layout.config.ts",
+      "kind": "configuration",
+      "symbol": "testDir"
+    },
+    {
+      "id": "crm:dashboard:charts-contract",
+      "source": "packages/contracts/src/dashboard.ts",
+      "kind": "contract",
+      "symbol": "DashboardChartsData"
+    },
+    {
+      "id": "crm:dashboard:aggregate",
+      "source": "apps/api/src/modules/relationships/dashboard.ts",
+      "kind": "service",
+      "symbol": "relationshipDashboard"
+    },
+    {
+      "id": "crm:dashboard:charts-ui",
+      "source": "apps/web/src/features/dashboard/DashboardCharts.tsx",
+      "kind": "component",
+      "symbol": "DashboardCharts"
+    },
+    {
+      "id": "crm:dashboard:tests",
+      "source": "tests/unit/dashboard.test.ts",
+      "kind": "test",
+      "symbol": "dashboard chart scope and dates"
+    },
+    {
+      "id": "crm:audit:actor-names",
+      "source": "apps/api/src/infrastructure/audit-actors.ts",
+      "kind": "policy",
+      "symbol": "auditActorNames"
+    },
+    {
+      "id": "crm:audit:timeline",
+      "source": "apps/web/src/components/HistoryTimeline.tsx",
+      "kind": "component",
+      "symbol": "HistoryTimeline"
+    },
+    {
+      "id": "crm:catalog:product-fields",
+      "source": "apps/web/src/features/catalog/ProductFields.tsx",
+      "kind": "component",
+      "symbol": "ProductFields"
+    },
+    {
+      "id": "crm:technical:contract",
+      "source": "packages/contracts/src/technical.ts",
+      "kind": "contract",
+      "symbol": "TechnicalWorkView"
+    },
+    {
+      "id": "crm:technical:input",
+      "source": "apps/api/src/modules/technical/input.ts",
+      "kind": "validation",
+      "symbol": "technicalCreateInput"
+    },
+    {
+      "id": "crm:technical:model",
+      "source": "apps/api/src/modules/technical/models.ts",
+      "kind": "models",
+      "symbol": "TechnicalWork"
+    },
+    {
+      "id": "crm:technical:audit",
+      "source": "apps/api/src/modules/technical/models.ts",
+      "kind": "models",
+      "symbol": "TechnicalAudit"
+    },
+    {
+      "id": "crm:technical:service",
+      "source": "apps/api/src/modules/technical/service.ts",
+      "kind": "service",
+      "symbol": "technicalService"
+    },
+    {
+      "id": "crm:technical:http",
+      "source": "apps/api/src/modules/technical/router.ts",
+      "kind": "endpoint-group",
+      "symbol": "createTechnicalRouter"
+    },
+    {
+      "id": "crm:technical:ui",
+      "source": "apps/web/src/features/technical/TechnicalWorkspace.tsx",
+      "kind": "component",
+      "symbol": "TechnicalWorkspace"
+    },
+    {
+      "id": "crm:technical:unit",
+      "source": "tests/unit/technical.test.ts",
+      "kind": "test",
+      "symbol": "technical assignment and execution boundaries"
+    },
+    {
+      "id": "crm:technical:db",
+      "source": "tests/integration/technical-mongo.test.ts",
+      "kind": "test",
+      "symbol": "technical assignments and attendance MongoDB isolation"
+    },
+    {
+      "id": "crm:technical:e2e",
+      "source": "tests/e2e/technical.spec.ts",
+      "kind": "test",
+      "symbol": "assigned technician"
+    },
+    {
+      "id": "crm:audit:actor-tests",
+      "source": "tests/unit/audit-actors.test.ts",
+      "kind": "test",
+      "symbol": "audit actor attribution"
     }
   ],
   "edges": [
@@ -1812,7 +2022,7 @@
     },
     {
       "from": "crm:lead:pipeline-ui",
-      "to": "apps/web/src/features/relationships/Relationships.tsx",
+      "to": "apps/web/src/features/dashboard/Dashboard.tsx",
       "kind": "declared-in"
     },
     {
@@ -2704,6 +2914,271 @@
       "to": "apps/api/src/modules/field-visits/service.ts",
       "from": "crm:offline:report",
       "kind": "used-by"
+    },
+    {
+      "from": "crm:catalog:http",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:http",
+      "to": "apps/api/src/modules/catalog/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "apps/api/src/modules/catalog/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "packages/contracts/src/catalog.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:db",
+      "to": "apps/api/src/modules/catalog/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:dashboard",
+      "to": "apps/web/src/features/relationships/Relationships.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:dashboard",
+      "to": "tests/e2e/catalog-dashboard.spec.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:time",
+      "to": "packages/contracts/src/agenda.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "docs/catalog-pricing.md",
+      "kind": "documented-by"
+    },
+    {
+      "from": "crm:catalog:service",
+      "to": "docs/usability-review.md",
+      "kind": "documented-by"
+    },
+    {
+      "from": "crm:ux:compact",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:compact",
+      "to": "apps/web/src/App.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:compact",
+      "to": "apps/web/src/features/dashboard/Dashboard.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:compact",
+      "to": "apps/web/src/features/agenda/Agenda.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:compact",
+      "to": "docs/ux-layout.md",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:layout-tests",
+      "to": "apps/web/src/compact.css",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:layout-tests",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:layout-tests",
+      "to": "playwright.layout.config.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:dashboard",
+      "to": "docs/dashboard.md",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:dashboard",
+      "to": "tests/layout/compact.spec.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:aggregate",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:aggregate",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:aggregate",
+      "to": "apps/api/src/modules/relationships/router.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:aggregate",
+      "to": "docs/dashboard.md",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:aggregate",
+      "to": "tests/integration/relationships-mongo.test.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:charts-ui",
+      "to": "packages/contracts/src/dashboard.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:charts-ui",
+      "to": "apps/web/src/features/dashboard/Dashboard.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:dashboard:charts-ui",
+      "to": "tests/layout/compact.spec.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:audit:actor-names",
+      "to": "apps/api/src/modules/identity/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:audit:actor-names",
+      "to": "apps/api/src/modules/relationships/qualification-workflow.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:audit:actor-names",
+      "to": "apps/api/src/modules/opportunities/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:audit:timeline",
+      "to": "apps/web/src/features/relationships/QualificationModal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:audit:timeline",
+      "to": "apps/web/src/features/opportunities/Opportunities.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:product-fields",
+      "to": "packages/contracts/src/catalog.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/technical/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/identity/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/administration/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/territories/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/catalog/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/field-visits/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/offline/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "docs/technical-work.md",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:http",
+      "to": "apps/api/src/infrastructure/authorization.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:ui",
+      "to": "apps/web/src/components/HistoryTimeline.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:ui",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:db",
+      "to": "apps/api/src/modules/technical/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:e2e",
+      "to": "apps/web/src/features/technical/TechnicalWorkspace.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:catalog:product-fields",
+      "to": "tests/layout/compact.spec.ts",
+      "kind": "depends-on"
     }
   ]
 }

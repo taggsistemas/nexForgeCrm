@@ -1,3 +1,4 @@
+import {TechnicalWork} from '../technical/models.js';
 import mongoose from 'mongoose';
 import {createHash} from 'node:crypto';
 import type {AccessContext} from '../../../../../packages/contracts/src/index.js';
@@ -51,7 +52,8 @@ export const offlineService={
     companyScope(context,company,'visit:write');if(String(party.ownerId)!==context.userId)throw new AccessDenied();
     const activity=operation.activityId?await AgendaActivity.findOne({_id:operation.activityId,...scope,partyId:party._id,type:'visita'}).session(session):(await AgendaActivity.create([{...scope,partyId:party._id,title:('Visita offline - '+party.name).slice(0,160),type:'visita',dueAt:new Date(operation.observedInAt),offlineCapturedAt:new Date(operation.capturedAt),offlineOperationId:operation.operationId}],{session}))[0];if(!activity)throw new RecordNotFound();if(operation.activityId&&activity.version!==operation.activityVersion||activity.status!=='pendente'||activity.fieldState!=='none')throw new OfflineConflict();
     await User.updateOne({_id:context.userId,active:true},{$inc:{fieldRevision:1}},{session});
-    if(await FieldExecution.exists({actorId:context.userId,$or:[{state:'in_progress'},{checkedInAt:{$lt:new Date(operation.observedOutAt)},checkedOutAt:{$gt:new Date(operation.observedInAt)}}]}).session(session)||await OfflineVisitReport.exists({userId:context.userId,observedInAt:{$lt:new Date(operation.observedOutAt)},observedOutAt:{$gt:new Date(operation.observedInAt)}}).session(session))throw new OfflineConflict();
+    if(await TechnicalWork.exists({technicianId:context.userId,$or:[{state:'in_progress'},{checkedInAt:{$lt:new Date(operation.observedOutAt)},$or:[{checkedOutAt:{$gt:new Date(operation.observedInAt)}},{interruptedAt:{$gt:new Date(operation.observedInAt)}}]}]}).session(session))throw new OfflineConflict();
+     if(await FieldExecution.exists({actorId:context.userId,$or:[{state:'in_progress'},{checkedInAt:{$lt:new Date(operation.observedOutAt)},checkedOutAt:{$gt:new Date(operation.observedInAt)}}]}).session(session)||await OfflineVisitReport.exists({userId:context.userId,observedInAt:{$lt:new Date(operation.observedOutAt)},observedOutAt:{$gt:new Date(operation.observedInAt)}}).session(session))throw new OfflineConflict();
     // Serialize distinct offline imports and online check-in by touching the executor's membership.
     const {Membership}=await import('../identity/models.js');await Membership.updateOne({tenantId:context.tenantId,userId:context.userId,active:true},{$inc:{commercialRevision:1}},{session});
     if(activity.visitPlanId){const plan=await VisitPlan.findOne({_id:activity.visitPlanId,...scope,state:'published'}).session(session);if(!plan)throw new OfflineConflict();await VisitPlan.updateOne({_id:plan._id,...scope},{$inc:{agendaRevision:1}},{session});}

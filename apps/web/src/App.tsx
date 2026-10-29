@@ -1,3 +1,6 @@
+import {TechnicalWorkspace} from './features/technical/TechnicalWorkspace';
+import {Catalog} from './features/catalog/Catalog';
+import {Dashboard} from './features/dashboard/Dashboard';
 import {OfflineWorkspace} from './features/offline/OfflineWorkspace';
 import {FieldVisits} from './features/field-visits/FieldVisits';
 import {Territories} from './features/territories/Territories';
@@ -19,44 +22,46 @@ const modules = [
   {id:'offline',group:'ATIVIDADES E VISITAS',title:'Operação offline',icon:'OF',description:'Carteira criptografada, registros locais e sincronização.'},
   {id:'field',group:'ATIVIDADES E VISITAS',title:'Rotas e visitas em campo',icon:'RV',description:'Roteiro diário, check-in, check-out e resultados.'},
   {id:'territories',group:'ATIVIDADES E VISITAS',title:'Carteiras e planejamento',icon:'CP',description:'Regiões, vendedores, carteiras e planos de visitas.'},
+  {id:'catalog',group:'VENDAS',title:'Catálogo e preços',icon:'CT',description:'Produtos, caixas e tabelas de preços por abrangência.'},
+  {id:'technical',group:'SERVIÇOS',title:'Agenda e rota técnica',icon:'TC',description:'Atendimentos técnicos atribuídos, roteiro e execução.'},
   {id:'proposals',group:'VENDAS',title:'Propostas e pedidos',icon:'VP',description:'Negociação, aprovações e histórico comercial.'},
   {id:'management',group:'GESTÃO',title:'Central gerencial',icon:'CG',description:'Metas, comissões, forecast e acompanhamento.'},
   {id:'administration',group:'CONFIGURAÇÕES',title:'Usuários e equipes',icon:'CF',description:'Usuários, perfis e equipes das empresas autorizadas.'},
 ];
 export function App() {
   const identity = useIdentity();
-  const [offlinePortal,setOfflinePortal]=useState(false);
+  const [offlinePortal,setOfflinePortal]=useState(!navigator.onLine);
   const [online,setOnline] = useState(navigator.onLine);
   const [menu,setMenu] = useState(false);
   const [search,setSearch] = useState('');
   const [selected,setSelected] = useState('overview');
   useEffect(() => {
-    const update=()=>setOnline(navigator.onLine);
+    const update=()=>{setOnline(navigator.onLine);if(!navigator.onLine&&selected!=='offline')setOfflinePortal(true);};
     window.addEventListener('online',update); window.addEventListener('offline',update);
     return ()=> {window.removeEventListener('online',update);window.removeEventListener('offline',update);};
-  },[]);
+  },[selected]);
+  useEffect(()=>{if(identity.networkUnavailable&&selected!=='offline')setOfflinePortal(true);},[identity.networkUnavailable,selected]);
+  useEffect(()=>{setSelected('overview');setMenu(false);},[identity.account?.user.id,identity.account?.tenant.id]);
   const connection=<span className="nf-connection" role="status"><i className={online ? 'nf-dot' : 'nf-dot offline'}/>{online ? 'Conexão disponível' : 'Sem conexão'}</span>;
-  if(offlinePortal)return <main className="nf-content"><OfflineWorkspace account={identity.account??undefined} onClose={()=>setOfflinePortal(false)}/></main>;
+  if(offlinePortal)return <main className="nf-content"><OfflineWorkspace networkUnavailable={identity.networkUnavailable} account={identity.account??undefined} onClose={()=>setOfflinePortal(false)}/></main>;
   if(identity.checking) return <div className="nf-loading" role="status">Verificando sessão...</div>;
-  if(!identity.account) return <main className="nf-login"><div className="nf-login-tools">{connection}<ThemeToggle/></div><div className="nf-login-layout"><BrandPanel/><div><IdentityPanel identity={identity}/><button className="nf-secondary" onClick={()=>setOfflinePortal(true)}>Acessar carteira offline</button></div></div></main>;
+  if(!identity.account) return <main className="nf-login"><div className="nf-login-tools">{connection}<ThemeToggle/></div><div className="nf-login-layout"><BrandPanel/><div><IdentityPanel identity={identity}/></div></div></main>;
   const account=identity.account;
   if(account.security?.mustChangePassword||account.security?.privacyAcceptanceRequired)return <AccountOnboarding mustChangePassword={account.security.mustChangePassword} tenantName={account.tenant.name} onLogout={identity.logout}/>;
-  const availableModules=modules.filter(item=>(item.id!=='offline'||account.permissions?.includes('activity:read'))&&(item.id!=='field'||account.permissions?.includes('visit:read'))&&(item.id!=='territories'||account.permissions?.some(value=>['region:read','portfolio:read','visit:read'].includes(value)))&&(item.id!=='visits'||account.permissions?.includes('activity:read'))&&(item.id!=='opportunities'||account.permissions?.includes('pipeline:read'))&&(item.id!=='pipeline'||account.permissions?.includes('lead:read'))&&(item.id!=='administration'||account.permissions?.includes('user:manage'))&&(!['relationship','pipeline'].includes(item.id)||account.permissions?.some(permission=>['lead:read','customer:read','contact:read'].includes(permission))));
+  const technicianOnly=account.permissions?.includes('technical:read')&&!account.permissions?.includes('lead:read');
+  const availableModules=modules.filter(item=>(!technicianOnly||['overview','technical'].includes(item.id))&&(item.id!=='technical'||account.permissions?.includes('technical:read'))&&(item.id!=='catalog'||account.permissions?.includes('catalog:read'))&&(item.id!=='offline'||account.permissions?.includes('activity:read'))&&(item.id!=='field'||account.permissions?.includes('visit:read'))&&(item.id!=='territories'||account.permissions?.some(value=>['region:read','portfolio:read','visit:read'].includes(value)))&&(item.id!=='visits'||account.permissions?.includes('activity:read'))&&(item.id!=='opportunities'||account.permissions?.includes('pipeline:read'))&&(item.id!=='pipeline'||account.permissions?.includes('lead:read'))&&(item.id!=='administration'||account.permissions?.includes('user:manage'))&&(!['relationship','pipeline'].includes(item.id)||account.permissions?.some(permission=>['lead:read','customer:read','contact:read'].includes(permission))));
   const current=modules.find(item=>item.id===selected)!;
   return <div className="nf-shell">
-    <aside className={'nf-sidebar '+(menu?'is-open':'')} aria-label="Menu do CRM">
+    <aside className={'nf-sidebar '+(menu?'is-open':'')} aria-label="Menu do CRM"><button type="button" className="nf-sidebar-close nf-secondary" onClick={()=>setMenu(false)}>Fechar menu</button>
       <a className="nf-sidebar-brand" href="/" aria-label="NexForge CRM"><img src="/brand/tagg-logo-compact.png" alt="TAGG Sistemas"/><strong>NexForge <b>CRM</b></strong><small>Plataforma Comercial Integrada</small></a>
       <label className="nf-menu-search">BUSCAR FUNÇÃO<input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Digite para localizar um módulo"/></label>
-      <nav aria-label="Navegação principal">{availableModules.filter(item=>item.title.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'))).map(item=><div className="nf-menu-group" key={item.id}><span>{item.group}</span><button type="button" className={selected===item.id?'is-active':''} onClick={()=>{setSelected(item.id);setMenu(false);}} aria-current={selected===item.id?'page':undefined}><i aria-hidden="true">{item.icon}</i><span>{item.title}</span></button></div>)}</nav>
+      <nav aria-label="Navegação principal">{[...new Set(availableModules.map(item=>item.group))].map(group=>{const items=availableModules.filter(item=>item.group===group&&item.title.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')));return items.length?<div className="nf-menu-group" key={group}><span>{group}</span>{items.map(item=><button key={item.id} type="button" className={selected===item.id?'is-active':''} onClick={()=>{setSelected(item.id);setMenu(false);}} aria-current={selected===item.id?'page':undefined}><i aria-hidden="true">{item.icon}</i><span>{item.title}</span></button>)}</div>:null;})}</nav>
       <small className="nf-sidebar-footer">NexForge by TAGG Sistemas</small>
     </aside>
     <div className="nf-workspace"><header className="nf-topbar"><div className="nf-topbar-brand"><button className="nf-menu-toggle nf-secondary" onClick={()=>setMenu(!menu)} aria-label="Abrir ou fechar menu" aria-expanded={menu}>☰</button><strong>NexForge <span>• CRM</span></strong></div><div className="nf-user"><div><strong>{account.user.name}</strong><small>{account.tenant.name}</small><small>{account.profiles?.map(profile=>profile.name).join(', ')}</small></div><ThemeToggle/><button className="nf-secondary" onClick={identity.logout} disabled={identity.busy}>Encerrar sessão</button></div></header>
-      <main className="nf-content"><div className="nf-page-heading"><div><span className="nf-breadcrumb">Início / {current.title}</span><h1>{selected==='overview'?'Dashboard comercial':current.title}</h1><p>{account.tenant.name}</p></div>{connection}</div>
+      <main className="nf-content"><div className="nf-page-heading"><div><span className="nf-breadcrumb">Início / {current.title}</span><h1>{selected==='overview'?(account.permissions?.includes('technical:read')&&!account.permissions?.includes('lead:read')?'Minha rota técnica':'Dashboard comercial'):current.title}</h1><p>{account.tenant.name}</p></div>{connection}</div>
       {identity.message && <p role="alert" className="nf-error">{identity.message}</p>}
-      {selected==='overview'?<>
-        <section className="nf-panel"><div className="nf-section-heading"><h2>Seu ambiente de trabalho</h2><span className="nf-badge">Acesso ativo</span></div><div className="nf-account-grid"><div><small>EMPRESA CLIENTE</small><strong>{account.tenant.name}</strong></div><div><small>USUÁRIO</small><strong>{account.user.name}</strong><span>{account.user.email}</span></div><div><small>EMPRESAS AUTORIZADAS</small>{account.companies.map(company=><strong key={company.id}>{company.name}</strong>)}</div></div></section>
-        <div className="nf-section-heading"><h2>Operação comercial</h2><span className="nf-muted">Módulos do CRM</span></div><section className="nf-module-grid">{availableModules.slice(1).map(item=><button className="nf-module-card" key={item.id} onClick={()=>setSelected(item.id)}><span className="nf-module-icon">{item.icon}</span><span className="nf-badge">{['administration','relationship','pipeline','opportunities','visits','territories','field','offline'].includes(item.id)?'Disponível':'Em desenvolvimento'}</span><strong>{item.title}</strong><p>{item.description}</p></button>)}</section>
-      </>:selected==='offline'?<OfflineWorkspace account={account}/>:selected==='field'?<FieldVisits account={account}/>:selected==='territories'?<Territories account={account}/>:selected==='visits'?<Agenda account={account}/>:selected==='opportunities'?<Opportunities account={account}/>:['relationship','pipeline'].includes(selected)?<Relationships key={selected} account={account} initialPipeline={selected==='pipeline'}/>:selected==='administration'&&account.permissions?.includes('user:manage')?<UserAdministration companies={account.companies}/>:<section className="nf-panel nf-empty"><span className="nf-module-icon">{current.icon}</span><h2>{current.title}</h2><p>{current.description}</p><span className="nf-badge">Módulo em desenvolvimento</span><p>Este módulo ainda não está disponível para operação.</p><button className="nf-secondary" onClick={()=>setSelected('overview')}>Voltar à visão geral</button></section>}
+      {selected==='technical'||selected==='overview'&&account.permissions?.includes('technical:read')&&!account.permissions?.includes('lead:read')?<TechnicalWorkspace account={account}/>:selected==='overview'?<Dashboard account={account} onNavigate={module=>setSelected(module)}/>:selected==='pipeline'?<Dashboard account={account} pipeline/>:selected==='catalog'?<Catalog account={account}/>:selected==='offline'?<OfflineWorkspace networkUnavailable={identity.networkUnavailable} account={account}/>:selected==='field'?<FieldVisits account={account}/>:selected==='territories'?<Territories account={account}/>:selected==='visits'?<Agenda account={account}/>:selected==='opportunities'?<Opportunities account={account}/>:selected==='relationship'?<Relationships key={selected} account={account}/>:selected==='administration'&&account.permissions?.includes('user:manage')?<UserAdministration companies={account.companies}/>:<section className="nf-panel nf-empty"><span className="nf-module-icon">{current.icon}</span><h2>{current.title}</h2><p>{current.description}</p><span className="nf-badge">Módulo em desenvolvimento</span><p>Este módulo ainda não está disponível para operação.</p><button className="nf-secondary" onClick={()=>setSelected('overview')}>Voltar à visão geral</button></section>}
       </main><footer className="nf-footer">NexForge Plataforma Comercial Integrada — by TAGG Sistemas</footer>
     </div>
   </div>;

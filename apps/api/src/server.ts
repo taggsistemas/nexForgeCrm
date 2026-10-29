@@ -1,3 +1,5 @@
+import {initializeTechnicalModels} from './modules/technical/models.js';
+import {initializeCatalogModels} from './modules/catalog/models.js';
 import {initializeOfflineModels} from './modules/offline/models.js';
 import {initializeFieldVisitModels} from './modules/field-visits/models.js';
 import {initializeTerritoryModels} from './modules/territories/models.js';
@@ -18,7 +20,7 @@ import { identityService } from './modules/identity/service.js';
 const config = readConfig(process.env);
 const recoveryMailer=createSmtpMailer(process.env);
 await mongoose.connect(config.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-await Promise.all([initializeClientModels(), PlatformAdmin.init(), PlatformSession.init(), AdministrationAudit.init(),initializeRelationshipModels(),initializeAccountSecurityModels(),initializeOpportunityModels(),initializeAgendaModels(),initializeFieldVisitModels(),initializeOfflineModels(),initializeTerritoryModels()]);
+await Promise.all([initializeTechnicalModels(),initializeCatalogModels(),initializeClientModels(), PlatformAdmin.init(), PlatformSession.init(), AdministrationAudit.init(),initializeRelationshipModels(),initializeAccountSecurityModels(),initializeOpportunityModels(),initializeAgendaModels(),initializeFieldVisitModels(),initializeOfflineModels(),initializeTerritoryModels()]);
 const app = createApp({ origin: config.WEB_ORIGIN, databaseReady: () => mongoose.connection.readyState === 1, identity: identityService, platform: { auth: platformAuth, clients: platformClients }, secureCookies: config.NODE_ENV === 'production', recoveryMailer,privacyContact:config.PRIVACY_CONTACT_EMAIL });
 const stopRecovery=startPasswordRecoveryWorker(config.WEB_ORIGIN,recoveryMailer);
 const server = app.listen(config.PORT, () => console.info('NexForge CRM API listening on ' + config.PORT));

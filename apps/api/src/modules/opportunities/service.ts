@@ -1,3 +1,4 @@
+import {auditActorNames,auditActorLabel} from '../../infrastructure/audit-actors.js';
 import mongoose from 'mongoose';
 import type {AccessContext,Permission} from '../../../../../packages/contracts/src/index.js';
 import type {OpportunityView,OpportunityActivityView} from '../../../../../packages/contracts/src/opportunities.js';
@@ -99,7 +100,7 @@ export const opportunityService={
  async history(context:AccessContext,companyId:string,id:string,raw:unknown){
   await authorizeOpportunity(context,companyId,id,'pipeline:read');const input=pageInput.parse(raw),filter={...scope(context,companyId,'pipeline:read'),opportunityId:id};
   const [rows,total]=await Promise.all([OpportunityHistory.find(filter).sort({createdAt:-1,_id:-1}).skip((input.page-1)*20).limit(20),OpportunityHistory.countDocuments(filter)]);
-  // Actor identity is represented by a fixed label; no unrelated user account data is exposed.
-  return {items:rows.map(row=>({id:String(row._id),action:row.action,actorName:String(row.actorId)===context.userId?'Você':'Usuário autorizado',previousStage:row.previousStage,nextStage:row.nextStage,createdAt:row.createdAt.toISOString()})),total,page:input.page,pageSize:20};
+  const actors=await auditActorNames(context.tenantId,rows.map(row=>String(row.actorId)));
+  return {items:rows.map(row=>({id:String(row._id),action:row.action,actorName:auditActorLabel(actors,String(row.actorId),context.userId),previousStage:row.previousStage,nextStage:row.nextStage,createdAt:row.createdAt.toISOString()})),total,page:input.page,pageSize:20};
  }
 };

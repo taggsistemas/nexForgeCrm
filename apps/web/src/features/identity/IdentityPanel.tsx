@@ -9,6 +9,7 @@ export function useIdentity() {
   const mutating = useRef(false);
   const seenSession = useRef(false);
   const [account, setAccount] = useState<Account | null>(null);
+  const [networkUnavailable,setNetworkUnavailable]=useState(!navigator.onLine);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(new URLSearchParams(window.location.search).has('passwordChanged')?'Senha alterada. Entre novamente com sua senha pessoal.':'');
@@ -23,8 +24,9 @@ export function useIdentity() {
       const controller=new AbortController();requests.add(controller);
       const generation=epoch.current;
       try {
-        const response=await fetch('/api/v1/auth/session',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
+        const response=await fetch('/api/v1/auth/session',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10000)])});
         if(disposed || generation!==epoch.current) return;
+        setNetworkUnavailable(false);
         if(response.ok) {
           const value=await response.json();
           if(disposed || generation!==epoch.current)return;
@@ -35,7 +37,7 @@ export function useIdentity() {
           if(seenSession.current)setMessage('Sua sessão expirou ou foi encerrada por um novo acesso. Entre novamente.');
           seenSession.current=false;setAccount(null);
         }
-      } catch {} finally {
+      } catch {if(!disposed&&generation===epoch.current)setNetworkUnavailable(true);} finally {
         refreshing=false;requests.delete(controller);
         if(!disposed)setChecking(false);
       }
@@ -71,7 +73,7 @@ export function useIdentity() {
     } catch { setMessage('Não foi possível encerrar a sessão no servidor. Reconecte e tente novamente.'); }
     finally { epoch.current++;mutating.current=false;setBusy(false); }
   }
-  return {account,checking,busy,message,login,logout};
+  return {account,checking,busy,message,login,logout,networkUnavailable};
 }
 export function IdentityPanel({ identity }: { identity: ReturnType<typeof useIdentity> }) {
   const [forgot,setForgot]=useState(false),[policy,setPolicy]=useState(false);

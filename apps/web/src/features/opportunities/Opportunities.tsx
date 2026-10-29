@@ -1,3 +1,5 @@
+import {HistoryTimeline} from '../../components/HistoryTimeline';
+import {businessDateTime,businessDateTimeInput} from '../../../../../packages/contracts/src/business-time';
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
 import {opportunityStages,openOpportunityStages,opportunityStageNames,activityTypes,activityStatuses,moneyToCents,type OpportunityView,type OpportunityActivityView,type OpportunityHistoryView} from '../../../../../packages/contracts/src/opportunities';
@@ -5,8 +7,8 @@ type Account={companies:{id:string;name:string}[];permissions?:string[]};
 type Editor={type:'opportunity';record?:OpportunityView}|{type:'close';record:OpportunityView;stage:'ganha'|'perdida'}|{type:'activity';record?:OpportunityActivityView};
 type Reference={id:string;name:string;kind:string};
 const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
-const dateTime=(value:string)=>new Date(value).toLocaleString('pt-BR');
-const localInput=(value:string)=>{const date=new Date(value);return new Date(date.valueOf()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);};
+const dateTime=(value:string)=>new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+const localInput=(value:string)=>businessDateTimeInput(new Date(value));
 const activityNames:Record<string,string>={visita:'Visita planejada',ligacao:'Ligação',email:'E-mail',reuniao:'Reunião',tarefa:'Tarefa',pendente:'Pendente',concluida:'Concluída',cancelada:'Cancelada'};
 const eventNames:Record<string,string>={'opportunity.created':'Oportunidade criada','opportunity.updated':'Oportunidade editada','opportunity.stage_changed':'Etapa alterada','activity.created':'Atividade criada','activity.updated':'Atividade atualizada'};
 async function api(company:string,path='',options:RequestInit={}){
@@ -49,7 +51,7 @@ export function Opportunities({account}:{account:Account}){
    body={title:draft.title,amountCents,expectedCloseDate:draft.expectedCloseDate,stage:draft.stage,notes:draft.notes,...(editor.record?{version:editor.record.version}:{partyId:draft.partyId})};
   }else if(editor.type==='close'){path='/'+editor.record.id;method='PATCH';body={stage:editor.stage,version:editor.record.version,...(editor.stage==='perdida'?{lossReason:draft.lossReason}:{})};}
   else{
-   if(!details)return;const dueDate=new Date(draft.dueAt??'');if(!Number.isFinite(dueDate.valueOf())){setError('Informe data e hora válidas.');return;}
+   if(!details)return;const dueDate=businessDateTime(draft.dueAt??'');if(!Number.isFinite(dueDate.valueOf())){setError('Informe data e hora válidas.');return;}
    path='/'+details.id+'/activities'+(editor.record?'/'+editor.record.id:'');method=editor.record?'PATCH':'POST';
    body={title:draft.title,type:draft.type,dueAt:dueDate.toISOString(),notes:draft.notes,...(editor.record?{version:editor.record.version,status:draft.status}:{})};
   }
@@ -58,7 +60,7 @@ export function Opportunities({account}:{account:Account}){
  }
  const field=(key:string,label:string,type='text',required=true,maxLength=160)=><label>{label}<input name={key} type={type} required={required} maxLength={maxLength} value={draft[key]??''} onChange={event=>update(key,event.target.value)}/></label>;
  const pager=(current:number,count:number,setter:(page:number)=>void)=><div className="nf-crm-pagination"><button className="nf-secondary" disabled={current<=1} onClick={()=>setter(current-1)}>Anterior</button><span>Página {current} · {count} registro(s)</span><button className="nf-secondary" disabled={current*20>=count} onClick={()=>setter(current+1)}>Próxima</button></div>;
- return <section className="nf-crm nf-opportunities">
+ return <section className="nf-crm nf-opportunities"><p>Uma oportunidade representa uma negociação: registre o valor previsto, o fechamento e acompanhe proposta, negociação, ganho ou perda. Ela se vincula a um cliente ou lead qualificado e ainda não gera pedido ou faturamento.</p>
   <div className="nf-crm-toolbar"><label>Empresa<select value={company} disabled={Boolean(editor||details)} onChange={event=>{setCompany(event.target.value);setPage(1);setNotice('');}}>{account.companies.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><p className="nf-muted">Oportunidades herdam a carteira do lead ou cliente vinculado.</p></div>
   {!editor&&!details&&error&&<p role="alert" className="nf-error">{error}</p>}{notice&&<p role="status" className="nf-admin-success">{notice}</p>}
   <section className="nf-panel"><div className="nf-section-heading"><h2>Oportunidades comerciais</h2>{canWrite&&<button className="nf-primary" onClick={()=>openOpportunity()}>Nova oportunidade</button>}</div>
@@ -70,7 +72,7 @@ export function Opportunities({account}:{account:Account}){
   <Modal open={Boolean(details)} title={'Atividades e histórico — '+(details?.title??'')} onClose={()=>{setDetails(null);setError('');}} busy={busy}>
    {details&&<><p><strong>{details.partyName}</strong> · {money(details.amountCents)} · {opportunityStageNames[details.stage]}</p>{details.notes&&<p>{details.notes}</p>}{details.lossReason&&<p>Motivo da perda: {details.lossReason}</p>}{details.closedAt&&<p>Encerrada em {dateTime(details.closedAt)}</p>}
    {detailsLoading?<p role="status">Carregando detalhes...</p>:<>{canActivities&&<section><div className="nf-section-heading"><h3>Atividades vinculadas</h3>{canActivityWrite&&openOpportunityStages.some(value=>value===details.stage)&&<button className="nf-primary" onClick={()=>openActivity()}>Nova atividade</button>}</div>{!activities.length?<p>Nenhuma atividade registrada.</p>:<ul className="nf-activity-list">{activities.map(item=><li key={item.id}><strong>{item.title}</strong><p>{activityNames[item.type]} · {dateTime(item.dueAt)} · {activityNames[item.status]}{item.status==='pendente'&&new Date(item.dueAt).valueOf()<Date.now()?' · Atrasada':''}</p>{item.notes&&<p>{item.notes}</p>}{canActivityWrite&&<button className="nf-secondary" onClick={()=>openActivity(item)}>Editar atividade</button>}</li>)}</ul>}{pager(activityPage,activityTotal,setActivityPage)}</section>}
-   <section><h3>Histórico comercial</h3>{!history.length?<p>Nenhuma alteração registrada.</p>:<ol className="nf-activity-list">{history.map(item=><li key={item.id}><strong>{eventNames[item.action]??item.action}</strong>{item.previousStage&&item.nextStage&&<p>{opportunityStageNames[item.previousStage]} → {opportunityStageNames[item.nextStage]}</p>}<small>{dateTime(item.createdAt)} · {item.actorName}</small></li>)}</ol>}{pager(historyPage,historyTotal,setHistoryPage)}</section></>}{!editor&&error&&<p role="alert" className="nf-error">{error}</p>}</>}
+   <section><HistoryTimeline title="Histórico comercial" events={history.map(item=>({id:item.id,action:eventNames[item.action]??item.action,actor:item.actorName,at:item.createdAt,detail:item.previousStage&&item.nextStage?opportunityStageNames[item.previousStage]+' → '+opportunityStageNames[item.nextStage]:undefined}))}/>{pager(historyPage,historyTotal,setHistoryPage)}</section></>}{!editor&&error&&<p role="alert" className="nf-error">{error}</p>}</>}
   </Modal>
   <Modal open={Boolean(editor)} title={editor?.type==='activity'?(editor.record?'Editar atividade':'Nova atividade'):editor?.type==='close'?(editor.stage==='ganha'?'Encerrar como ganha':'Encerrar como perdida'):editor?.record?'Editar oportunidade':'Nova oportunidade'} busy={busy} onClose={()=>{setEditor(null);setError('');}}>
    <form className="nf-form" onSubmit={submit}><fieldset disabled={busy}>{editor?.type==='activity'&&editor.record?.seriesId&&<p>Esta alteração afeta apenas esta ocorrência da série.</p>}<div className="nf-admin-grid">

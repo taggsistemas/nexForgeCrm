@@ -1,3 +1,4 @@
+import {TechnicalWork} from '../technical/models.js';
 import {QualificationWorkflowRequired} from './qualification-input.js';
 import {FieldExecution} from '../field-visits/models.js';
 import {PortfolioTransferRequired} from '../territories/errors.js';
@@ -95,7 +96,7 @@ export const relationshipService={
    const row=await Party.findOneAndUpdate(commercialFilter(context,companyId,writePermission(kind),{_id:id,kind,archived:false,version}),{$set:{archived:true},$inc:{version:1}},{new:true,session});
    if(!row)return conflictOrMissing(context,companyId,kind,id,session);
    if(row.qualificationState==='submitted')throw new QualificationWorkflowRequired();
-   if(await FieldExecution.exists({tenantId:context.tenantId,companyId,partyId:id,state:'in_progress'}).session(session))throw new RecordConflict();
+   if(await FieldExecution.exists({tenantId:context.tenantId,companyId,partyId:id,state:'in_progress'}).session(session)||await TechnicalWork.exists({tenantId:context.tenantId,companyId,partyId:id,state:'in_progress'}).session(session))throw new RecordConflict();
    await Contact.updateMany({tenantId:context.tenantId,companyId,partyId:row._id},{$set:{archived:true},$inc:{version:1}},{session});
    await audit(context,companyId,row._id,'party.archived',session);return {id};
   });

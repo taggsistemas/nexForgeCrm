@@ -2,8 +2,8 @@
 
 ## Como usar
 1. Entre online com sua conta, acesse **Operação offline** e escolha **Preparar carteira offline**. Selecione empresa/responsável e defina uma senha local de 12 a 256 caracteres, diferente da senha de login. O aplicativo precisa ter sido aberto online para instalar seu shell/service worker.
-2. Durante a desconexão, consulte a carteira, registre atividades e inicie/encerre visitas neste módulo. Na abertura sem rede, use **Acessar carteira offline** no login e desbloqueie com a senha local; isso não cria uma sessão autenticada fictícia nas outras telas.
-3. Ao reconectar, a carteira é revalidada/atualizada. Clique **Sincronizar pendências**. Resultados ficam como sincronizado, conflito ou recusado. Resposta perdida mantém a operação pendente para reenvio do mesmo ID.
+2. Durante a desconexão, consulte a carteira, registre atividades e inicie/encerre visitas neste módulo. Na abertura sem rede, o espaço offline abre automaticamente; desbloqueie com a senha local; isso não cria uma sessão autenticada fictícia nas outras telas.
+3. Ao reconectar, a carteira é revalidada/atualizada. A sincronização começa automaticamente com a carteira aberta/desbloqueada. Use **Sincronizar pendências** para repetir após falha. Resultados ficam como sincronizado, conflito ou recusado. Resposta perdida mantém a operação pendente para reenvio do mesmo ID.
 4. Em conflito confirmado, confira a carteira atual e o relato, então use **Revisar conflito** para uma nova tentativa com as versões atuais. Visita já encerrada, cancelada ou em atendimento não é sobrescrita. Recusas de acesso/prazo não são convertidas em nova tentativa automaticamente.
 
 ## Entregue neste incremento
@@ -21,7 +21,7 @@ Validade local de até 8 horas, limitada pela expiração da sessão e fim do tr
 
 Um check-in feito na tela online não é concluído automaticamente por um relato offline. Visitas que serão registradas sem rede devem ser iniciadas e encerradas no módulo offline. Não há conversão retroativa para comprovação online. Rascunho sem saída não é enviado como visita completa; expiração pode exigir descarte explícito/regularização operacional pela gestão, sem inventar horário/localização de saída.
 
-Não inclui edição offline de cadastro, qualificação/aprovações, crédito, preços, pedidos, metas, planejamento, atividades de oportunidades, anexos ou rastreamento contínuo. Não há otimização viária/mapas offline ou sincronização automática em background com aplicativo fechado. Sincronização é explícita enquanto aberto/desbloqueado. Instalação nativa APK/IPA não é criada.
+Não inclui edição offline de cadastro, qualificação/aprovações, crédito, preços, pedidos, metas, planejamento, atividades de oportunidades, anexos ou rastreamento contínuo. Não há otimização viária/mapas offline ou sincronização automática em background com aplicativo fechado. Sincronização inicia ao reconectar enquanto aberto/desbloqueado, com repetição manual após falha. Instalação nativa APK/IPA não é criada.
 
 ## Criptografia e proteção local
 IndexedDB armazena apenas envelope AES-GCM 256, IV aleatório de 96 bits por gravação e salt de 128 bits. Chave derivada por PBKDF2/SHA-256 (600.000 iterações nos novos envelopes; leitura de envelopes de desenvolvimento sem esse metadado preserva os 310.000 originais, sem perder pendências), não extraível, mantida somente em memória. A senha local não é persistida e não tem recuperação. O envelope expõe somente versão, revisão, contador de pendências e marcador de bloqueio, sem nomes ou conteúdo da carteira.

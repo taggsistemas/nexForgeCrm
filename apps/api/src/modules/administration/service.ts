@@ -1,3 +1,4 @@
+import {Region} from '../territories/models.js';
 import {lockSeats} from '../licensing/service.js';
 import { assertAccountReady } from '../../infrastructure/account-gate.js';
 import { AdministrationAudit } from './models.js';
@@ -33,6 +34,28 @@ async function validateTeam(context:AccessContext,profileKey:ProfileKey,userIds:
   const users=await User.countDocuments({_id:{$in:userIds},active:true}).session(session);
   if(members.length!==userIds.length||users!==userIds.length||members.some(member=>member.companyIds.some(id=>!companyIds.includes(String(id)))))throw new AdministrationInputError();
 }
+async function assignment(context:AccessContext,userId:string,profileKey:ProfileKey,companies:string[],regionIds:string[],supervisorId:string|null,team:string[],session:mongoose.ClientSession){
+ const regional=['seller','supervisor','technician'].includes(profileKey);
+ if(!regional&&(regionIds.length||supervisorId))throw new AdministrationInputError();
+ if(profileKey==='supervisor'&&supervisorId)throw new AdministrationInputError();
+ if(await Region.countDocuments({tenantId:context.tenantId,companyId:{$in:companies},_id:{$in:regionIds},active:true}).session(session)!==regionIds.length)throw new AdministrationInputError();
+ if(supervisorId){if(userId===supervisorId)throw new AdministrationInputError();const role=await Role.findOne({tenantId:context.tenantId,key:'supervisor'}).session(session);const parent=await Membership.findOne({tenantId:context.tenantId,userId:supervisorId,active:true,roleIds:role?role._id:null}).session(session);if(!parent||companies.some(id=>!parent.companyIds.some(value=>String(value)===id))||regionIds.some(id=>!parent.regionIds.some(value=>String(value)===id))||!await User.exists({_id:supervisorId,active:true}).session(session))throw new AdministrationInputError();}
+ if(profileKey==='supervisor'){
+  const children=await Membership.find({tenantId:context.tenantId,active:true,$or:[{supervisorId:userId},{userId:{$in:team}}]}).session(session);
+  for(const child of children)if((team.includes(String(child.userId))||String(child.supervisorId)===userId&&!child.roleIds.length)&&child.regionIds.some(id=>!regionIds.includes(String(id))))throw new AdministrationInputError();
+  // Existing technicians remain assigned; removing a region must not silently widen or break supervision.
+  const technicalRole=await Role.findOne({tenantId:context.tenantId,key:'technician'}).session(session);
+  for(const child of children)if(String(child.supervisorId)===userId&&technicalRole&&child.roleIds.some(id=>String(id)===String(technicalRole._id))&&child.regionIds.some(id=>!regionIds.includes(String(id))))throw new AdministrationInputError();
+ }
+ await Membership.updateMany({tenantId:context.tenantId,supervisedUserIds:userId},{$pull:{supervisedUserIds:userId}},{session});
+ if(profileKey!=='supervisor')await Membership.updateMany({tenantId:context.tenantId,supervisorId:userId},{$set:{supervisorId:null},$inc:{adminVersion:1}},{session});
+ else{
+  await Membership.updateMany({tenantId:context.tenantId,supervisorId:userId,userId:{$nin:team},roleIds:{$in:(await Role.find({tenantId:context.tenantId,key:'seller'}).session(session)).map(row=>row._id)}},{$set:{supervisorId:null},$inc:{adminVersion:1}},{session});
+  for(const sellerId of team){await Membership.updateMany({tenantId:context.tenantId,userId:{$ne:userId},supervisedUserIds:sellerId},{$pull:{supervisedUserIds:sellerId},$inc:{adminVersion:1}},{session});await Membership.updateOne({tenantId:context.tenantId,userId:sellerId},{$set:{supervisorId:userId},$inc:{adminVersion:1}},{session});}
+ }
+ if(profileKey==='seller'&&supervisorId)await Membership.updateOne({tenantId:context.tenantId,userId:supervisorId},{$addToSet:{supervisedUserIds:userId},$inc:{adminVersion:1}},{session});
+ return {regionIds,supervisorId};
+}
 export const administrationService={
   async list(context:AccessContext){
     const tenant=await check(context);
@@ -43,9 +66,10 @@ export const administrationService={
       const [user,roles]=await Promise.all([User.findById(member.userId).select('name email active mustChangePassword'),Role.find({tenantId:context.tenantId,_id:{$in:member.roleIds}})]);
       if(!user)continue;
       const key=roles.find(role=>role.key)?.key ?? (String(tenant.primaryAdminId)===String(user._id)?'tenant_admin':null);
-      rows.push({id:String(user._id),name:user.name,email:user.email,active:member.active&&user.active,profileKey:key,profileName:key?profileDefinitions[key].name:roles.map(role=>role.name).join(', '),companyIds:member.companyIds.map(String),supervisedUserIds:member.supervisedUserIds.map(String),mustChangePassword:user.mustChangePassword,protected:String(user._id)===context.userId||String(user._id)===String(tenant.primaryAdminId)});
+      rows.push({id:String(user._id),name:user.name,email:user.email,active:member.active&&user.active,profileKey:key,profileName:key?profileDefinitions[key].name:roles.map(role=>role.name).join(', '),companyIds:member.companyIds.map(String),supervisedUserIds:member.supervisedUserIds.map(String),regionIds:member.regionIds.map(String),supervisorId:member.supervisorId?String(member.supervisorId):null,version:member.adminVersion,mustChangePassword:user.mustChangePassword,protected:String(user._id)===context.userId||String(user._id)===String(tenant.primaryAdminId)});
     }
-    return {items:rows,profiles:profileKeys.map(key=>({key,...profileDefinitions[key]}))};
+    const regions=await Region.find({tenantId:context.tenantId,companyId:{$in:context.companyIds},active:true}).select('name companyId').sort({name:1}).limit(1000);
+    return {regions:regions.map(row=>({id:String(row._id),name:row.name,companyId:String(row.companyId)})),items:rows,profiles:profileKeys.map(key=>({key,...profileDefinitions[key]}))};
   },
   async create(context:AccessContext,raw:unknown){
     await check(context);
@@ -63,8 +87,9 @@ export const administrationService={
         const role=profiles.find(role=>role?.key===input.profileKey);
         if(!role)throw new AdministrationInputError();
         const [user]=await User.create([{name:input.name,email:input.email,passwordHash,mustChangePassword:true}],{session});
-        await Membership.create([{tenantId:context.tenantId,userId:user._id,companyIds:input.companyIds,roleIds:[role._id],supervisedUserIds:input.supervisedUserIds}],{session});
-        await AdministrationAudit.create([{tenantId:context.tenantId,actorId:context.userId,targetId:user._id,action:'user.created',profileKey:input.profileKey,active:true}],{session});
+        const fields=await assignment(context,String(user._id),input.profileKey,input.companyIds,input.regionIds??[],input.supervisorId??null,input.supervisedUserIds,session);
+        await Membership.create([{...fields,tenantId:context.tenantId,userId:user._id,companyIds:input.companyIds,roleIds:[role._id],supervisedUserIds:input.supervisedUserIds}],{session});
+        await AdministrationAudit.create([{tenantId:context.tenantId,actorId:context.userId,targetId:user._id,action:'user.created',regionIds:fields.regionIds,supervisorId:fields.supervisorId,supervisedUserIds:input.supervisedUserIds,profileKey:input.profileKey,active:true}],{session});
         return {id:String(user._id),name:user.name,email:user.email};
       });
     }catch(error){if((error as {code?:number}).code===11000)throw new AdministrationConflict();throw error;}
@@ -78,15 +103,18 @@ export const administrationService={
       if(!member)return null;
       const companies=member.companyIds.map(String);
       if(companies.some(id=>!context.companyIds.includes(id)))throw new AdministrationDenied();
+      if(input.version!==undefined&&input.version!==member.adminVersion)throw new AdministrationConflict();
       await lockSeats(context.tenantId,session,!member.active&&input.active);
       const profiles=await ensureProfiles(context.tenantId,session);
       await validateTeam(context,input.profileKey,input.supervisedUserIds,companies,session);
       const role=profiles.find(role=>role?.key===input.profileKey);
       if(!role)throw new AdministrationInputError();
-      await Membership.updateOne({_id:member._id,tenantId:context.tenantId},{$set:{active:input.active,roleIds:[role._id],supervisedUserIds:input.supervisedUserIds}},{session,runValidators:true});
+      let legacySupervisor:string|null=null;if(input.supervisorId===undefined&&!member.supervisorId&&input.profileKey==='seller'){const parents=await Membership.find({tenantId:context.tenantId,active:true,supervisedUserIds:userId}).session(session).limit(2);if(parents.length>1)throw new AdministrationInputError();legacySupervisor=parents[0]?String(parents[0].userId):null;}
+      const fields=await assignment(context,userId,input.profileKey,companies,input.regionIds??(['seller','supervisor','technician'].includes(input.profileKey)?member.regionIds.map(String):[]),input.supervisorId!==undefined?input.supervisorId:(['seller','technician'].includes(input.profileKey)?member.supervisorId?String(member.supervisorId):legacySupervisor:null),input.supervisedUserIds,session);
+      await Membership.updateOne({_id:member._id,tenantId:context.tenantId},{$inc:{adminVersion:1},$set:{...fields,active:input.active,roleIds:[role._id],supervisedUserIds:input.supervisedUserIds}},{session,runValidators:true});
       if(input.profileKey!=='seller'||!input.active) await Membership.updateMany({tenantId:context.tenantId,supervisedUserIds:userId},{$pull:{supervisedUserIds:userId}},{session});
       await Session.deleteMany({userId,tenantId:context.tenantId},{session});
-      await AdministrationAudit.create([{tenantId:context.tenantId,actorId:context.userId,targetId:userId,action:'user.updated',profileKey:input.profileKey,active:input.active}],{session});
+      await AdministrationAudit.create([{tenantId:context.tenantId,actorId:context.userId,targetId:userId,action:'user.updated',regionIds:fields.regionIds,supervisorId:fields.supervisorId,supervisedUserIds:input.supervisedUserIds,profileKey:input.profileKey,active:input.active}],{session});
       return {id:userId,active:input.active,profileKey:input.profileKey};
     });
   },

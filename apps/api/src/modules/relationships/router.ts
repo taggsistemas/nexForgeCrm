@@ -1,3 +1,4 @@
+import {relationshipDashboard} from './dashboard.js';
 import {qualificationWorkflow} from './qualification-workflow.js';
 import {QualificationWorkflowRequired,QualificationSelfApproval} from './qualification-input.js';
 import {PortfolioTransferRequired} from '../territories/errors.js';
@@ -14,6 +15,7 @@ export function createRelationshipRouter(identity:IdentityService,origin:string)
  const router=Router({mergeParams:true});
  router.use((req,res,next)=>{if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.get('origin')!==origin){res.status(403).json({code:'ORIGIN_REJECTED'});return;}next();});
  const scope=(res:import('express').Response)=>(res.locals.authorizedCompany as AuthorizedCompany).context;
+ router.get('/dashboard',authorizeCompany(identity,'company:read'),async(req,res)=>res.json(await relationshipDashboard(scope(res),String(req.params.companyId),req.query)));
  for(const [path,kind,read,write] of [['leads','lead','lead:read','lead:write'],['customers','customer','customer:read','customer:write']] as const){
   router.get('/'+path,authorizeCompany(identity,read),async(req,res)=>res.json(await relationshipService.list(scope(res),String(req.params.companyId),kind,req.query)));
   router.post('/'+path,authorizeCompany(identity,write),async(req,res)=>res.status(201).json({record:await relationshipService.create(scope(res),String(req.params.companyId),kind,req.body)}));

@@ -1,5 +1,7 @@
 # Escopo comercial incorporado — CRM
 
+Estado atual: catálogo e tabelas de preços têm implementação própria em [catalog-pricing.md](catalog-pricing.md), com validação completa ainda pendente. Pedidos continuam futuros. Ajustes de dashboard, qualificação e offline: [usability-review.md](usability-review.md). As seções abaixo incluem registros históricos.
+
 ## Padrão obrigatório de interface
 - Cadastros e edições em modais: usuários, leads, clientes, contatos e novos domínios.
 - Listas, filtros e busca podem ficar na página; formulários de criação/edição não.

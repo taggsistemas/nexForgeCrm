@@ -9,7 +9,7 @@ Regras detalhadas e auditoria do que existe: [commercial-rules-review.md](commer
 **Pré-requisito antes do offline:** lead mínimo, qualificação completa submetida à análise administrativa, revisão com motivo, aprovação/conversão atômica, crédito/pagamento e política explícita de clientes existentes. Implementado; sem migração automática, com regularização por revisão. Ver lead-qualification.md.
 
 3. Operação offline: carteira criptografada, atividades/visitas agendadas e espontâneas, idempotência e revisão de conflitos implementadas. Ver offline.md. Homologação em aparelhos reais e finalização da instalação PWA seguem pendentes.
-4. Catálogo e tabelas de preços: produtos/serviços, unidades, caixas/kits/peso variável, fiscal, prazos e abrangências comerciais. Ainda pendente.
+4. Catálogo e tabelas de preços: primeira implementação de produtos/serviços, unidades, composição de caixas/kits, peso, fiscal, prazos e seis abrangências. Ver catalog-pricing.md. Validação MongoDB/E2E e homologação pendentes; pedidos e peso aferido continuam futuros.
 5. Propostas/pedidos, aprovação comercial e status operacionais. Ainda pendente.
 6. Metas globais/regionais/individuais, comissões, forecast e central gerencial. Ainda pendente.
 7. Integração opcional ERP, contratos e visão federada dos grafos. Ainda pendente.
@@ -70,3 +70,5 @@ Roteiro cronológico de visitas diretas da agenda/planos publicados, localizaç�
 ## Plataforma: trial e licenças
 Trial opcional de 30 dias no cadastro, plano padrão de 25 licenças, adicionais e projeção de valores configuráveis, controle concorrente no backend e olho de senha nos formulários. Ver subscriptions.md. Offline continua como próxima etapa, condicionado a expiração, sessão única e autorização atual na sincronização.
 
+
+Execução técnica adicionada como domínio separado: perfil Técnico, supervisor/regiões, agendamento manual de serviços e roteiro/check-in/out online. Automação a partir de serviço vendido depende de propostas/pedidos; não considera agendamento como venda. Ver technical-work.md. Validação integral pendente.

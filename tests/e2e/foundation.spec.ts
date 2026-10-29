@@ -14,6 +14,8 @@ test('authenticated dashboard has company header, navigation and theme control',
   await page.goto('/');
   await expect(page.getByRole('heading',{name:'Dashboard comercial'})).toBeVisible();
   await expect(page.locator('.nf-user')).toContainText('Empresa Teste');
+  const groupNames=await page.locator('.nf-menu-group>span').allTextContents();
+  expect(new Set(groupNames).size).toBe(groupNames.length);
   await page.screenshot({path:'artifacts/crm-dashboard-dark-' + test.info().project.name + '.png',fullPage:true});
   await page.getByRole('button',{name:'Ativar tema claro'}).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme','light');
@@ -33,6 +35,7 @@ test('public login shell opens offline after its first online visit',async({page
   await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
   await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await context.setOffline(true); await page.reload();
-  await expect(page.getByRole('status')).toHaveText('Sem conexão');
-  await expect(page.getByRole('heading',{name:'Acessar sua conta',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Operação offline',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Acessar sua conta',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Acessar carteira offline',exact:true})).toHaveCount(0);
 });

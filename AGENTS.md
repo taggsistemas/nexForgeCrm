@@ -14,7 +14,7 @@
 - Admin-created users receive temporary passwords. Enforce password change and versioned privacy acceptance in the backend before business access.
 - Recovery tokens must be hashed, expiring and single-use; never return tokens or credentials in API responses or logs. Send email through configured backend SMTP only.
 - Leads, customers and contacts must enforce tenant/company and owner/team scope on every query; use optimistic versions and audit mutations.
-- Orders and price tables in commercial-roadmap contracts are planned scope, not operational features.
+- Sales/service orders are operational (docs/orders.md); the production/expedition statuses in commercial-roadmap contracts remain planned scope.
 
 - Lead intake stays minimal. Require complete persisted/merged qualification data in the backend before qualified stage or conversion. Never clear fiscal fields merely because they are hidden in the initial form.
 
@@ -54,3 +54,5 @@
 - Work order parts are an immutable consumption/return ledger of active catalog products with integer-thousandth balances; returns never exceed the net. Only the assigned technician or coordination writes, until closing. Reference prices are server snapshots shown only to catalog readers. Never move stock or bill from this ledger.
 
 - Indicators are computed only on the server after the same profile scopes used by each module (portfolio, ticket queue, technical scope) and the shared filters (São Paulo calendar period, property-region territory, responsible). Return each value with its definition; ratios without a denominator are null. Commercial values are never revenue.
+
+- Orders belong to an approved customer of the live portfolio and come from an accepted proposal (one order each), a closed work order (billable hours + net parts, one order each) or direct entry. The server computes totals, numbers and instants; approval is required only for discount below table, payment outside approved conditions or credit exposure, by someone other than the submitter. Invoices are registered (not issued) by finance with billing:write; full coverage makes the order invoiced. Cost is visible only with cost:read, frozen on submission; margin is null when any line lacks cost.

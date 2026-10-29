@@ -5,6 +5,7 @@ import {businessDateTimeInput} from '../../../../../packages/contracts/src/busin
 import {dateParts} from '../../../../../packages/contracts/src/agenda';
 import {formatMinutes,technicalStateNames,workOrderOriginNames,type TechnicalWorkView} from '../../../../../packages/contracts/src/technical';
 import type {TicketView} from '../../../../../packages/contracts/src/tickets';
+import {OrderFromSource} from '../orders/Orders';
 import {WorkOrderParts} from './WorkOrderParts';
 type Account={companies:{id:string;name:string}[];permissions?:string[]};
 type Option={id:string;name:string;propertyId?:string};
@@ -120,6 +121,7 @@ export function TechnicalWorkspace({account}:{account:Account}){
     {record.checkedInAt&&<p>Entrada registrada: {format(record.checkedInAt)}</p>}{record.checkedOutAt&&<p>Saída registrada: {format(record.checkedOutAt)}</p>}{record.interruptedAt&&<p>Interrupção: {format(record.interruptedAt)} (não representa checkout geolocalizado)</p>}
     <LocationPoint position={record.checkIn} label="Posição de entrada"/><LocationPoint position={record.checkOut} label="Posição de saída"/>
     <p className="nf-field-hint">Posições pontuais informadas pelo aparelho, sem comprovação física nem acompanhamento em tempo real.</p>{record.notes&&<p>{record.notes}</p>}
+    {record.closedAt&&<div className="nf-crm-row-actions"><OrderFromSource company={company} source={{workOrderId:record.id}} permissions={account.permissions??[]} label="Gerar pedido de serviço"/></div>}
     <WorkOrderParts company={company} workId={record.id} canRegister={record.canRegisterParts} onChanged={()=>setRefresh(value=>value+1)}/>
     <HistoryTimeline title="Histórico da OS" events={history}/></>:
    <form className="nf-form" onSubmit={submit}><fieldset disabled={busy}>

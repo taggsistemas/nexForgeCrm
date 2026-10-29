@@ -1,5 +1,6 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
+import {OrderFromSource} from '../orders/Orders';
 import {moneyToCents,proposalLineCents,proposalStatusNames,type OpportunityView,type ProposalRevisionView,type ProposalView} from '../../../../../packages/contracts/src/opportunities';
 import type {ProductView} from '../../../../../packages/contracts/src/catalog';
 type Line={productId:string;label:string;quantity:string;price:string;discount:string;reference:number|null};
@@ -76,7 +77,7 @@ export function OpportunityProposals({company,opportunity,permissions}:{company:
   <p className="nf-field-hint">Proposta não é receita nem pedido. O aceite registra a decisão do cliente; o ganho é marcado na oportunidade.</p>
   {!editor&&!action&&error&&<p role="alert" className="nf-error">{error}</p>}{notice&&<p role="status" className="nf-admin-success">{notice}</p>}
   {rows===null?<p role="status">Carregando propostas...</p>:!rows.length?<p className="nf-muted">Nenhuma proposta registrada.</p>:<ul className="nf-property-list">{rows.map(row=><li key={row.id}><div><strong>{row.number} · rev. {row.revision}</strong><span className="nf-badge">{proposalStatusNames[row.status]}{row.expired?' · vencida':''}</span></div><p>{money(row.totalCents)} · {row.items.length} item(ns) · válida até {day(row.validUntil)}</p>{row.decisionReason&&<small>Motivo: {row.decisionReason}</small>}
-   <div className="nf-crm-row-actions"><button type="button" className="nf-secondary" onClick={()=>void showRevisions(row)}>Revisões</button>{canWrite&&row.status==='rascunho'&&<button type="button" className="nf-secondary" onClick={()=>openEditor(row)}>Editar</button>}{canWrite&&(available[row.status]??[]).map(value=><button key={value} type="button" className={value==='accept'||value==='send'?'nf-primary':'nf-secondary'} onClick={()=>{setReason('');setFormError('');setAction({row,action:value});}}>{actionNames[value].label}</button>)}</div></li>)}</ul>}
+   <div className="nf-crm-row-actions"><button type="button" className="nf-secondary" onClick={()=>void showRevisions(row)}>Revisões</button>{canWrite&&row.status==='rascunho'&&<button type="button" className="nf-secondary" onClick={()=>openEditor(row)}>Editar</button>}{row.status==='aceita'&&<OrderFromSource company={company} source={{proposalId:row.id,opportunityId:opportunity.id}} permissions={permissions}/>}{canWrite&&(available[row.status]??[]).map(value=><button key={value} type="button" className={value==='accept'||value==='send'?'nf-primary':'nf-secondary'} onClick={()=>{setReason('');setFormError('');setAction({row,action:value});}}>{actionNames[value].label}</button>)}</div></li>)}</ul>}
   <Modal open={Boolean(editor)} title={editor?.row?'Editar '+editor.row.number+' (rev. '+editor.row.revision+')':'Nova proposta'} busy={busy} onClose={()=>setEditor(null)}>
    <form className="nf-form" onSubmit={save}><fieldset disabled={busy}>
     <div className="nf-admin-grid"><label>Válida até<input type="date" required value={validUntil} onChange={event=>setValidUntil(event.target.value)}/></label>

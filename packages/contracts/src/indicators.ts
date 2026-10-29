@@ -4,7 +4,7 @@ export type IndicatorView=typeof indicatorViews[number];
 export const indicatorViewNames:Readonly<Record<IndicatorView,string>>={comercial:'Comercial',tecnica:'Técnica',gerencial:'Gerencial'};
 export type IndicatorUnit='count'|'cents'|'percent'|'minutes';
 export interface IndicatorValue{key:string;label:string;value:number|null;unit:IndicatorUnit;definition:string}
-export interface IndicatorSection{key:'carteira'|'visitas'|'oportunidades'|'propostas'|'chamados'|'ordens';title:string;indicators:IndicatorValue[]}
+export interface IndicatorSection{key:'carteira'|'visitas'|'oportunidades'|'propostas'|'pedidos'|'chamados'|'ordens';title:string;indicators:IndicatorValue[]}
 export interface IndicatorReport{asOf:string;view:IndicatorView;filters:{startDate:string;endDate:string;regionId:string|null;ownerId:string|null};sections:IndicatorSection[]}
 /** Ratio as a percentage with one decimal; null when there is no denominator, never a fabricated zero. */
 export function percent(part:number,total:number){return total>0?Math.round(part*1000/total)/10:null;}

@@ -73,7 +73,7 @@ describe.skipIf(!uri)('indicators: values match records within each profile scop
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('computes commercial indicators that match the records of the seller scope',async()=>{
   const report=await indicatorService.report(seller.context,company,{view:'comercial'});
-  expect(report.sections.map(item=>item.key)).toEqual(['carteira','visitas','oportunidades','propostas']);
+  expect(report.sections.map(item=>item.key)).toEqual(['carteira','visitas','oportunidades','propostas','pedidos']);
   expect([value(report,'carteira','customers'),value(report,'carteira','leads'),value(report,'carteira','upcoming')]).toEqual([2,1,1]);
   expect([value(report,'visitas','planned'),value(report,'visitas','completed'),value(report,'visitas','realized'),value(report,'visitas','coverage')]).toEqual([2,1,1,50]);
   expect([value(report,'oportunidades','open'),value(report,'oportunidades','pipeline'),value(report,'oportunidades','forecast'),value(report,'oportunidades','won'),value(report,'oportunidades','wonAmount'),value(report,'oportunidades','conversion')]).toEqual([1,100000,40000,1,300000,50]);
@@ -98,6 +98,6 @@ describe.skipIf(!uri)('indicators: values match records within each profile scop
   const elsewhere=await indicatorService.report(coordinator.context,company,{view:'tecnica',regionId:carambei});expect(value(elsewhere,'chamados','open')).toBe(0);expect(value(elsewhere,'ordens','open')).toBe(0);
   const sellerTechnical=await indicatorService.report(seller.context,company,{view:'tecnica'});expect(sellerTechnical.sections.map(item=>item.key)).toEqual(['chamados']);expect(value(sellerTechnical,'chamados','open')).toBe(2);
   expect((await indicatorService.report(otherSeller.context,company,{view:'tecnica'})).sections[0]!.indicators.find(item=>item.key==='open')!.value).toBe(0);
-  const http=await request(app).get('/api/v1/companies/'+company+'/indicators?view=gerencial').set(headers(manager));expect(http.status).toBe(200);expect(http.body.sections).toHaveLength(6);
+  const http=await request(app).get('/api/v1/companies/'+company+'/indicators?view=gerencial').set(headers(manager));expect(http.status).toBe(200);expect(http.body.sections).toHaveLength(7);
  },30000);
 });

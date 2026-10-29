@@ -107,7 +107,7 @@ export function Tickets({account}:{account:Account}){
     {record.solution&&<div><dt>Solução</dt><dd>{record.solution}</dd></div>}
    </dl>
    {open&&record.canManage&&<div className="nf-crm-row-actions nf-ticket-actions">{(Object.keys(actionNames) as TicketAction[]).filter(item=>item!=='first-response'||!record.firstResponseAt).map(item=><button key={item} type="button" className={item==='resolve'||item==='first-response'?'nf-primary':'nf-secondary'} onClick={()=>startAction(item)}>{actionNames[item]}</button>)}</div>}
-   {permissions.includes('technical:read')&&<WorkOrderList companyId={company} query={{ticketId:record.id}} title="Ordens de serviço do chamado"/>}
+   {permissions.includes('technical:read')&&<WorkOrderList companyId={company} query={{ticketId:record.id}} title="Ordens de serviço do chamado" permissions={permissions}/>}
    <HistoryTimeline title="Histórico do chamado" events={detail!.history.map(item=>({action:eventNames[item.action]??item.action,actor:item.actor,at:item.at,detail:[item.fromAssignee||item.toAssignee?(item.fromAssignee||'sem responsável')+' → '+(item.toAssignee||'sem responsável'):'',ticketStatusNames[item.statusAfter as keyof typeof ticketStatusNames]].filter(Boolean).join(' · '),reason:item.note,reasonLabel:'Registro'}))}/></>}
   </Modal>
   <Modal open={Boolean(action)} title={action?actionNames[action]:''} size="compact" busy={busy} onClose={()=>setAction(null)}>

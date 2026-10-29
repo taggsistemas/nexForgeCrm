@@ -17,7 +17,9 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 9. OS básica | Implementada; homologação de uso pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
 | 10. Peças utilizadas | Implementada; homologação de uso pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
 | 11. Dashboards | Implementada; homologação de uso pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
-| 12. Homologação e piloto | Próxima | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
+| 12. Pedidos de venda e serviço | Implementada; homologação de uso pendente | Custo no catálogo, pedido de proposta/direto/OS, aprovação fora da regra, entrega, notas do Financeiro, previsão de faturamento e margem |
+| 13. Offline automático | Próxima | Salvamento criptografado no aparelho sem senha local, sincronização automática de visitas, atividades, pedidos e chamados |
+| 14. Homologação e piloto | Pendente | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
 
 ## Etapa 1 — checklist de implementação
 
@@ -184,11 +186,29 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Indicadores financeiros e capacidade técnica (RF-BI-004/005, fase P1); XLSX e relatório gerencial.
 - [ ] Homologar definições com a direção da Só Leite.
 
-## Próxima etapa — 12. Homologação e piloto
+## Plano revisado em 29/10/2026 (pedidos e offline antes da homologação)
 
-- [ ] Executar testes integrados e ponta a ponta do roteiro T01–T08 (T01 por cadastro manual).
-- [ ] Revisar acessibilidade, testar aparelhos reais, exportação, backup e restauração demonstrada.
-- [ ] Preparar instruções de uso e corrigir os problemas encontrados.
+Decisões de Giovanni: pedido de venda a partir de proposta aceita ou direto, sempre para cliente aprovado; aprovação do Gerencial/Direção só quando o pedido foge da regra (limite de crédito ou desconto abaixo da tabela); custo cadastrado no catálogo, visível só para Administrador, Gerencial, Direção e Financeiro; pedidos fechados passam a entregue e faturado; o Financeiro emite as notas no sistema dele e as lança no CRM; previsão de faturamento pelos prazos. Offline automático, sem senha e sem baixar carteira, para visitas, atividades, pedidos e chamados.
+
+## Etapa 12 — pedidos de venda e serviço
+
+- [x] Custo unitário no catálogo (`cost:read`/`cost:manage`, versionado e auditado) e perfil Financeiro (`billing:write`).
+- [x] Pedido de venda a partir de proposta aceita (itens copiados, um pedido por proposta) ou direto; pedido de serviço a partir de OS encerrada (horas faturáveis e peças líquidas, um pedido por OS); sempre para cliente aprovado da carteira viva.
+- [x] Aprovação só fora da regra: desconto abaixo da tabela, forma/prazo fora das condições aprovadas ou crédito excedido; aprovador diferente de quem enviou; devolução e cancelamento com motivo.
+- [x] Situações rascunho, aguardando aprovação, confirmado, entregue, faturado e cancelado, com instantes do servidor e histórico imutável; confirmação de pedido de proposta marca a oportunidade como ganha.
+- [x] Lançamento de notas pelo Financeiro (número, emissão, valor) sem duplicidade, data futura ou soma acima do total; faturado quando as notas cobrem o pedido.
+- [x] Parcelas e previsão de faturamento pelos prazos; margem pelo custo congelado, nula sem custo completo.
+- [x] Indicadores "Pedidos e faturamento": confirmados, faturado no período, carteira a faturar, aguardando aprovação/entrega, previsão por faixa e margem (com `cost:read`).
+- [x] Telas: módulo de pedidos, "Gerar pedido" na proposta aceita e na OS encerrada, custo no catálogo, lançamento de notas.
+- [x] Testes: 4 cenários MongoDB reais, 5 unitários e 2 E2E (desktop/celular).
+- [x] Verificação completa: check (199 Vitest), MongoDB 93/93, layout 115 aprovados e 2 ignorados, E2E 90/90.
+- [ ] Homologar regras de aprovação, prazos e indicadores com a Só Leite.
+
+## Próxima etapa — 13. Offline automático
+
+- [ ] Remover senha local e o passo "Preparar carteira"; chave não extraível no IndexedDB vinculada ao usuário.
+- [ ] Snapshot automático da carteira quando online; fila de saída para visitas, atividades, pedidos e chamados com IDs idempotentes.
+- [ ] Sincronização automática na reconexão com revalidação completa no servidor; aviso no logout com itens pendentes.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

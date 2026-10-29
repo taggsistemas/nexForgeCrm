@@ -16,6 +16,8 @@ import {Ticket} from '../tickets/models.js';
 import {authority as ticketAuthority,scopeStages as ticketScope} from '../tickets/service.js';
 import {TechnicalWork} from '../technical/models.js';
 import {pipeline as workOrderScope} from '../technical/service.js';
+import {SalesOrder} from '../orders/models.js';
+import {orderPendingInstallments} from '../../../../../packages/contracts/src/orders.js';
 const zone='America/Sao_Paulo';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 export const indicatorInput=z.object({view:z.enum(indicatorViews).default('gerencial'),startDate:calendarDate.optional(),endDate:calendarDate.optional(),regionId:objectId.optional(),ownerId:objectId.optional()}).strict().superRefine((value,ctx)=>{
@@ -76,6 +78,44 @@ async function commercial(ctx:AccessContext,companyId:string,filters:Filters):Pr
   ]},
  ];
 }
+/** Orders of the live customer scope (order:read); territory = active property region; responsible = portfolio owner. */
+async function orders(ctx:AccessContext,companyId:string,filters:Filters,startDate:string,endDate:string,today:string):Promise<IndicatorSection[]>{
+ const regionParties=filters.regionId?await Property.distinct('partyId',{tenantId:filters.tenant,companyId:filters.company,archived:false,regionId:oid(filters.regionId)}):null;
+ const query=Party.find(commercialFilter(ctx,companyId,'order:read',{kind:'customer',...(filters.ownerId?{ownerId:filters.ownerId}:{}),...(regionParties?{_id:{$in:regionParties}}:{})}));query.cast(Party);
+ const ids={tenantId:filters.tenant,companyId:filters.company},period={$gte:filters.from,$lt:filters.to},showCost=ctx.permissions.includes('cost:read');
+ const [row]=await SalesOrder.aggregate([{$match:ids},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:query.getFilter()},{$project:{_id:1}}],as:'party'}},{$unwind:'$party'},{$facet:{
+  confirmed:[{$match:{confirmedAt:period}},{$group:{_id:null,count:{$sum:1},total:{$sum:'$totalCents'}}}],
+  pending:[{$match:{status:'aguardando_aprovacao'}},{$count:'count'}],
+  undelivered:[{$match:{status:{$in:['confirmado','faturado']},deliveredAt:null}},{$count:'count'}],
+  invoiced:[{$unwind:'$invoices'},{$match:{'invoices.issueDate':{$gte:startDate,$lte:endDate}}},{$group:{_id:null,total:{$sum:'$invoices.amountCents'}}}],
+  open:[{$match:{status:{$in:['confirmado','entregue']}}},{$project:{totalCents:1,invoicedCents:1,expectedDeliveryDate:1,paymentTermDays:1,first:{$arrayElemAt:['$invoices.issueDate',0]}}}],
+  margin:[{$match:{confirmedAt:period,status:{$ne:'cancelado'}}},{$project:{totalCents:1,complete:{$allElementsTrue:[{$map:{input:'$items',as:'item',in:{$ne:[{$ifNull:['$$item.costCents',null]},null]}}}]},cost:{$sum:'$items.costCents'}}},{$match:{complete:true}},{$group:{_id:null,total:{$sum:'$totalCents'},cost:{$sum:'$cost'}}}],
+ }}]);
+ const buckets={overdue:0,d30:0,d60:0,d90:0,later:0},limit=(days:number)=>addCalendarDays(today,days);let backlog=0;
+ for(const order of row.open as {totalCents:number;invoicedCents:number;expectedDeliveryDate:string;paymentTermDays:number[];first?:string}[]){
+  backlog+=order.totalCents-order.invoicedCents;
+  for(const item of orderPendingInstallments(order.totalCents,order.invoicedCents,order.first??order.expectedDeliveryDate,order.paymentTermDays)){
+   const key=item.dueDate<today?'overdue':item.dueDate<=limit(30)?'d30':item.dueDate<=limit(60)?'d60':item.dueDate<=limit(90)?'d90':'later';buckets[key]+=item.amountCents;
+  }
+ }
+ const confirmed=row.confirmed[0]??{count:0,total:0},margin=row.margin[0] as {total:number;cost:number}|undefined;
+ const forecast='Parcelas ainda não faturadas dos pedidos confirmados ou entregues, pelos prazos de pagamento contados da primeira nota (ou da entrega prevista).';
+ return [{key:'pedidos',title:'Pedidos e faturamento',indicators:[
+  {key:'confirmed',label:'Pedidos confirmados',value:confirmed.count,unit:'count',definition:'Pedidos confirmados (direto ou após aprovação) no período.'},
+  {key:'confirmedValue',label:'Valor confirmado',value:confirmed.total,unit:'cents',definition:'Total dos pedidos confirmados no período. Pedido não é receita até a nota ser lançada.'},
+  {key:'invoiced',label:'Faturado no período',value:sum(row.invoiced),unit:'cents',definition:'Soma das notas fiscais lançadas pelo financeiro com emissão no período.'},
+  {key:'backlog',label:'Carteira a faturar',value:backlog,unit:'cents',definition:'Saldo não faturado dos pedidos confirmados ou entregues, hoje (independe do período).'},
+  {key:'pendingApproval',label:'Aguardando aprovação',value:count(row.pending),unit:'count',definition:'Pedidos fora da tabela, do crédito ou das condições aprovadas aguardando a gerência, hoje.'},
+  {key:'undelivered',label:'Aguardando entrega',value:count(row.undelivered),unit:'count',definition:'Pedidos confirmados sem entrega registrada, hoje.'},
+  {key:'forecastOverdue',label:'Previsão vencida',value:buckets.overdue,unit:'cents',definition:forecast+' Vencimento anterior a hoje.'},
+  {key:'forecast30',label:'Previsão até 30 dias',value:buckets.d30,unit:'cents',definition:forecast+' Vencimento de hoje a 30 dias.'},
+  {key:'forecast60',label:'Previsão 31 a 60 dias',value:buckets.d60,unit:'cents',definition:forecast},
+  {key:'forecast90',label:'Previsão 61 a 90 dias',value:buckets.d90,unit:'cents',definition:forecast},
+  {key:'forecastLater',label:'Previsão após 90 dias',value:buckets.later,unit:'cents',definition:forecast},
+  ...(showCost?[{key:'margin',label:'Margem bruta',value:margin?margin.total-margin.cost:null,unit:'cents' as const,definition:'Total menos custo congelado no envio, dos pedidos confirmados no período com custo em todos os itens.'},
+   {key:'marginPercent',label:'Margem bruta (%)',value:margin?percent(margin.total-margin.cost,margin.total):null,unit:'percent' as const,definition:'Margem bruta ÷ total dos mesmos pedidos.'}]:[]),
+ ]}];
+}
 async function technical(ctx:AccessContext,companyId:string,filters:Filters):Promise<IndicatorSection[]>{
  const sections:IndicatorSection[]=[],period={$gte:filters.from,$lt:filters.to},now=new Date();
  if(ctx.permissions.includes('ticket:read')){
@@ -130,7 +170,8 @@ export const indicatorService={
   const filters:Filters={tenant:oid(scope.tenantId),company:oid(companyId),from:dayBoundary(startDate,zone),to:dayBoundary(addCalendarDays(endDate,1),zone),regionId:input.regionId??null,ownerId:input.ownerId??null};
   const wantsCommercial=input.view!=='tecnica'&&(ctx.permissions.includes('lead:read')||ctx.permissions.includes('customer:read'));
   const wantsTechnical=input.view!=='comercial';
-  const sections=[...(wantsCommercial?await commercial(ctx,companyId,filters):[]),...(wantsTechnical?await technical(ctx,companyId,filters):[])];
+  const wantsOrders=input.view!=='tecnica'&&ctx.permissions.includes('order:read');
+  const sections=[...(wantsCommercial?await commercial(ctx,companyId,filters):[]),...(wantsOrders?await orders(ctx,companyId,filters,startDate,endDate,today):[]),...(wantsTechnical?await technical(ctx,companyId,filters):[])];
   return {asOf:new Date().toISOString(),view:input.view,filters:{startDate,endDate,regionId:filters.regionId,ownerId:filters.ownerId},sections};
  },
 };

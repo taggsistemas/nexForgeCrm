@@ -1,6 +1,6 @@
 # Escopo comercial incorporado — CRM
 
-Estado atual: catálogo e tabelas de preços têm implementação própria em [catalog-pricing.md](catalog-pricing.md), com validação completa ainda pendente. Pedidos continuam futuros. Ajustes de dashboard, qualificação e offline: [usability-review.md](usability-review.md). As seções abaixo incluem registros históricos.
+Estado atual: catálogo e tabelas de preços têm implementação própria em [catalog-pricing.md](catalog-pricing.md), com validação completa ainda pendente. Pedidos de venda e serviço operacionais desde a etapa 12 ([orders.md](orders.md)); produção, separação e expedição continuam futuras. Ajustes de dashboard, qualificação e offline: [usability-review.md](usability-review.md). As seções abaixo incluem registros históricos.
 
 ## Padrão obrigatório de interface
 - Cadastros e edições em modais: usuários, leads, clientes, contatos e novos domínios.
@@ -37,7 +37,7 @@ O backend valida transições, escopo, permissões, preços, descontos e totais.
 Aprovações seguem permissões gerenciais; o frontend não fornece status válido por si só.
 Após aprovação, valores e regras aplicadas devem ser preservados como snapshot/versionados.
 ERP é integração opcional por contrato/eventos, sem escrita direta no banco do ERP.
-Estes fluxos foram registrados no escopo; modelos/endpoints/telas de pedidos ainda não são entregues aqui.
+Estes fluxos de produção/expedição continuam no escopo futuro; o pedido operacional da etapa 12 usa as situações rascunho, aguardando aprovação, confirmado, entregue, faturado e cancelado.
 
 ## Tabelas de preços — próxima etapa comercial
 Abrangências requeridas: global do tenant, por cliente, por tipo de cliente

@@ -10,7 +10,7 @@ Regras detalhadas e auditoria do que existe: [commercial-rules-review.md](commer
 
 3. Operação offline: carteira criptografada, atividades/visitas agendadas e espontâneas, idempotência e revisão de conflitos implementadas. Ver offline.md. Homologação em aparelhos reais e finalização da instalação PWA seguem pendentes.
 4. Catálogo e tabelas de preços: primeira implementação de produtos/serviços, unidades, composição de caixas/kits, peso, fiscal, prazos e seis abrangências. Ver catalog-pricing.md. Validação MongoDB/E2E e homologação pendentes; pedidos e peso aferido continuam futuros.
-5. Propostas/pedidos, aprovação comercial e status operacionais. Ainda pendente.
+5. Propostas/pedidos, aprovação comercial e status operacionais. Propostas na etapa 6 e pedidos de venda e serviço na etapa 12 (orders.md).
 6. Metas globais/regionais/individuais, comissões, forecast e central gerencial. Ainda pendente.
 7. Integração opcional ERP, contratos e visão federada dos grafos. Ainda pendente.
 8. Piloto e homologação: implantação HTTPS, Android/iPhone reais, backup/restauração, acessibilidade e monitoramento.
@@ -46,7 +46,7 @@ Administração do tenant agora permite cadastrar usuários, atribuir perfis pad
 
 ## Incremento entregue: relacionamento e acesso
 Leads, clientes, contatos, conversão preservando vínculos, carteira por perfil, auditoria, conflitos de edição e formulários em modais implementados. Senha temporária com troca obrigatória, recuperação por e-mail e aceite versionado implementados. Configurar SMTP para entrega real. Operações comerciais offline e sincronização permanecem futuras; a PWA atual não grava esses cadastros offline.
-Pedidos e tabelas de preços constam em commercial-scope.md e nos contratos planejados. Ainda não possuem telas, persistência nem motor de cálculo.
+Tabelas de preços (catalog-pricing.md) e pedidos de venda e serviço (orders.md) estão implementados; produção/expedição continuam planejadas em commercial-scope.md.
 
 ## Incremento entregue: pipeline de leads e qualificação progressiva
 Cadastro inicial reduzido e endereço opcional expansível. Dados fiscais e endereço completo são exigidos ao qualificar e antes da conversão, no backend. Pipeline por etapa com paginação, pesquisa e auditoria de transições. Ver lead-qualification.md.

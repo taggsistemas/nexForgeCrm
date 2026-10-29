@@ -25,18 +25,19 @@ validados no banco a cada autenticação; "próprio" = ownerId/atribuição do u
 |---|---|---|---|---|---|
 | Administrador do sistema | Empresa | Tudo | Tudo, inclusive usuários e perfis | Tudo, inclusive distribuição técnica | Outro tenant |
 | Direção | Empresa | Comercial, financeiro do cliente (crédito/pagamento), técnico, relatórios | Nada operacional | Qualificação com crédito, propostas e pedidos | Criar/editar leads, clientes, agenda; distribuir atendimentos; pacote offline |
-| Gerencial | Empresa | Comercial, técnico (consulta), relatórios | Operação comercial, regiões, carteiras, equipes, catálogo, listas do cadastro | Qualificação, propostas, pedidos | Distribuir atendimentos técnicos; administrar identidades |
-| Administrativo de vendas | Empresa | Comercial | Operação comercial, carteiras, catálogo, listas do cadastro | Qualificação | Comissões; atendimentos técnicos; propostas/pedidos |
+| Gerencial | Empresa | Comercial, técnico (consulta), relatórios, custos e margem | Operação comercial, regiões, carteiras, equipes, catálogo, custos, listas do cadastro | Qualificação, propostas, pedidos fora da regra | Distribuir atendimentos técnicos; administrar identidades |
+| Administrativo de vendas | Empresa | Comercial | Operação comercial, carteiras, catálogo, listas do cadastro, pedidos | Qualificação | Comissões; atendimentos técnicos; aprovar pedidos; custos |
 | Supervisor | Equipe comercial | Própria carteira e vendedores vinculados; técnicos vinculados nas regiões | Operação da equipe, carteiras | — | Aprovar; distribuir atendimentos |
 | Vendedor | Próprio | Própria carteira | Leads, clientes, contatos, oportunidades, agenda, visitas, offline | Enviar qualificação | Aprovar; ver outras carteiras |
 | Coordenação Técnica | Equipe técnica + regiões | Atendimentos dos técnicos vinculados; clientes aprovados das regiões; chamados do território | Agendar atendimentos; abrir chamados no território | Cancelar/interromper atendimentos da equipe; triar, designar, escalonar e encerrar chamados | Carteira comercial, crédito, catálogo, executar atendimento |
 | Técnico | Próprio | Atendimentos e chamados designados | Check-in/out dos próprios atendimentos | — | Carteira comercial, preços, aprovações |
-| Auditoria | Empresa | Comercial, financeiro do cliente, técnico, relatórios | Nada | Nada | Comissões, metas, forecast, pacote offline |
+| Financeiro | Empresa | Clientes, qualificação, oportunidades, propostas, pedidos, custos e margem, relatórios | Lançar notas fiscais emitidas no sistema financeiro | — | Criar/aprovar pedidos; operação comercial; editar custos |
+| Auditoria | Empresa | Comercial, financeiro do cliente, técnico, pedidos, relatórios | Nada | Nada | Comissões, metas, forecast, pacote offline |
 
 Somente a Coordenação Técnica (e o Administrador) distribui atendimentos técnicos.
 A Direção aprova sob as mesmas regras dos demais revisores: snapshot enviado,
-versão atual e revisor diferente de quem enviou. Financeiro e Estoque serão
-definidos com os respectivos módulos; nenhuma permissão foi reservada para eles.
+versão atual e revisor diferente de quem enviou. O perfil Financeiro (etapa 12)
+lança notas e vê custos; Estoque será definido com o módulo próprio. Pedidos: [orders.md](orders.md).
 
 `qualification:read` permite abrir a ficha de qualificação (inclui condições de crédito
 e pagamento); editar exige `qualification:edit`, aprovar exige `qualification:approve`.

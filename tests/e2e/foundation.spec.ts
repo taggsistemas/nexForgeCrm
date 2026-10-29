@@ -23,9 +23,8 @@ test('authenticated dashboard has company header, navigation and theme control',
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme','light');
   if(test.info().project.name==='mobile') await page.getByRole('button',{name:'Abrir ou fechar menu'}).click();
-  await page.getByRole('navigation').getByRole('button',{name:'Propostas e pedidos'}).click();
-  await expect(page.getByRole('heading',{name:'Propostas e pedidos',level:1})).toBeVisible();
-  await expect(page.getByText('Este módulo ainda não está disponível para operação.')).toBeVisible();
+  await expect(page.getByRole('navigation').getByRole('button',{name:'Central gerencial'})).toBeVisible();
+  await expect(page.getByRole('navigation').getByRole('button',{name:'Pedidos de venda e serviço'})).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('public login shell opens offline after its first online visit',async({page,context})=>{

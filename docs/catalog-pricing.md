@@ -36,3 +36,7 @@ Serviços também aceitam **Hora (h)**, com quantidades fracionadas conforme a p
 Tabelas possuem início/fim opcionais, inclusivos no calendário America/Sao_Paulo. A consulta usa o dia do servidor e ignora tabelas fora da vigência antes da prioridade/fallback. Legados sem datas continuam válidos. A restrição de uma tabela ativa por destino permanece; promoções simultâneas no mesmo destino ainda não são permitidas.
 O modal oferece aplicação em lote de markup, desconto ou margem sobre os valores digitados, com arredondamento de centavos. É uma preparação explícita de valores: não uma regra persistida de custo. Margem de 25% usa base / 0,75; markup de 25% usa base * 1,25.
 Evolução solicitada: custos restritos e versionados (produto/hora), regras persistidas por base/categoria/marca/fornecedor, vigências concorrentes com prioridade explícita, condições de pagamento autorizadas, simulação explicável e pisos/descontos aplicados no futuro backend de pedidos. Custo médio contábil exige integração; não é calculado pelo CRM. Não existe recalculação automática de custos nem bloqueio de desconto em pedidos neste incremento.
+
+## Custo unitário (etapa 12)
+
+`PUT /catalog/products/:id/cost` (`cost:manage`) grava `costCents` (ou vazio = desconhecido) com versão própria e auditoria `product.cost_updated`. O custo só aparece nas consultas com `cost:read` e é congelado nos pedidos no envio para calcular a margem. Ver [orders.md](orders.md).

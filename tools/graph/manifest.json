@@ -1861,6 +1861,60 @@
       "kind": "test",
       "source": "tests/e2e/indicators.spec.ts",
       "symbol": "management indicators apply shared filters"
+    },
+    {
+      "id": "crm:orders:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/orders/service.ts",
+      "symbol": "orderService"
+    },
+    {
+      "id": "crm:orders:models",
+      "kind": "model",
+      "source": "apps/api/src/modules/orders/models.ts",
+      "symbol": "SalesOrder"
+    },
+    {
+      "id": "crm:orders:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/orders/router.ts",
+      "symbol": "createOrderRouter"
+    },
+    {
+      "id": "crm:orders:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/orders.ts",
+      "symbol": "OrderView"
+    },
+    {
+      "id": "crm:orders:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/orders/Orders.tsx",
+      "symbol": "Orders"
+    },
+    {
+      "id": "crm:catalog:cost-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/catalog/ProductCost.tsx",
+      "symbol": "ProductCost"
+    },
+    {
+      "id": "crm:orders:test",
+      "kind": "test",
+      "source": "tests/integration/orders-mongo.test.ts",
+      "symbol": "sales and service orders"
+    },
+    {
+      "id": "crm:orders:unit",
+      "kind": "test",
+      "source": "tests/unit/orders.test.ts",
+      "symbol": "sales and service order rules"
+    },
+    {
+      "id": "crm:orders:e2e",
+      "kind": "test",
+      "source": "tests/e2e/orders.spec.ts",
+      "symbol": "management approves an exception and finance registers an invoice"
     }
   ],
   "edges": [
@@ -3827,6 +3881,66 @@
     {
       "from": "crm:indicators:e2e",
       "to": "apps/web/src/features/indicators/Indicators.tsx",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/catalog/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/opportunities/proposals.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/technical/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/orders/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:http",
+      "to": "apps/api/src/app.ts",
+      "kind": "mounted-by"
+    },
+    {
+      "from": "crm:orders:ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:catalog:cost-ui",
+      "to": "apps/web/src/features/catalog/Catalog.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:indicators:service",
+      "to": "apps/api/src/modules/orders/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:test",
+      "to": "apps/api/src/modules/orders/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:orders:unit",
+      "to": "packages/contracts/src/orders.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:orders:e2e",
+      "to": "apps/web/src/features/orders/Orders.tsx",
       "kind": "tests"
     }
   ]

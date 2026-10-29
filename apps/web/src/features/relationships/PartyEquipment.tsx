@@ -13,7 +13,7 @@ export const equipmentFieldNames:Record<string,string>={'equipment.propertyId':'
 export const equipmentActionNames:Record<string,string>={'equipment.created':'Equipamento cadastrado','equipment.updated':'Equipamento alterado','equipment.archived':'Equipamento arquivado'};
 export function equipmentValue(field:string,value:string){return field==='equipment.status'?equipmentStatusNames[value as keyof typeof equipmentStatusNames]??value:/^equipment\.(installedAt|warrantyUntil)$/.test(field)&&value?day(value):value||'vazio';}
 /** Installed base of one customer. Each item sits on one of its active properties. */
-export function PartyEquipment({companyId,record,lists,canWrite}:{companyId:string;record:PartyView;lists:PartyListOptionView[];canWrite:boolean}){
+export function PartyEquipment({companyId,record,lists,canWrite,permissions=[]}:{companyId:string;record:PartyView;lists:PartyListOptionView[];canWrite:boolean;permissions?:readonly string[]}){
  const [rows,setRows]=useState<EquipmentView[]|null>(null),[properties,setProperties]=useState<PropertyView[]>([]),[filter,setFilter]=useState(''),[refresh,setRefresh]=useState(0);
  const [editor,setEditor]=useState<{row?:EquipmentView;archive?:boolean}|null>(null),[timeline,setTimeline]=useState<{row:EquipmentView;items:PartyHistoryEntry[]|null}|null>(null);
  const [draft,setDraft]=useState<Record<string,string>>(emptyDraft),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
@@ -71,7 +71,7 @@ export function PartyEquipment({companyId,record,lists,canWrite}:{companyId:stri
    {timeline?.items===null?<p role="status">Carregando linha do tempo...</p>:<HistoryTimeline title="Eventos do equipamento" events={(timeline?.items??[]).map(event=>({action:equipmentActionNames[event.action]??'Alteração registrada',actor:event.actor,at:event.at,detail:event.changes.map(change=>(equipmentFieldNames[change.field]??change.field)+': '+equipmentValue(change.field,change.before)+' → '+equipmentValue(change.field,change.after)).join(' · ')}))}/>}
    {timeline&&<section className="nf-history"><div className="nf-history-heading"><h3>Atendimentos no equipamento</h3></div><PartyAttendances companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/></section>}
    {timeline&&<EquipmentTickets companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/>}
-   {timeline&&<WorkOrderList companyId={companyId} query={{partyId:record.id,equipmentId:timeline.row.id}} title="Ordens de serviço do equipamento"/>}
+   {timeline&&<WorkOrderList companyId={companyId} query={{partyId:record.id,equipmentId:timeline.row.id}} title="Ordens de serviço do equipamento" permissions={permissions}/>}
    <p className="nf-field-hint">Peças utilizadas aparecem em cada ordem de serviço.</p>
   </Modal>
  </>;

@@ -46,3 +46,5 @@
 - Proposals belong to an open opportunity and its live Party. The server computes line totals from catalog snapshots, freezes sent revisions and stamps decision times; never accept totals, numbers or reference prices from input. Acceptance is not an order or revenue. Fixed pipeline phases keep configurable labels/probabilities; won=100 and lost=0 are set by the server.
 
 - Attendance location (property/equipment) must belong to the live Party; opportunity activities inherit the opportunity location. Territory filters use the property region, never the seller portfolio or a frontend-trusted region, and apply after Party scope and before counts.
+
+- Tickets require a property of the live Party; queue scope follows profile (company, coordination territory by property region, commercial portfolio, or assigned technician) before counts. Only coordination/administrator triage. Opening, first response, resolution and cancellation instants come from the server; only the agreed deadline is typed. Assignment history is immutable; closing requires a solution.

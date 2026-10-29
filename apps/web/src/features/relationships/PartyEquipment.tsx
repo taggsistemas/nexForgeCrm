@@ -5,6 +5,7 @@ import {equipmentStatuses,equipmentStatusNames,type EquipmentView,type PartyHist
 import {relationshipApi} from './api';
 import {optionLabel,selectableOptions} from './PartyLists';
 import {PartyAttendances} from './PartyAttendances';
+import {ticketStatusNames,type TicketView} from '../../../../../packages/contracts/src/tickets';
 const emptyDraft={propertyId:'',categoryId:'',brand:'',model:'',serialNumber:'',status:'em_operacao',installedAt:'',warrantyUntil:'',supplier:'',notes:''};
 const day=(value:string|null)=>value?new Date(value+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
 export const equipmentFieldNames:Record<string,string>={'equipment.propertyId':'Propriedade','equipment.categoryId':'Categoria','equipment.brand':'Marca','equipment.model':'Modelo','equipment.serialNumber':'Número de série','equipment.status':'Situação','equipment.installedAt':'Instalação','equipment.warrantyUntil':'Garantia até','equipment.supplier':'Fornecedor'};
@@ -68,7 +69,15 @@ export function PartyEquipment({companyId,record,lists,canWrite}:{companyId:stri
   <Modal open={Boolean(timeline)} title={timeline?'Linha do tempo — '+timeline.row.brand+' '+timeline.row.model:'Linha do tempo'} onClose={()=>setTimeline(null)}>
    {timeline?.items===null?<p role="status">Carregando linha do tempo...</p>:<HistoryTimeline title="Eventos do equipamento" events={(timeline?.items??[]).map(event=>({action:equipmentActionNames[event.action]??'Alteração registrada',actor:event.actor,at:event.at,detail:event.changes.map(change=>(equipmentFieldNames[change.field]??change.field)+': '+equipmentValue(change.field,change.before)+' → '+equipmentValue(change.field,change.after)).join(' · ')}))}/>}
    {timeline&&<section className="nf-history"><div className="nf-history-heading"><h3>Atendimentos no equipamento</h3></div><PartyAttendances companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/></section>}
-   <p className="nf-field-hint">Chamados, ordens de serviço e peças passam a aparecer aqui nas próximas etapas.</p>
+   {timeline&&<EquipmentTickets companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/>}
+   <p className="nf-field-hint">Ordens de serviço e peças passam a aparecer aqui nas próximas etapas.</p>
   </Modal>
  </>;
+}
+/** Tickets on one equipment; hidden when the profile cannot read tickets. */
+function EquipmentTickets({companyId,partyId,equipmentId}:{companyId:string;partyId:string;equipmentId:string}){
+ const [rows,setRows]=useState<TicketView[]|null>(null);
+ useEffect(()=>{const controller=new AbortController();fetch('/api/v1/companies/'+companyId+'/tickets?status=all&partyId='+partyId+'&equipmentId='+equipmentId,{credentials:'same-origin',cache:'no-store',signal:controller.signal}).then(response=>response.ok?response.json():null).then(data=>setRows(data?data.items??[]:null)).catch(()=>{});return()=>controller.abort();},[companyId,partyId,equipmentId]);
+ if(!rows)return null;
+ return <section className="nf-history"><div className="nf-history-heading"><h3>Chamados do equipamento</h3><span>{rows.length} chamado(s)</span></div>{!rows.length?<p className="nf-muted">Nenhum chamado registrado.</p>:<ul className="nf-property-list">{rows.map(row=><li key={row.id}><div><strong>{row.number} · {row.title}</strong><span className="nf-badge">{ticketStatusNames[row.status]}</span></div><small>Aberto em {new Date(row.openedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'})}{row.previousTicketNumber?' · retorno de '+row.previousTicketNumber:''}</small>{row.solution&&<p>Solução: {row.solution}</p>}</li>)}</ul>}</section>;
 }

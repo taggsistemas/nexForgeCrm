@@ -29,8 +29,8 @@ validados no banco a cada autenticação; "próprio" = ownerId/atribuição do u
 | Administrativo de vendas | Empresa | Comercial | Operação comercial, carteiras, catálogo, listas do cadastro | Qualificação | Comissões; atendimentos técnicos; propostas/pedidos |
 | Supervisor | Equipe comercial | Própria carteira e vendedores vinculados; técnicos vinculados nas regiões | Operação da equipe, carteiras | — | Aprovar; distribuir atendimentos |
 | Vendedor | Próprio | Própria carteira | Leads, clientes, contatos, oportunidades, agenda, visitas, offline | Enviar qualificação | Aprovar; ver outras carteiras |
-| Coordenação Técnica | Equipe técnica + regiões | Atendimentos dos técnicos vinculados; clientes aprovados das regiões | Agendar atendimentos | Cancelar/interromper atendimentos da equipe | Carteira comercial, crédito, catálogo, executar atendimento |
-| Técnico | Próprio | Atendimentos atribuídos | Check-in/out dos próprios atendimentos | — | Carteira comercial, preços, aprovações |
+| Coordenação Técnica | Equipe técnica + regiões | Atendimentos dos técnicos vinculados; clientes aprovados das regiões; chamados do território | Agendar atendimentos; abrir chamados no território | Cancelar/interromper atendimentos da equipe; triar, designar, escalonar e encerrar chamados | Carteira comercial, crédito, catálogo, executar atendimento |
+| Técnico | Próprio | Atendimentos e chamados designados | Check-in/out dos próprios atendimentos | — | Carteira comercial, preços, aprovações |
 | Auditoria | Empresa | Comercial, financeiro do cliente, técnico, relatórios | Nada | Nada | Comissões, metas, forecast, pacote offline |
 
 Somente a Coordenação Técnica (e o Administrador) distribui atendimentos técnicos.

@@ -13,8 +13,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 5. Parque instalado | Implementada; homologação de uso pendente | Equipamentos, série, instalação, garantia e histórico |
 | 6. Oportunidades e propostas | Implementada; homologação de uso pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
 | 7. Agenda e visitas | Implementada; homologação de uso pendente | Adaptar ao local/equipamento e uniformizar filtros |
-| 8. Chamados e triagem | Próxima | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
-| 9. OS básica | Pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
+| 8. Chamados e triagem | Implementada; homologação de uso pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
+| 9. OS básica | Próxima | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
 | 10. Peças utilizadas | Pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
 | 11. Dashboards | Pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
 | 12. Homologação e piloto | Pendente | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
@@ -133,11 +133,26 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Mapa e sugestão de rotas (RF-VIS-004/005, fases P1/P2).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 8. Chamados e triagem
+## Etapa 8 — chamados e triagem
 
-- [ ] Abertura manual por cliente/propriedade/equipamento com origem, descrição e criticidade configurável (crítico, alto, programado).
-- [ ] Primeiro retorno, prazo pactuado, responsável, distribuição e escalonamento com histórico de designações.
-- [ ] Fila da Coordenação Técnica por território da propriedade; tempos calculados com instantes do servidor.
+- [x] Abertura manual por cliente, propriedade (obrigatória) e equipamento, com origem, criticidade, título e descrição; numeração CH por empresa.
+- [x] Criticidade crítico/alto/programado ordenando a fila, nomes configuráveis por empresa.
+- [x] Primeiro retorno, prazo pactuado (caso a caso, sem SLA automático), responsável, designação e escalonamento com histórico imutável de designações.
+- [x] Resolver exige solução; cancelar exige motivo; encerrados somente leitura; reincidência ligada a chamado resolvido do mesmo cliente.
+- [x] Tempos de resposta e solução e prazo vencido calculados com instantes do servidor.
+- [x] Fila por perfil: empresa, território da Coordenação (região da propriedade), carteira comercial ou técnico designado; só Coordenação/Administrador triam.
+- [x] Cliente com chamado aberto não pode ser arquivado; chamados na linha do tempo do equipamento.
+- [x] Módulo Chamados com contadores por criticidade, filtros, modais de abertura, triagem e configuração.
+- [x] Testes: 4 cenários MongoDB, 4 unitários, E2E em desktop e celular.
+- [x] Verificação completa: check (185 Vitest), MongoDB 80/80, layout 115 aprovados e 2 ignorados, E2E 82/82.
+- [ ] Alertas de chamados sem retorno/atrasados (RF-CHA-005, fase P1).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 9. OS básica
+
+- [ ] OS vinculada a chamado ou manutenção programada, com equipamento/propriedade.
+- [ ] Diagnóstico, técnico, execução, horas trabalhadas, deslocamento, horas faturáveis separadas, solução e retorno pela mesma falha.
+- [ ] Técnico executa só OS atribuídas; conclusão exige dados obrigatórios e permissão de encerramento.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

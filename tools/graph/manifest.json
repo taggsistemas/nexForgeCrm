@@ -1729,6 +1729,54 @@
       "kind": "test",
       "source": "tests/unit/attendances.test.ts",
       "symbol": "agenda location, outcome and territory inputs"
+    },
+    {
+      "id": "crm:tickets:models",
+      "kind": "models",
+      "source": "apps/api/src/modules/tickets/models.ts",
+      "symbol": "Ticket"
+    },
+    {
+      "id": "crm:tickets:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/tickets/service.ts",
+      "symbol": "ticketService"
+    },
+    {
+      "id": "crm:tickets:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/tickets/router.ts",
+      "symbol": "createTicketRouter"
+    },
+    {
+      "id": "crm:tickets:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/tickets.ts",
+      "symbol": "TicketView"
+    },
+    {
+      "id": "crm:tickets:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/tickets/Tickets.tsx",
+      "symbol": "Tickets"
+    },
+    {
+      "id": "crm:tickets:test",
+      "kind": "test",
+      "source": "tests/integration/tickets-mongo.test.ts",
+      "symbol": "tickets: territory queue"
+    },
+    {
+      "id": "crm:tickets:unit",
+      "kind": "test",
+      "source": "tests/unit/tickets.test.ts",
+      "symbol": "ticket rules"
+    },
+    {
+      "id": "crm:tickets:e2e",
+      "kind": "test",
+      "source": "tests/e2e/tickets.spec.ts",
+      "symbol": "coordination opens a critical ticket"
     }
   ],
   "edges": [
@@ -3555,6 +3603,56 @@
     {
       "from": "crm:agenda:attendances-unit",
       "to": "apps/api/src/modules/agenda/input.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:tickets:service",
+      "to": "apps/api/src/modules/tickets/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:tickets:service",
+      "to": "apps/api/src/modules/technical/access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:tickets:service",
+      "to": "apps/api/src/modules/relationships/locations.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:tickets:http",
+      "to": "apps/api/src/modules/tickets/service.ts",
+      "kind": "exposes"
+    },
+    {
+      "from": "crm:tickets:http",
+      "to": "apps/api/src/app.ts",
+      "kind": "mounted-by"
+    },
+    {
+      "from": "crm:tickets:ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:tickets:contract",
+      "to": "apps/web/src/features/relationships/PartyEquipment.tsx",
+      "kind": "used-by"
+    },
+    {
+      "from": "crm:tickets:test",
+      "to": "apps/api/src/modules/tickets/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:tickets:unit",
+      "to": "apps/api/src/modules/tickets/input.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:tickets:e2e",
+      "to": "apps/web/src/features/tickets/Tickets.tsx",
       "kind": "tests"
     }
   ]

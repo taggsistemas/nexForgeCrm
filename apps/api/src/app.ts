@@ -1,4 +1,5 @@
 import {createTechnicalRouter} from './modules/technical/router.js';
+import {createTicketRouter} from './modules/tickets/router.js';
 import {createCatalogRouter} from './modules/catalog/router.js';
 import {createOfflineRouter} from './modules/offline/router.js';
 import {SubscriptionExpired} from './modules/licensing/input.js';
@@ -35,6 +36,7 @@ export function createApp(options: { origin: string; databaseReady: () => boolea
   });
   if (options.identity) {
     app.use('/api/v1/companies/:companyId/technical',createTechnicalRouter(options.identity,options.origin));
+    app.use('/api/v1/companies/:companyId/tickets',createTicketRouter(options.identity,options.origin));
     app.use('/api/v1/companies/:companyId/catalog',createCatalogRouter(options.identity,options.origin));
     app.use('/api/v1/auth', createIdentityRouter(options.identity, options.origin, options.secureCookies ?? false));
     app.use('/api/v1/auth',createAccountSecurityRouter(options.identity,options.origin,options.recoveryMailer,options.privacyContact));

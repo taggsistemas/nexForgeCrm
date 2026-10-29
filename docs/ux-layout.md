@@ -18,3 +18,16 @@
 Configurações de layout: 1366×768, 1280×600 e 393×851. São quatro cenários por tamanho. Capturas sintéticas em `artifacts/ux/` para inspeção. Local usa Chrome instalado; CI usa Chromium instalado pelo Playwright. A rotina de CI inclui a suíte de layout e coleta artefatos em caso de falha. Nenhum teste usa clientes ou localizações reais.
 
 Resultados e limitações por execução em `verification.md`. Alterações visuais não mudam permissões ou validações do backend.
+
+## Padronização transversal — etapa 1 (29/10/2026)
+
+A base visual compartilhada agora uniformiza campos, botões, filtros, tabelas, seções, feedback e foco nos dois temas. Checkboxes têm dimensão própria; controles de texto no celular mantêm 16px e 44px de altura. Tabelas extensas usam rolagem local, não da página inteira. Formulários longos continuam roláveis.
+
+Modal oferece tamanho compacto/amplo, foco inicial no título e aria-busy. O cadastro de empresa do Master passou a usá-lo, removendo o diálogo separado. Recuperação de acesso usa largura compacta. Menu móvel possui fundo de fechamento, contenção de teclado, Escape e restauração do foco; atalho permite ir ao conteúdo principal.
+
+`tests/layout/workspaces.spec.ts` compila os componentes reais com esbuild e monta React no Chrome sem servidor HTTP, usando fetch sintético. Exercita abertura/fechamento dos editores, geometria, retorno de foco e os temas claro/escuro. Não executa escritas reais nem substitui testes de autorização/banco ou homologação em dispositivos. Capturas sintéticas ficam em artifacts/ux para inspeção interna.
+
+Plano vigente de entrada manual e progresso por etapa: implementation-checklist.md.
+
+### Refinamento de espaçamento
+Botões e ações receberam afastamento maior das bordas e dos campos: barras com 16px (14px no celular), conteúdo de modal com 18px (16px no celular), seções/cards com 16px e grupos de ações com gap de 10px. Rodapés de formulário têm separação de 16px; ações soltas não encostam nos containers seguintes.

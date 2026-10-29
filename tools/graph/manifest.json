@@ -1567,6 +1567,18 @@
       "source": "tests/unit/audit-actors.test.ts",
       "kind": "test",
       "symbol": "audit actor attribution"
+    },
+    {
+      "id": "crm:ux:workspace-tests",
+      "kind": "test",
+      "source": "tests/layout/workspaces.spec.ts",
+      "symbol": "mobile navigation traps keyboard focus"
+    },
+    {
+      "id": "crm:plan:implementation",
+      "kind": "specification",
+      "source": "docs/implementation-checklist.md",
+      "symbol": "Plano de programação e checklist"
     }
   ],
   "edges": [
@@ -3178,6 +3190,21 @@
     {
       "from": "crm:catalog:product-fields",
       "to": "tests/layout/compact.spec.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:workspace-tests",
+      "to": "apps/web/src/components/Modal.tsx",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:ux:workspace-tests",
+      "to": "apps/web/src/compact.css",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:plan:implementation",
+      "to": "docs/ux-layout.md",
       "kind": "depends-on"
     }
   ]

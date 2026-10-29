@@ -239,3 +239,19 @@ E2E da revisão: 18 casos aprovados no Chrome instalado, em desktop e celular (i
 
 ### Vigência e preparação de tabelas — 2026-10-29
 TypeScript e build passaram. Catálogo: 8 testes passaram, incluindo markup versus margem, arredondamento, vigência inclusiva, datas inválidas. Check completo: 126 passaram, 31 HTTP falharam com connect EACCES 127.0.0.1, 55 Mongo ignorados. E2E iniciado com configuração local, sem executar casos ao aguardar servidor; interrompido. Fórmulas em lote preparam valores fixos; regras automáticas persistidas e custos integrados continuam pendentes.
+
+## Etapa 1 — padronização transversal (29/10/2026)
+
+- Implementação: estilos compartilhados, modal Master unificado, foco no título e aria-busy, recuperação compacta, menu móvel com contenção de teclado/Escape/retorno, atalho para conteúdo, ações do catálogo e remoção de paginação vazia técnica.
+- TypeScript passou em npm run check; build API/web/PWA passou separadamente, após as alterações de interface.
+- Check completo: 4 testes nativos e 5 limites estáticos passaram; 126 testes Vitest passaram, 31 testes HTTP falharam com connect EACCES 127.0.0.1, 55 testes MongoDB ignorados por falta da configuração isolada. Não é aprovação de isolamento real.
+- Layout: execução ampliada teve 93 aprovados, 2 ignorados (drawer móvel em desktop) e uma falha no teste de teclado. Causa: a página sintética desse teste estava sem meta viewport. Corrigido o fixture; reexecução dirigida do teste móvel passou, com os 2 desktop ignorados. Total de cenários distintos validados: 94. Os 69 cenários anteriores também haviam passado antes da ampliação.
+- A suíte nova monta os componentes React reais em Chrome usando esbuild e API sintética, sem HTTP local. Inclui abertura e fechamento de editores, foco e retorno, dois temas, 1366x768, 1280x600 e 393x851. Não verifica gravação/autorização real nem todas as variantes de edição.
+- Inspeção de capturas sintéticas: cadastro de produto claro no desktop e agendamento técnico escuro no celular. Nenhum dado real utilizado.
+- npm run test:e2e -- --config playwright.local.config.ts iniciado: aguardou o preview sem executar casos e foi interrompido. Não declarado aprovado.
+- esbuild 0.28.2, já instalado, declarado diretamente para a suíte. Tentativa de atualizar lock pelo npm offline encontrou ENOTCACHED no registry; manifesto e raiz do lock foram alinhados à versão existente sem baixar pacotes. npm ls esbuild --depth=0 confirmou a instalação válida.
+- Metadados declarados do grafo atualizados; não equivalem à extração AST Graphify. git diff --check sem erros.
+- Checklist e sequência: docs/implementation-checklist.md. Homologação humana/dispositivos e integrações de teste continuam pendentes; próxima etapa 2: perfis e permissões. Nenhuma publicação ou alteração no ERP.
+
+### Refinamento: botões próximos aos containers (29/10/2026)
+Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações e margem acima/abaixo de botões soltos. Test:layout: 94 passaram, 2 ignorados por se aplicarem apenas a menu móvel. TypeScript, build API/web/PWA, graph:metadata (263 nós/325 arestas declarados) e diff --check passaram. Check geral: 126 Vitest passaram, 31 HTTP falharam com connect EACCES 127.0.0.1, 55 Mongo ignorados; nativos 4 e limites estáticos 5 passaram. E2E aguardou preview sem executar casos e foi interrompido. Próxima etapa permanece perfis/permissões; homologação visual humana pendente.

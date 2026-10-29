@@ -39,7 +39,8 @@ async function resolveAccess(userId: string, tenantId: string): Promise<Verified
   const sellerRoles=visibility==='team' ? await Role.find({tenantId:tenant._id,key:'seller'}).select('_id') : [];
   const supervised=visibility==='team' ? await Membership.find({tenantId:tenant._id,active:true,userId:{$in:membership.supervisedUserIds},roleIds:{$in:sellerRoles.map(role=>role._id)}}).select('userId') : [];
   const activeSellers=supervised.length ? await User.find({_id:{$in:supervised.map(item=>item.userId)},active:true}).select('_id') : [];
-  const dataAccess: NonNullable<AccessContext['dataAccess']>={visibility,supervisedUserIds:activeSellers.map(item=>String(item._id))};
+  const technicalManagementVisibility=owner||keys.includes('tenant_admin')?'company':keys.includes('technical_coordinator')?'team':undefined;
+  const dataAccess: NonNullable<AccessContext['dataAccess']>={...(technicalManagementVisibility?{technicalManagementVisibility}:{}),visibility,supervisedUserIds:activeSellers.map(item=>String(item._id))};
   return {
     credentialVersion:user.passwordVersion,
     context: { onboarding:{passwordChangeRequired:user.mustChangePassword,privacyAcceptanceRequired:membership.privacyVersion!==privacyVersion},userId: String(user._id), tenantId: String(tenant._id), companyIds: companies.map(company => String(company._id)), permissions: granted, dataAccess },

@@ -103,7 +103,7 @@ html:has(dialog[open]),body:has(dialog[open]){overflow:hidden}
  .nf-modal{width:calc(100% - 12px);max-height:calc(100dvh - 12px)}
  .nf-modal-heading{padding:8px 12px;gap:8px}
  .nf-modal-heading h2{font-size:17px}
- .nf-modal-content{padding:12px}
+ .nf-modal-content{padding:16px}
  .nf-crm-toolbar{display:flex}
  .nf-crm-toolbar>label{min-width:0;flex:1 1 160px}
  .nf-crm-search{flex-direction:row;flex-wrap:wrap;align-items:flex-end}
@@ -242,3 +242,107 @@ html:has(dialog[open]),body:has(dialog[open]){overflow:hidden}
 .nf-technical .nf-field-stops p{font-size:12px;margin:6px 0;color:var(--nf-muted)}
 .nf-location-link{color:var(--nf-accent);text-decoration:underline;text-underline-offset:3px}
 .nf-technical .nf-form-section{display:grid;gap:8px}
+/* Shared UI baseline — stage 1. Components keep their business behavior. */
+:root{--nf-radius:12px;--nf-control-radius:8px;--nf-focus:var(--nf-accent);--nf-shadow:0 8px 24px #00000012;--nf-danger:#fda4af;--nf-danger-bg:#351923;--nf-success:#86efac;--nf-success-bg:#123024}
+:root[data-theme=light]{--nf-danger:#9f1239;--nf-danger-bg:#fff1f2;--nf-success:#166534;--nf-success-bg:#f0fdf4}
+.nf-shell,.nf-login,.master-shell{line-height:1.5}
+.nf-content{max-width:1680px}
+.nf-page-heading h1{font-weight:750;letter-spacing:-.6px}
+.nf-panel,.master-card{box-shadow:0 2px 8px #00000006}
+.nf-crm,.nf-admin,.nf-offline,.nf-modal-content,.master-card{min-width:0;overflow-wrap:anywhere}
+.nf-crm-toolbar{padding:16px;border:1px solid var(--nf-border);border-radius:var(--nf-radius);background:var(--nf-surface);display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px}
+.nf-crm-toolbar>label{flex:0 1 220px}
+.nf-crm-toolbar>button{align-self:flex-end}
+.nf-form{display:grid;gap:12px}
+.nf-form>fieldset{min-width:0;margin:0;padding:0;border:0}
+.nf-form fieldset>legend{font-size:13px;font-weight:650;padding:0 0 6px;color:var(--nf-text)}
+.nf-form label,.nf-admin label,.nf-crm-toolbar label,.nf-crm-search label,.nf-territory-option label{font-size:13px;font-weight:550;line-height:1.4}
+.nf-form label:not(.nf-check),.nf-crm>label,.nf-territory-option>label{display:grid;gap:5px}
+.nf-form :is(input,select,textarea):not([type=checkbox]):not([type=radio]),.nf-crm :is(input,select,textarea):not([type=checkbox]):not([type=radio]),.nf-admin :is(input,select,textarea):not([type=checkbox]):not([type=radio]),.master-registration :is(input,select,textarea){width:100%;min-width:0;max-width:100%;min-height:38px;padding:8px 10px;font:inherit;font-size:13px;line-height:1.4;color:var(--nf-text);background:var(--nf-input);border:1px solid var(--nf-border);border-radius:var(--nf-control-radius)}
+.nf-form textarea{resize:vertical;min-height:80px;max-height:none}
+.nf-form .nf-check,.nf-crm .nf-check{display:flex;align-items:center;gap:9px;font-weight:400;min-height:36px}
+.nf-form input:is([type=checkbox],[type=radio]),.nf-crm input:is([type=checkbox],[type=radio]),.nf-admin input:is([type=checkbox],[type=radio]){width:18px;height:18px;min-height:18px;padding:0;flex:0 0 18px;accent-color:var(--nf-accent)}
+.nf-form :is(input,select,textarea):disabled{opacity:.65;cursor:not-allowed}
+:is(.nf-primary,.nf-secondary,.master-main button,.master-outline){min-height:38px;border-radius:var(--nf-control-radius);font-size:13px;font-weight:600;line-height:1.35;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-align:center;transition:background .15s,border-color .15s,box-shadow .15s}
+.nf-primary{background:#2563eb;color:#fff;box-shadow:0 2px 4px #00000012}
+.nf-primary:hover:not(:disabled){background:#1d4ed8}
+.nf-secondary:hover:not(:disabled){background:var(--nf-selected);border-color:var(--nf-accent)}
+button:disabled,.nf-shell button:disabled,.nf-login button:disabled{cursor:not-allowed;opacity:.55}
+:is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--nf-focus);outline-offset:3px}
+.nf-modal-heading h2:focus{outline:none}
+.nf-modal-heading{gap:16px;align-items:center;background:var(--nf-surface);padding:14px 18px}
+.nf-modal-heading h2{font-size:18px;line-height:1.35;margin:0}
+.nf-modal-heading>button{flex-shrink:0}
+.nf-modal{box-shadow:0 24px 80px #0006;border:1px solid var(--nf-border)}
+.nf-modal::backdrop{background:#020617a6;backdrop-filter:blur(3px)}
+.nf-modal--compact{width:min(560px,calc(100% - 24px))}
+.nf-modal-content{padding:18px}
+.nf-modal-content>.nf-form{margin:0}
+.nf-modal .nf-admin-actions{margin-top:16px;padding:16px 0 4px;border-top:1px solid var(--nf-border);gap:8px}
+.nf-modal .nf-form>.nf-primary{justify-self:end;min-width:140px}
+.nf-modal .nf-policy{font-size:13px;line-height:1.7}
+.nf-modal .nf-form-section{padding:14px}
+.nf-error,[role=alert]:not(.nf-connection):not(.nf-chart-empty){padding:10px 12px;border:1px solid var(--nf-danger);border-left-width:3px;border-radius:8px;background:var(--nf-danger-bg);color:var(--nf-danger);font-size:13px;line-height:1.5;white-space:normal}
+.nf-admin-success,.nf-crm>p[role=status]:not(.nf-muted),.nf-modal-content>p[role=status]{padding:10px 12px;border:1px solid var(--nf-success);border-left-width:3px;border-radius:8px;background:var(--nf-success-bg);color:var(--nf-success);line-height:1.5}
+.nf-admin-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto!important}
+.nf-admin-table th{font-size:11px;font-weight:700;letter-spacing:.3px;background:var(--nf-surface2);color:var(--nf-muted);border-bottom:1px solid var(--nf-border)}
+.nf-admin-table td{font-size:13px;vertical-align:middle;line-height:1.5}
+.nf-admin-table th:last-child{width:auto}
+.nf-admin-table tbody tr:hover{background:var(--nf-selected)}
+.nf-admin-table td:has(button){min-width:150px}
+.nf-crm-row-actions,.nf-field-actions,.nf-field-actions>div{display:flex;flex-wrap:wrap;gap:6px}
+.nf-badge{font-size:11px;font-weight:600;border-radius:20px;line-height:1.3}
+.nf-agenda-list,.nf-territory-items{list-style:none;padding:0}
+.nf-agenda-list>li,.nf-territory-items>li{min-width:0;align-items:center}
+.nf-agenda-list>li>div,.nf-territory-items>li>div{min-width:0}
+.nf-catalog-list>li{align-items:flex-start}
+.nf-form details>summary{font-size:13px;cursor:pointer}
+.nf-skip-link{position:fixed;top:8px;left:12px;z-index:100;background:var(--nf-surface);color:var(--nf-text);padding:10px 16px;border:2px solid var(--nf-accent);border-radius:8px;transform:translateY(-160%)}
+.nf-skip-link:focus{transform:translateY(0)}
+.nf-menu-backdrop{display:none}
+.nf-menu-group button.is-active{font-weight:650}
+.nf-menu-group button>span{min-width:0;overflow-wrap:anywhere}
+.nf-login-card input,.master-login input{min-height:44px}
+.nf-login-card{border-radius:18px}
+@media(max-width:800px){
+ .nf-menu-backdrop{display:block;position:fixed;inset:0;border:0;background:#02061799;z-index:9;cursor:pointer}
+ body:has(.nf-menu-backdrop){overflow:hidden}
+ .nf-sidebar.is-open{z-index:10}
+ .nf-crm-toolbar{padding:14px;gap:10px}
+ .nf-crm-toolbar>label{flex:1 1 145px}
+ .nf-crm-toolbar>button{flex:1 1 auto}
+ :is(.nf-primary,.nf-secondary,.master-main button,.master-outline){min-height:44px}
+ .nf-form :is(input,select,textarea):not([type=checkbox]):not([type=radio]),.nf-crm :is(input,select,textarea):not([type=checkbox]):not([type=radio]),.nf-admin :is(input,select,textarea):not([type=checkbox]):not([type=radio]),.master-registration :is(input,select,textarea){min-height:44px;font-size:16px}
+ .nf-form .nf-check,.nf-crm .nf-check{min-height:44px}
+ .nf-modal-heading{padding:12px 16px;gap:12px}
+ .nf-modal-content{padding:12px}
+ .nf-admin-table{min-width:560px!important}
+ .nf-form-section .nf-admin-grid{grid-template-columns:minmax(0,1fr)}
+ .nf-login-card input,.master-login input{font-size:16px}
+ .nf-topbar-brand>strong{font-size:14px}
+}
+@media(max-width:480px){
+ .nf-modal--compact{width:calc(100% - 12px)}
+ .nf-catalog-list>li{flex-wrap:wrap}
+ .nf-catalog-list>li>div{flex:1 1 180px}
+ .nf-crm-search label{flex:1 1 100%}
+ .nf-modal .nf-admin-actions>button{flex:1 1 120px}
+}
+/* The company registration uses the shared dialog, including its responsive grid. */
+@media(min-width:1000px){.nf-modal .master-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.nf-modal .master-registration{margin:0}
+.nf-modal .master-registration fieldset{min-width:0;border-radius:var(--nf-radius);background:var(--nf-surface2);padding:12px;margin:0 0 12px}
+.nf-modal .master-registration legend{font-size:13px;font-weight:650}
+
+/* Breathing room between actions, fields and container edges. */
+.nf-panel,.master-card{padding:16px}
+.nf-form-section,.nf-modal .nf-form-section{padding:16px}
+.nf-catalog-list>li,.nf-technical .nf-field-stops>li{padding:16px;gap:14px}
+.nf-field-actions,.nf-crm-row-actions,.nf-admin-actions{gap:10px}
+.nf-form .nf-field-actions{margin-top:12px}
+.nf-form>fieldset>button,.nf-crm>button{margin-block:12px}
+.nf-form>fieldset>.nf-admin-actions{margin-top:16px}
+.nf-modal .nf-form>.nf-primary{margin-top:8px;margin-bottom:4px}
+.nf-section-heading,.master-section-heading{gap:14px}
+@media(max-width:800px){.nf-panel,.master-card{padding:14px}.nf-form-section,.nf-modal .nf-form-section{padding:14px}.nf-catalog-list>li,.nf-technical .nf-field-stops>li{padding:14px}}
+.nf-admin-grid>.nf-field-wide{grid-column:1/-1}

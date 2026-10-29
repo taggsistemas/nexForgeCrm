@@ -6,7 +6,7 @@ export interface AccessContext {
   companyIds: readonly string[];
   permissions: readonly Permission[];
   onboarding?: {passwordChangeRequired:boolean;privacyAcceptanceRequired:boolean};
-  dataAccess?: { visibility: 'company' | 'team' | 'own'; supervisedUserIds: readonly string[] };
+  dataAccess?: { technicalManagementVisibility?:'company'|'team'; visibility: 'company' | 'team' | 'own'; supervisedUserIds: readonly string[] };
 }
 export interface IntegrationEvent<T> {
   eventId: string;

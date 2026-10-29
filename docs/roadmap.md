@@ -72,3 +72,6 @@ Trial opcional de 30 dias no cadastro, plano padrão de 25 licenças, adicionais
 
 
 Execução técnica adicionada como domínio separado: perfil Técnico, supervisor/regiões, agendamento manual de serviços e roteiro/check-in/out online. Automação a partir de serviço vendido depende de propostas/pedidos; não considera agendamento como venda. Ver technical-work.md. Validação integral pendente.
+
+## Plano vigente do piloto com entrada manual (29/10/2026)
+A sequência de programação acordada após análise dos requisitos do cliente está em [implementation-checklist.md](implementation-checklist.md). Ela prioriza propriedades, parque instalado, propostas, chamados e OS básica antes das evoluções P1/P2, aproveitando o comercial e a execução já existentes. Importação/integração fica posterior por decisão explícita; não representa cumprimento do requisito original de importação. Etapa 1 de padronização visual implementada, com homologação de uso ainda pendente; próxima etapa: perfis e permissões. As seções anteriores deste arquivo permanecem como histórico.

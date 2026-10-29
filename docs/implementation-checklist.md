@@ -11,8 +11,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 3. Evoluir clientes e contatos | Implementada; homologação de uso pendente | Documento único no grupo, listas configuráveis, próxima ação, responsável técnico, papéis/consentimento e ficha com histórico |
 | 4. Propriedades/locais | Implementada; homologação de uso pendente | Vários locais por cliente e vínculos autorizados |
 | 5. Parque instalado | Implementada; homologação de uso pendente | Equipamentos, série, instalação, garantia e histórico |
-| 6. Oportunidades e propostas | Próxima | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
-| 7. Agenda e visitas | Pendente | Adaptar ao local/equipamento e uniformizar filtros |
+| 6. Oportunidades e propostas | Implementada; homologação de uso pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
+| 7. Agenda e visitas | Próxima | Adaptar ao local/equipamento e uniformizar filtros |
 | 8. Chamados e triagem | Pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
 | 9. OS básica | Pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
 | 10. Peças utilizadas | Pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
@@ -107,11 +107,26 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Anexos, alertas de garantia e manutenção prevista (RF-EQP-004/005, fase P1).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 6. Oportunidades e propostas
+## Etapa 6 — oportunidades e propostas
 
-- [ ] Vincular oportunidades a propriedade e equipamento; origem e probabilidade.
-- [ ] Configuração de etapas do funil.
-- [ ] Propostas com versões, itens de produtos/serviços, quantidades, preços, validade e status, sem contabilizar proposta como receita.
+- [x] Oportunidade vinculada a propriedade e equipamento do mesmo cliente (equipamento na propriedade escolhida) e à origem configurável.
+- [x] Funil configurável: nomes e probabilidades padrão das fases abertas por empresa (`list:manage`); fases continuam fixas.
+- [x] Probabilidade 0–100 com padrão da fase; Ganha = 100% e Perdida = 0% definidos pelo servidor; previsão ponderada apenas como previsão.
+- [x] Propostas numeradas por empresa, itens do catálogo com quantidade decimal, preço e desconto; totais calculados no servidor; preço de referência das tabelas.
+- [x] Revisões congeladas no envio; aceite, recusa com motivo e cancelamento com datas do servidor; uma proposta aceita por oportunidade; vencimento sinalizado.
+- [x] Propostas seguem a oportunidade e o cliente atual; somente leitura após encerramento; histórico comercial com eventos de proposta.
+- [x] Proposta não gera pedido nem receita; ganho continua explícito.
+- [x] Itens da proposta viram cartões empilhados no celular.
+- [x] Testes: 4 cenários MongoDB (incluindo envio concorrente e transferência), 4 unitários, E2E de proposta em desktop e celular.
+- [x] Verificação completa: check (178 Vitest), MongoDB 73/73, layout 112 aprovados e 2 ignorados, E2E 80/80.
+- [ ] PDF, alçadas de desconto e aprovação interna (RF-CRM-006/007, fase P1).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 7. Agenda e visitas
+
+- [ ] Incluir propriedade/equipamento, objetivo, resultado e próxima ação nas atividades e visitas.
+- [ ] Uniformizar filtros por território (da propriedade), responsável e período.
+- [ ] Exibir agendamento e execução no histórico do cliente/propriedade e na linha do tempo do equipamento.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

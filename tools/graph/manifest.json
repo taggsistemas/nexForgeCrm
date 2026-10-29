@@ -1675,6 +1675,36 @@
       "kind": "test",
       "source": "tests/unit/equipment.test.ts",
       "symbol": "installed base inputs"
+    },
+    {
+      "id": "crm:opportunities:proposals",
+      "kind": "service",
+      "source": "apps/api/src/modules/opportunities/proposals.ts",
+      "symbol": "proposalService"
+    },
+    {
+      "id": "crm:opportunities:proposals-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/opportunities/OpportunityProposals.tsx",
+      "symbol": "OpportunityProposals"
+    },
+    {
+      "id": "crm:opportunities:proposals-test",
+      "kind": "test",
+      "source": "tests/integration/proposals-mongo.test.ts",
+      "symbol": "versioned proposals"
+    },
+    {
+      "id": "crm:opportunities:proposals-unit",
+      "kind": "test",
+      "source": "tests/unit/proposals.test.ts",
+      "symbol": "proposal money and inputs"
+    },
+    {
+      "id": "crm:opportunities:proposals-e2e",
+      "kind": "test",
+      "source": "tests/e2e/proposals.spec.ts",
+      "symbol": "proposal is built from catalog items"
     }
   ],
   "edges": [
@@ -3421,6 +3451,46 @@
     {
       "from": "crm:relationships:equipment-unit",
       "to": "apps/api/src/modules/relationships/input.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:opportunities:proposals",
+      "to": "apps/api/src/modules/opportunities/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunities:proposals",
+      "to": "apps/api/src/modules/catalog/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunities:proposals",
+      "to": "packages/contracts/src/opportunities.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:opportunities:proposals",
+      "to": "apps/api/src/modules/opportunities/router.ts",
+      "kind": "exposed-by"
+    },
+    {
+      "from": "crm:opportunities:proposals-ui",
+      "to": "apps/web/src/features/opportunities/Opportunities.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:opportunities:proposals-test",
+      "to": "apps/api/src/modules/opportunities/proposals.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:opportunities:proposals-unit",
+      "to": "packages/contracts/src/opportunities.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:opportunities:proposals-e2e",
+      "to": "apps/web/src/features/opportunities/OpportunityProposals.tsx",
       "kind": "tests"
     }
   ]

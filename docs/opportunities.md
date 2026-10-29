@@ -27,8 +27,20 @@ Base: /api/v1/companies/:companyId/opportunities
 - GET /:id/history: histórico paginado.
 - GET /:id/activities e POST /:id/activities: listar/criar atividades.
 - PATCH /:id/activities/:activityId: alterar atividade com versão.
+- GET /settings e PUT /settings: funil da empresa (leitura com pipeline:read; alteração com list:manage e versão).
+- GET/POST /:id/proposals, PATCH /:id/proposals/:proposalId, GET /:id/proposals/:proposalId/revisions e POST /:id/proposals/:proposalId/{send,revise,accept,refuse,cancel}: propostas (proposal:read/proposal:write).
 
 GET / aceita page, search e stage. Alterações exigem Origin exata, cookie de sessão e DTO estrito. Erros de versão retornam 409; referência fora do acesso retorna 404; regra de encerramento retorna OPPORTUNITY_RULE_REJECTED (400). Leads incompletos retornam LEAD_QUALIFICATION_REQUIRED (400). Sem campos internos ou tokens nos erros.
 
 ## Limites e próximos incrementos
 Agenda geral com calendário, recorrências, notificações, planejamento de visitas e operação comercial offline permanecem pendentes. Não há envio automático de e-mails de atividade. Pipeline de leads permanece no menu Pipeline comercial; negociações ficam em Oportunidades. Metas e forecast consolidado ainda não são calculados.
+
+## Vínculos, funil e propostas (etapa 6 — 29/10/2026)
+
+- **Vínculos.** Oportunidade pode indicar propriedade e equipamento do mesmo cliente (o equipamento precisa estar na propriedade; informar só o equipamento preenche a propriedade) e origem da lista configurável. Vínculos novos exigem registros ativos; os já gravados permanecem se arquivados depois e aparecem marcados. Erros retornam INVALID_REFERENCE (400).
+- **Funil configurável.** As fases continuam fixas (Descoberta, Proposta, Negociação, Ganha, Perdida) porque agenda, histórico e regras de encerramento dependem delas. Cada empresa configura o nome exibido e a probabilidade padrão das três fases abertas. Criar fases adicionais fica para evolução futura.
+- **Probabilidade e previsão.** Inteiro de 0 a 100. Sem valor informado, vale o padrão da fase ao criar ou ao mudar de fase; Ganha grava 100 e Perdida 0 no servidor, ignorando o enviado. A previsão ponderada (valor × probabilidade) é apenas previsão, nunca receita. Oportunidades antigas assumem 10% até serem editadas.
+- **Propostas.** Numeração PR-000001 por empresa (sequência atômica). Itens apenas do catálogo ativo, com quantidade respeitando as casas decimais do produto, preço unitário e desconto em centavos; código, descrição e unidade ficam congelados no item. O servidor calcula linhas e total e registra o preço de referência das tabelas de preço quando o cliente é aprovado; o navegador nunca envia totais, número, situação ou preço de referência.
+- **Revisões e situação.** Rascunho editável → Enviada (revisão congelada, data do servidor) → Aceita, Recusada (motivo obrigatório) ou Cancelada. Enviada ou Recusada pode gerar nova revisão. Aceite exige validade vigente e só uma proposta aceita por oportunidade. Validade vencida aparece como "vencida" sem alterar a situação gravada.
+- **Regras de acesso.** Propostas seguem a oportunidade e o cliente atual (transferência muda quem pode alterar). Escrita só com oportunidade aberta; ganha ou perdida torna as propostas somente leitura. Cada escrita serializa na oportunidade, então envio/aceite concorrentes ou encerramento simultâneo geram conflito. Eventos de proposta entram no histórico comercial.
+- **Fora do escopo.** Aceite não gera pedido, faturamento ou receita e não altera o valor da oportunidade; marcar Ganha continua explícito. PDF, alçadas de desconto e aprovação interna (proposal:approve) ficam para a fase P1.

@@ -33,8 +33,8 @@ test('opportunity modal, linked activity, history and won closure work on each v
  await expect(page.getByRole('table')).toContainText('Projeto Acme');
  expect(creation).toMatchObject({partyId,amountCents:123456,stage:'descoberta'});
  expect(creation).not.toHaveProperty('tenantId');expect(creation).not.toHaveProperty('ownerId');
- await page.getByRole('button',{name:'Atividades e histórico'}).click();
- const details=page.getByRole('dialog',{name:'Atividades e histórico — Projeto Acme',exact:true});
+ await page.getByRole('button',{name:'Propostas, atividades e histórico'}).click();
+ const details=page.getByRole('dialog',{name:'Oportunidade — Projeto Acme',exact:true});
  await expect(details).toContainText('Oportunidade criada');
  await details.getByRole('button',{name:'Nova atividade',exact:true}).click();
  const activityModal=page.getByRole('dialog',{name:'Nova atividade',exact:true});

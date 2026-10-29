@@ -322,3 +322,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Nova suíte `work-order-parts-mongo` (3 casos reais): lançamento só durante/após execução pelo técnico atribuído, casas decimais, serviço/produto inativo recusados, devolução acima do saldo recusada, outro técnico e OS pendente recusados, preço forjado recusado (400); preço só para Gerencial; sem alteração de horas faturáveis/catálogo; devoluções concorrentes (uma vence), lançamento da coordenação após conclusão e bloqueio após encerramento.
 - Novo E2E de peças (desktop/celular); componente tolerante a resposta inesperada após falha detectada no E2E técnico.
 - `npm run check`: aprovado, 190 Vitest, grafo declarado (303 nós/385 arestas, não Graphify AST). `npm run test:db`: 86/86. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 84/84.
+
+## Etapa 11 — dashboards (29/10/2026)
+
+- Central gerencial com visões Comercial, Técnica e Gerencial; indicadores com definição calculados no servidor após o escopo de cada módulo e os filtros de período (São Paulo), território da propriedade e responsável; "sem base" para percentuais sem denominador; CSV com os mesmos valores.
+- Nova suíte `indicators-mongo` (3 casos reais) confere valores com os registros criados: carteira, visitas/cobertura, oportunidades/previsão/conversão, propostas, chamados (críticos, tempos, prazo cumprido, reincidência) e OS (horas, faturáveis, reincidência); escopo de vendedor, coordenação e gestão; filtros de território, responsável e período; período inválido (400).
+- Primeira rodada: 5 suítes antigas (agenda, field-visits, offline, opportunities, territories) estouraram 30 s no beforeAll com 22 suítes em paralelo; nenhum caso de regra falhou. Limites de preparação alinhados a 90 s; as cinco passam juntas (26/26) e a suíte completa passou.
+- `npm run check`: aprovado, 194 Vitest, grafo declarado (310 nós/393 arestas, não Graphify AST). `npm run test:db`: 89/89. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 86/86.

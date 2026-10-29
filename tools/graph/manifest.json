@@ -1819,6 +1819,48 @@
       "kind": "test",
       "source": "tests/e2e/work-order-parts.spec.ts",
       "symbol": "assigned technician registers a part"
+    },
+    {
+      "id": "crm:indicators:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/indicators/service.ts",
+      "symbol": "indicatorService"
+    },
+    {
+      "id": "crm:indicators:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/indicators/router.ts",
+      "symbol": "createIndicatorRouter"
+    },
+    {
+      "id": "crm:indicators:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/indicators.ts",
+      "symbol": "IndicatorReport"
+    },
+    {
+      "id": "crm:indicators:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/indicators/Indicators.tsx",
+      "symbol": "Indicators"
+    },
+    {
+      "id": "crm:indicators:test",
+      "kind": "test",
+      "source": "tests/integration/indicators-mongo.test.ts",
+      "symbol": "indicators: values match records"
+    },
+    {
+      "id": "crm:indicators:unit",
+      "kind": "test",
+      "source": "tests/unit/indicators.test.ts",
+      "symbol": "indicator definitions"
+    },
+    {
+      "id": "crm:indicators:e2e",
+      "kind": "test",
+      "source": "tests/e2e/indicators.spec.ts",
+      "symbol": "management indicators apply shared filters"
     }
   ],
   "edges": [
@@ -3745,6 +3787,46 @@
     {
       "from": "crm:technical:parts-e2e",
       "to": "apps/web/src/features/technical/WorkOrderParts.tsx",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:indicators:service",
+      "to": "apps/api/src/modules/tickets/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:indicators:service",
+      "to": "apps/api/src/modules/technical/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:indicators:service",
+      "to": "apps/api/src/modules/identity/profile-access.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:indicators:http",
+      "to": "apps/api/src/app.ts",
+      "kind": "mounted-by"
+    },
+    {
+      "from": "crm:indicators:ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:indicators:test",
+      "to": "apps/api/src/modules/indicators/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:indicators:unit",
+      "to": "packages/contracts/src/indicators.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:indicators:e2e",
+      "to": "apps/web/src/features/indicators/Indicators.tsx",
       "kind": "tests"
     }
   ]

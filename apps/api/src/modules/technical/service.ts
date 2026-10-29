@@ -47,7 +47,7 @@ async function assignee(ctx:AccessContext,company:string,id:string,regionId:stri
  await Membership.updateOne({_id:member._id,tenantId:ctx.tenantId},{$inc:{commercialRevision:1}},{session});return member;
 }
 /** Scope before counts: assigned technician, live team and territory (property region, or portfolio for legacy rows), or company. */
-async function pipeline(ctx:AccessContext,company:string,extra:Record<string,unknown>={},session?:mongoose.ClientSession){
+export async function pipeline(ctx:AccessContext,company:string,extra:Record<string,unknown>={},session?:mongoose.ClientSession){
  const scope=companyScope(ctx,company,'technical:read');if(!ctx.dataAccess)throw new AccessDenied();
  const ids={tenantId:oid(scope.tenantId),companyId:oid(company)},filter:Record<string,unknown>={...ids,...extra};let regions:mongoose.Types.ObjectId[]|null=null;
  if(ctx.dataAccess.visibility==='own')filter.technicianId=oid(ctx.userId);

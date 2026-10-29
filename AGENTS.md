@@ -52,3 +52,5 @@
 - Work orders come from a ticket or scheduled maintenance on a property of the live Party; territory is the property region. Keep attendance time (server check-in/out), reported labor/travel and billable hours (authorized only at coordination closing) separate. A ticket cannot be resolved while linked work orders are open.
 
 - Work order parts are an immutable consumption/return ledger of active catalog products with integer-thousandth balances; returns never exceed the net. Only the assigned technician or coordination writes, until closing. Reference prices are server snapshots shown only to catalog readers. Never move stock or bill from this ledger.
+
+- Indicators are computed only on the server after the same profile scopes used by each module (portfolio, ticket queue, technical scope) and the shared filters (São Paulo calendar period, property-region territory, responsible). Return each value with its definition; ratios without a denominator are null. Commercial values are never revenue.

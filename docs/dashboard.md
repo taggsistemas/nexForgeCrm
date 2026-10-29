@@ -23,3 +23,20 @@ A tela inicial combina cards compactos, um destaque escuro para clientes aprovad
 - Atualização automática e botão “Atualizar painel”. Falha de consulta do gráfico tem estado próprio; não gera série zero como se fosse confirmada.
 
 Contratos: `packages/contracts/src/dashboard.ts`. Serviço: `apps/api/src/modules/relationships/dashboard.ts`. Componente: `DashboardCharts.tsx`. Testes de entradas/escopo/datas e layout, mais cenário MongoDB de isolamento, são registrados em `verification.md`.
+
+## Central gerencial — indicadores (etapa 11 — 29/10/2026)
+
+GET `/api/v1/companies/:companyId/indicators?view=comercial|tecnica|gerencial&startDate&endDate&regionId&ownerId` (`company:read`). Cada indicador volta com rótulo, valor, unidade e **definição**. O escopo do perfil é aplicado antes de qualquer soma: carteira comercial (`commercialFilter`), fila de chamados do perfil e escopo técnico das OS. Seções que o perfil não pode consultar não aparecem.
+
+**Filtros comuns**: período em datas de calendário de São Paulo (padrão últimos 30 dias, máximo 366, data final inclusiva); território = região da **propriedade** (comercial: cliente com propriedade ativa na região; chamados e OS: propriedade do registro); responsável = dono da carteira (comercial), designado (chamado) ou técnico (OS).
+
+| Seção | Indicadores e definição |
+|---|---|
+| Carteira | Clientes e leads ativos; próximas ações em 7 dias; próximas ações vencidas |
+| Visitas | Planejadas e concluídas no período; qualificadas (checkout com resultado "realizada"); cobertura = clientes com visita concluída ÷ clientes ativos |
+| Oportunidades | Abertas, valor em negociação e previsão ponderada (todas as datas); ganhas e valor ganho no período; conversão = ganhas ÷ (ganhas + perdidas) no período |
+| Propostas | Enviadas, aceitas, recusadas e valor aceito no período (não é pedido nem receita) |
+| Chamados | Críticos e totais em aberto; prazos vencidos; abertos e resolvidos no período; tempo médio de primeiro retorno e de solução; prazo pactuado cumprido; reincidência |
+| Ordens de serviço | Pendentes/em execução; concluídas e encerradas no período; horas trabalhadas, deslocamento, horas faturáveis autorizadas; reincidência de OS |
+
+Percentuais sem denominador aparecem como "sem base", nunca como zero inventado. Exportação CSV (separador ;) gerada no navegador com os mesmos números exibidos e o período. Indicadores financeiros (receita, margem, inadimplência) dependem de integração e ficam para a fase P1.

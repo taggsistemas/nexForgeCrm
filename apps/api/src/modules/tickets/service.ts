@@ -21,7 +21,7 @@ type Authority={kind:'company'}|{kind:'territory';regionIds:mongoose.Types.Objec
  * Who sees tickets: company-wide profiles all of them; technical coordination its live territories and
  * technicians; commercial profiles the live portfolio of the customer; technicians only tickets assigned to them.
  */
-async function authority(ctx:AccessContext,companyId:string,session?:mongoose.ClientSession):Promise<Authority>{
+export async function authority(ctx:AccessContext,companyId:string,session?:mongoose.ClientSession):Promise<Authority>{
  companyScope(ctx,companyId,'ticket:read');if(!ctx.dataAccess)throw new AccessDenied();
  if(ctx.dataAccess.visibility==='company')return {kind:'company'};
  if(ctx.dataAccess.technicalManagementVisibility==='team'){const team=await technicalTeamAuthority({...ctx,permissions:[...ctx.permissions,'technical:read'],dataAccess:{...ctx.dataAccess,visibility:'team'}},companyId,session);return {kind:'territory',regionIds:team!.regionIds,technicianIds:team!.technicianIds};}
@@ -31,7 +31,7 @@ async function authority(ctx:AccessContext,companyId:string,session?:mongoose.Cl
 function kinds(ctx:AccessContext){return [...(ctx.permissions.includes('lead:read')?['lead']:[]),...(ctx.permissions.includes('customer:read')?['customer']:[])];}
 function portfolioFilter(ctx:AccessContext,companyId:string){const query=Party.find(commercialFilter(ctx,companyId,ctx.permissions.includes('lead:read')?'lead:read':'customer:read',{kind:{$in:kinds(ctx)}}));query.cast(Party);return query.getFilter();}
 /** Scope stages applied before counts and pagination. */
-function scopeStages(ctx:AccessContext,companyId:string,access:Authority):mongoose.PipelineStage[]{
+export function scopeStages(ctx:AccessContext,companyId:string,access:Authority):mongoose.PipelineStage[]{
  const ids={tenantId:oid(ctx.tenantId),companyId:oid(companyId)};
  const stages:mongoose.PipelineStage[]=[{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:{...ids,...(access.kind==='portfolio'?portfolioFilter(ctx,companyId):{})}},{$project:{name:1,ownerId:1}}],as:'party'}},{$unwind:'$party'},
   {$lookup:{from:Property.collection.name,localField:'propertyId',foreignField:'_id',pipeline:[{$match:ids},{$project:{regionId:1}}],as:'property'}},{$unwind:{path:'$property',preserveNullAndEmptyArrays:true}}];

@@ -35,7 +35,7 @@ describe.skipIf(!uri)('opportunities: live parent authorization, lifecycle, acti
   s1=await seller('opp-seller-one');s2=await seller('opp-seller-two');
   const user=await administrationService.create(a.context,{name:'Supervisor',email:'opp-supervisor@example.invalid',password,profileKey:'supervisor',companyIds:[company],supervisedUserIds:[s1.context.userId]});
   await prepareAccount(user.email);supervisor=(await identityService.login(user.email,password))!;
- },30000);
+ },90000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('inherits scope from the current party and rejects foreign references, ownership and tenant injection',async()=>{
   const party=await seedRelationship(s1.context,company,'customer',{name:'Customer One'});

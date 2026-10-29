@@ -16,8 +16,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 8. Chamados e triagem | Implementada; homologação de uso pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
 | 9. OS básica | Implementada; homologação de uso pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
 | 10. Peças utilizadas | Implementada; homologação de uso pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
-| 11. Dashboards | Próxima | Visões por perfil e indicadores territoriais comerciais/técnicos |
-| 12. Homologação e piloto | Pendente | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
+| 11. Dashboards | Implementada; homologação de uso pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
+| 12. Homologação e piloto | Próxima | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
 
 ## Etapa 1 — checklist de implementação
 
@@ -173,11 +173,22 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] Estoque, reservas e custos (RF-EST, fase P1).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 11. Dashboards
+## Etapa 11 — dashboards
 
-- [ ] Visões comercial, técnica e gerencial com filtros padronizados (território, responsável, período).
-- [ ] Indicadores: carteira, próximas ações, visitas, oportunidades, propostas, chamados críticos, tempo de resposta, OS e reincidência, com definições documentadas.
-- [ ] Respeitar o escopo de cada perfil antes dos totais; exportação CSV.
+- [x] Central gerencial com visões Comercial, Técnica e Gerencial, conforme as seções que o perfil pode consultar.
+- [x] Indicadores de carteira, próximas ações, visitas e cobertura, oportunidades/previsão/conversão, propostas, chamados (críticos, tempos, prazo, reincidência) e OS (horas, faturáveis, reincidência), cada um com definição.
+- [x] Filtros comuns: período (São Paulo), território da propriedade e responsável, aplicados no servidor após o escopo e antes dos totais.
+- [x] Percentuais sem base exibidos como "sem base"; exportação CSV com os mesmos valores.
+- [x] Testes: 3 cenários MongoDB conferindo valores com registros, 4 unitários e E2E em desktop e celular.
+- [x] Verificação completa: check (194 Vitest), MongoDB 89/89, layout 115 aprovados e 2 ignorados, E2E 86/86.
+- [ ] Indicadores financeiros e capacidade técnica (RF-BI-004/005, fase P1); XLSX e relatório gerencial.
+- [ ] Homologar definições com a direção da Só Leite.
+
+## Próxima etapa — 12. Homologação e piloto
+
+- [ ] Executar testes integrados e ponta a ponta do roteiro T01–T08 (T01 por cadastro manual).
+- [ ] Revisar acessibilidade, testar aparelhos reais, exportação, backup e restauração demonstrada.
+- [ ] Preparar instruções de uso e corrigir os problemas encontrados.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

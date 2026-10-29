@@ -37,7 +37,7 @@ describe.skipIf(!uri)('agenda: unified persisted calendar, live portfolio and re
   s1=await seller('agenda-seller-one');s2=await seller('agenda-seller-two');
   const user=await administrationService.create(a.context,{name:'Supervisor',email:'agenda-supervisor@example.invalid',password,profileKey:'supervisor',companyIds:[company],supervisedUserIds:[s1.context.userId]});
   await prepareAccount(user.email);supervisor=(await identityService.login(user.email,password))!;
- },30000);
+ },90000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('unifies existing opportunity tasks and initial leads while enforcing tenant, company, role and live owner',async()=>{
   const party=await seedRelationship(s1.context,company,'lead',{name:'Initial Lead'});

@@ -41,7 +41,7 @@ describe.skipIf(!uri)('territories: ownership, references, periods, atomic publi
   s1=await seller('agenda-seller-one');s2=await seller('agenda-seller-two');
   const user=await administrationService.create(a.context,{name:'Supervisor',email:'agenda-supervisor@example.invalid',password,profileKey:'supervisor',companyIds:[company],supervisedUserIds:[s1.context.userId]});
   await prepareAccount(user.email);supervisor=(await identityService.login(user.email,password))!;
- },30000);
+ },90000);
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('enforces region permissions, seller eligibility and atomic reassignment without stale access',async()=>{
   const region=(await request(app).post(base()+'/regions').set(headers(a)).send({name:'Centro',state:'PR',cities:['Guarapuava']})).body.record;

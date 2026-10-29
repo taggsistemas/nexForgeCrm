@@ -28,3 +28,4 @@ Interrupção mantém a entrada, registra horário/ator/motivo, libera o bloquei
 ## Próximos incrementos
 Geocodificação de endereços, escolha/configuração do provedor, cálculo de distância/tempo e otimização com janelas/restrições. Roteiro atual não calcula trajeto viário, trânsito nem sugere menor distância. Depois: offline com criptografia/expiração local, idempotência e resolução de conflitos, autorização revalidada ao sincronizar. Não considerar a PWA atual apta a gravação offline.
 
+Etapa 7: o roteiro diário aceita filtro por território (Região da propriedade da visita) e mostra propriedade, território, equipamento e objetivo; o endereço exibido passa a ser o da propriedade quando vinculada.

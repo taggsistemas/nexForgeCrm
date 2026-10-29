@@ -4,6 +4,7 @@ import {HistoryTimeline} from '../../components/HistoryTimeline';
 import {equipmentStatuses,equipmentStatusNames,type EquipmentView,type PartyHistoryEntry,type PartyListOptionView,type PartyView,type PropertyView} from '../../../../../packages/contracts/src/relationships';
 import {relationshipApi} from './api';
 import {optionLabel,selectableOptions} from './PartyLists';
+import {PartyAttendances} from './PartyAttendances';
 const emptyDraft={propertyId:'',categoryId:'',brand:'',model:'',serialNumber:'',status:'em_operacao',installedAt:'',warrantyUntil:'',supplier:'',notes:''};
 const day=(value:string|null)=>value?new Date(value+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
 export const equipmentFieldNames:Record<string,string>={'equipment.propertyId':'Propriedade','equipment.categoryId':'Categoria','equipment.brand':'Marca','equipment.model':'Modelo','equipment.serialNumber':'Número de série','equipment.status':'Situação','equipment.installedAt':'Instalação','equipment.warrantyUntil':'Garantia até','equipment.supplier':'Fornecedor'};
@@ -66,7 +67,8 @@ export function PartyEquipment({companyId,record,lists,canWrite}:{companyId:stri
   </Modal>
   <Modal open={Boolean(timeline)} title={timeline?'Linha do tempo — '+timeline.row.brand+' '+timeline.row.model:'Linha do tempo'} onClose={()=>setTimeline(null)}>
    {timeline?.items===null?<p role="status">Carregando linha do tempo...</p>:<HistoryTimeline title="Eventos do equipamento" events={(timeline?.items??[]).map(event=>({action:equipmentActionNames[event.action]??'Alteração registrada',actor:event.actor,at:event.at,detail:event.changes.map(change=>(equipmentFieldNames[change.field]??change.field)+': '+equipmentValue(change.field,change.before)+' → '+equipmentValue(change.field,change.after)).join(' · ')}))}/>}
-   <p className="nf-field-hint">Visitas, chamados, ordens de serviço e peças passam a aparecer aqui nas próximas etapas.</p>
+   {timeline&&<section className="nf-history"><div className="nf-history-heading"><h3>Atendimentos no equipamento</h3></div><PartyAttendances companyId={companyId} partyId={record.id} equipmentId={timeline.row.id}/></section>}
+   <p className="nf-field-hint">Chamados, ordens de serviço e peças passam a aparecer aqui nas próximas etapas.</p>
   </Modal>
  </>;
 }

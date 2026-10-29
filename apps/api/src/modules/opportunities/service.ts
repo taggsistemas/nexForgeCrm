@@ -54,7 +54,7 @@ async function links(context:AccessContext,companyId:string,partyId:unknown,inpu
  if(equipmentId&&!propertyId)throw new InvalidReference();
  if(equipmentId&&propertyId&&same('equipmentId')&&!same('propertyId')&&!await Equipment.exists({_id:equipmentId,tenantId:context.tenantId,companyId,partyId,propertyId}).session(session))throw new InvalidReference();
 }
-function activityView(row:InstanceType<typeof OpportunityActivity>):OpportunityActivityView{return {id:String(row._id),opportunityId:String(row.opportunityId),title:row.title,type:row.type,status:row.status,dueAt:row.dueAt.toISOString(),completedAt:row.completedAt?.toISOString()??null,notes:row.notes,version:row.version,...(row.seriesId?{seriesId:String(row.seriesId)}:{})};}
+function activityView(row:InstanceType<typeof OpportunityActivity>):OpportunityActivityView{return {id:String(row._id),opportunityId:String(row.opportunityId),title:row.title,type:row.type,status:row.status,dueAt:row.dueAt.toISOString(),completedAt:row.completedAt?.toISOString()??null,notes:row.notes,objective:row.objective??'',result:row.result??'',nextAction:row.nextAction??'',version:row.version,...(row.seriesId?{seriesId:String(row.seriesId)}:{})};}
 export async function history(context:AccessContext,companyId:string,id:unknown,entityId:unknown,action:string,session:mongoose.ClientSession,transition?:{previousStage:string;nextStage:string},detail=''){
  await OpportunityHistory.create([{tenantId:context.tenantId,companyId,opportunityId:id,actorId:context.userId,entityId,action,...transition,...(detail?{detail:detail.slice(0,300)}:{})}],{session});
 }

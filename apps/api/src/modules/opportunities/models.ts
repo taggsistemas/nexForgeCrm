@@ -6,7 +6,7 @@ const opportunitySchema=new Schema({...scope,partyId:{type:Schema.Types.ObjectId
 opportunitySchema.index({tenantId:1,companyId:1,stage:1,createdAt:-1});
 opportunitySchema.index({tenantId:1,companyId:1,partyId:1});
 export const Opportunity=model('CrmOpportunity',opportunitySchema);
-const activitySchema=new Schema({...scope,seriesId:{type:Schema.Types.ObjectId,immutable:true},occurrenceIndex:{type:Number,immutable:true},opportunityId:{type:Schema.Types.ObjectId,required:true,immutable:true},title:{type:String,required:true,maxlength:160},type:{type:String,enum:[...activityTypes],required:true},status:{type:String,enum:[...activityStatuses],default:'pendente'},dueAt:{type:Date,required:true},completedAt:{type:Date,default:null},notes:{type:String,default:'',maxlength:3000},version:{type:Number,default:0,required:true}},options);
+const activitySchema=new Schema({...scope,seriesId:{type:Schema.Types.ObjectId,immutable:true},occurrenceIndex:{type:Number,immutable:true},opportunityId:{type:Schema.Types.ObjectId,required:true,immutable:true},objective:{type:String,default:'',maxlength:500},result:{type:String,default:'',maxlength:2000},nextAction:{type:String,default:'',maxlength:500},title:{type:String,required:true,maxlength:160},type:{type:String,enum:[...activityTypes],required:true},status:{type:String,enum:[...activityStatuses],default:'pendente'},dueAt:{type:Date,required:true},completedAt:{type:Date,default:null},notes:{type:String,default:'',maxlength:3000},version:{type:Number,default:0,required:true}},options);
 activitySchema.index({tenantId:1,companyId:1,opportunityId:1,dueAt:1});
 activitySchema.index({tenantId:1,companyId:1,dueAt:1});
 activitySchema.index({tenantId:1,companyId:1,seriesId:1,status:1,dueAt:1});

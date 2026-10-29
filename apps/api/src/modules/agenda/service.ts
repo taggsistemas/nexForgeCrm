@@ -2,17 +2,20 @@ import {VisitPlan} from '../territories/models.js';
 import {AgendaRuleRejected} from './recurrence.js';
 import mongoose from 'mongoose';
 import type {AccessContext,Permission} from '../../../../../packages/contracts/src/index.js';
-import type {AgendaActivityView,AgendaSource,AgendaSeriesView} from '../../../../../packages/contracts/src/agenda.js';
+import type {AgendaActivityView,AgendaSource,AgendaSeriesView,AttendanceView} from '../../../../../packages/contracts/src/agenda.js';
+import {assertServiceLocation,locationNames,type LocationNames} from '../relationships/locations.js';
+import {Property} from '../relationships/models.js';
+import {FieldExecution} from '../field-visits/models.js';
 import {companyScope} from '../../infrastructure/access.js';
 import {commercialFilter} from '../identity/profile-access.js';
 import {Party} from '../relationships/models.js';
 import {Membership,User} from '../identity/models.js';
 import {objectId} from '../relationships/input.js';
-import {RecordNotFound,RecordConflict} from '../relationships/service.js';
+import {RecordNotFound,RecordConflict,InvalidReference} from '../relationships/service.js';
 import {Opportunity,OpportunityActivity,OpportunityHistory} from '../opportunities/models.js';
 import {authorizeOpportunity,opportunityService,OpportunityRuleRejected} from '../opportunities/service.js';
 import {AgendaActivity,AgendaSeries,AgendaAudit} from './models.js';
-import {agendaListInput,createAgendaInput,updateAgendaInput,referenceInput,cancelSeriesInput} from './input.js';
+import {agendaListInput,createAgendaInput,updateAgendaInput,referenceInput,cancelSeriesInput,attendanceInput} from './input.js';
 import {materializeOccurrences,wallTimeToInstant,dayBoundary} from './recurrence.js';
 const scope=(context:AccessContext,companyId:string,permission:Permission)=>{const result=companyScope(context,companyId,permission);commercialFilter(context,companyId,permission);return result;};
 function parentFilter(context:AccessContext,companyId:string,permission:Permission,extra:Record<string,unknown>={}){
@@ -35,8 +38,11 @@ async function load(context:AccessContext,companyId:string,source:AgendaSource,i
  const query=AgendaActivity.findOne(filter);if(session)query.session(session);const activity=await query;if(!activity)throw new RecordNotFound();
  const party=await authorizeParty(context,companyId,String(activity.partyId),permission,session);return {activity,party,opportunity:null};
 }
-function view(activity:InstanceType<typeof AgendaActivity>|InstanceType<typeof OpportunityActivity>,source:AgendaSource,party:InstanceType<typeof Party>,ownerName:string,opportunity?:{title:string}|null):AgendaActivityView{
- return {...('offlineCapturedAt'in activity&&activity.offlineCapturedAt?{offlineCapturedAt:activity.offlineCapturedAt.toISOString()}:{}),id:String(activity._id),source,opportunityId:'opportunityId'in activity?String(activity.opportunityId):'',partyId:String(party._id),partyName:party.name,ownerId:String(party.ownerId),ownerName,opportunityTitle:opportunity?.title??'',title:activity.title,type:activity.type,status:activity.status,dueAt:activity.dueAt.toISOString(),completedAt:activity.completedAt?.toISOString()??null,notes:activity.notes,version:activity.version,...(activity.seriesId?{seriesId:String(activity.seriesId)}:{})};
+/** Location of the attendance: its own for direct activities, the opportunity's for opportunity activities. */
+const locationOf=(activity:InstanceType<typeof AgendaActivity>|InstanceType<typeof OpportunityActivity>,opportunity?:{propertyId?:unknown;equipmentId?:unknown}|null)=>'partyId'in activity?{propertyId:activity.propertyId??null,equipmentId:activity.equipmentId??null}:{propertyId:opportunity?.propertyId??null,equipmentId:opportunity?.equipmentId??null};
+function view(activity:InstanceType<typeof AgendaActivity>|InstanceType<typeof OpportunityActivity>,source:AgendaSource,party:InstanceType<typeof Party>,ownerName:string,opportunity:{title:string;propertyId?:unknown;equipmentId?:unknown}|null|undefined,names:LocationNames):AgendaActivityView{
+ const location=locationOf(activity,opportunity),property=location.propertyId?names.property.get(String(location.propertyId)):undefined;
+ return {propertyId:location.propertyId?String(location.propertyId):null,propertyName:property?.name??(location.propertyId?'Propriedade indisponível':''),regionName:property?.regionName??'',equipmentId:location.equipmentId?String(location.equipmentId):null,equipmentName:location.equipmentId?names.equipment.get(String(location.equipmentId))??'Equipamento indisponível':'',objective:activity.objective??'',result:activity.result??'',nextAction:activity.nextAction??'',...('offlineCapturedAt'in activity&&activity.offlineCapturedAt?{offlineCapturedAt:activity.offlineCapturedAt.toISOString()}:{}),id:String(activity._id),source,opportunityId:'opportunityId'in activity?String(activity.opportunityId):'',partyId:String(party._id),partyName:party.name,ownerId:String(party.ownerId),ownerName,opportunityTitle:opportunity?.title??'',title:activity.title,type:activity.type,status:activity.status,dueAt:activity.dueAt.toISOString(),completedAt:activity.completedAt?.toISOString()??null,notes:activity.notes,version:activity.version,...(activity.seriesId?{seriesId:String(activity.seriesId)}:{})};
 }
 function seriesView(row:InstanceType<typeof AgendaSeries>):AgendaSeriesView{return {id:String(row._id),frequency:row.frequency,interval:row.interval,count:row.count,timeZone:row.timeZone,state:row.state,version:row.version};}
 async function audit(context:AccessContext,companyId:string,entityId:unknown,source:string,action:string,session:mongoose.ClientSession,affectedCount?:number){await AgendaAudit.create([{...scope(context,companyId,'activity:write'),actorId:context.userId,entityId,source,action,affectedCount}],{session});}
@@ -66,16 +72,21 @@ export const agendaService={
   const ids={tenantId:new mongoose.Types.ObjectId(company.tenantId),companyId:new mongoose.Types.ObjectId(companyId)};
   const range={dueAt:{$gte:dayBoundary(input.startDate,input.timeZone),$lt:dayBoundary(input.endDate,input.timeZone)}};
   const match={...ids,...range,...(input.status?{status:input.status}:{}),...(input.type?{type:input.type}:{}),...(input.overdue==='true'?{$and:[{status:'pendente'},{dueAt:{$lt:new Date()}}]}:{})};
-  const pipeline:mongoose.PipelineStage[]=[{$match:match},{$set:{source:'party',linkPartyId:'$partyId',opportunityTitle:''}}];
-  if(context.permissions.includes('pipeline:read'))pipeline.push({$unionWith:{coll:OpportunityActivity.collection.name,pipeline:[{$match:match},{$lookup:{from:Opportunity.collection.name,localField:'opportunityId',foreignField:'_id',pipeline:[{$match:ids}],as:'opportunity'}},{$unwind:'$opportunity'},{$set:{source:'opportunity',linkPartyId:'$opportunity.partyId',opportunityTitle:'$opportunity.title'}}]}});
-  pipeline.push({$lookup:{from:Party.collection.name,localField:'linkPartyId',foreignField:'_id',pipeline:[{$match:castParentFilter(context,companyId,input.ownerId?{ownerId:input.ownerId}:{})},{$project:{name:1,ownerId:1}}],as:'party'}},{$unwind:'$party'},{$sort:{dueAt:1,_id:1,source:1}},{$facet:{total:[{$count:'count'}],dailyCounts:[{$group:{_id:{$dateToString:{date:'$dueAt',format:'%Y-%m-%d',timezone:input.timeZone}},total:{$sum:1}}},{$sort:{_id:1}}],items:[{$skip:(input.page-1)*50},{$limit:50},{$lookup:{from:User.collection.name,localField:'party.ownerId',foreignField:'_id',pipeline:[{$project:{name:1}}],as:'owner'}}]}});
+  const pipeline:mongoose.PipelineStage[]=[{$match:match},{$set:{source:'party',linkPartyId:'$partyId',linkPropertyId:'$propertyId',linkEquipmentId:'$equipmentId',opportunityTitle:''}}];
+  if(context.permissions.includes('pipeline:read'))pipeline.push({$unionWith:{coll:OpportunityActivity.collection.name,pipeline:[{$match:match},{$lookup:{from:Opportunity.collection.name,localField:'opportunityId',foreignField:'_id',pipeline:[{$match:ids}],as:'opportunity'}},{$unwind:'$opportunity'},{$set:{source:'opportunity',linkPartyId:'$opportunity.partyId',linkPropertyId:'$opportunity.propertyId',linkEquipmentId:'$opportunity.equipmentId',opportunityTitle:'$opportunity.title'}}]}});
+  pipeline.push({$lookup:{from:Party.collection.name,localField:'linkPartyId',foreignField:'_id',pipeline:[{$match:castParentFilter(context,companyId,input.ownerId?{ownerId:input.ownerId}:{})},{$project:{name:1,ownerId:1}}],as:'party'}},{$unwind:'$party'});
+  // Territory belongs to the property, not to the seller portfolio; checked against the same tenant/company.
+  if(input.regionId)pipeline.push({$lookup:{from:Property.collection.name,localField:'linkPropertyId',foreignField:'_id',pipeline:[{$match:{...ids,regionId:new mongoose.Types.ObjectId(input.regionId)}},{$project:{_id:1}}],as:'territory'}},{$unwind:'$territory'});
+  pipeline.push({$sort:{dueAt:1,_id:1,source:1}},{$facet:{total:[{$count:'count'}],dailyCounts:[{$group:{_id:{$dateToString:{date:'$dueAt',format:'%Y-%m-%d',timezone:input.timeZone}},total:{$sum:1}}},{$sort:{_id:1}}],items:[{$skip:(input.page-1)*50},{$limit:50},{$lookup:{from:User.collection.name,localField:'party.ownerId',foreignField:'_id',pipeline:[{$project:{name:1}}],as:'owner'}}]}});
   const [result]=await AgendaActivity.aggregate(pipeline);
-  return {items:result.items.map((row:Record<string,unknown>)=>{const party=Party.hydrate(row.party),owner=row.owner as {name:string}[];return view(row.source==='party'?AgendaActivity.hydrate(row):OpportunityActivity.hydrate(row),row.source as AgendaSource,party,owner[0]?.name??'Responsável indisponível',{title:String(row.opportunityTitle??'')});}),total:result.total[0]?.count??0,page:input.page,pageSize:50,dailyCounts:result.dailyCounts.map((row:{_id:string;total:number})=>({date:row._id,total:row.total}))};
+  const names=await locationNames(context,companyId,result.items.map((row:Record<string,unknown>)=>({propertyId:row.linkPropertyId,equipmentId:row.linkEquipmentId})));
+  const items:AgendaActivityView[]=result.items.map((row:Record<string,unknown>)=>{const party=Party.hydrate(row.party),owner=row.owner as {name:string}[];return view(row.source==='party'?AgendaActivity.hydrate(row):OpportunityActivity.hydrate(row),row.source as AgendaSource,party,owner[0]?.name??'Responsável indisponível',{title:String(row.opportunityTitle??''),propertyId:row.linkPropertyId,equipmentId:row.linkEquipmentId},names);});
+  return {items,total:result.total[0]?.count??0,page:input.page,pageSize:50,dailyCounts:result.dailyCounts.map((row:{_id:string;total:number})=>({date:row._id,total:row.total}))};
  },
  async detail(context:AccessContext,companyId:string,source:AgendaSource,id:string){
   const {activity,party,opportunity}=await load(context,companyId,source,id,'activity:read');
   const [owner,series]=await Promise.all([User.findById(party.ownerId).select('name'),activity.seriesId?AgendaSeries.findOne({...scope(context,companyId,'activity:read'),_id:activity.seriesId,partyId:party._id}):null]);
-  return {record:view(activity,source,party,owner?.name??'Responsável indisponível',opportunity),series:series?seriesView(series):null};
+  return {record:view(activity,source,party,owner?.name??'Responsável indisponível',opportunity,await locationNames(context,companyId,[locationOf(activity,opportunity)])),series:series?seriesView(series):null};
  },
  async create(context:AccessContext,companyId:string,raw:unknown){
   const input=createAgendaInput.parse(raw),company=scope(context,companyId,'activity:write'),dates=materializeOccurrences(input.startLocal,input.timeZone,input.recurrence);
@@ -85,10 +96,14 @@ export const agendaService={
     const linked=await authorizeOpportunity(context,companyId,input.link.id,'pipeline:read',session);party=linked.party;opportunity=linked.row;
     if(['ganha','perdida'].includes(opportunity.stage))throw new OpportunityRuleRejected();
    }else party=await authorizeParty(context,companyId,input.link.id,'activity:write',session);
+   // Opportunity activities inherit the opportunity location; only direct activities carry their own.
+   const location:Record<string,unknown>={propertyId:input.propertyId??null,equipmentId:input.equipmentId??null};
+   if(opportunity&&(location.propertyId||location.equipmentId))throw new InvalidReference();
+   if(!opportunity)await assertServiceLocation(context,companyId,party._id,location,{},session);
    await touch(party,context,companyId,session);
    if(opportunity)await Opportunity.updateOne({_id:opportunity._id,...company},{$inc:{activityRevision:1}},{session});
    const series=input.recurrence.frequency==='none'?null:(await AgendaSeries.create([{...company,partyId:party._id,...(opportunity?{opportunityId:opportunity._id}:{}),...input.recurrence,timeZone:input.timeZone,startAt:dates[0]}],{session}))[0]!;
-   const payload=dates.map((dueAt,index)=>({...company,title:input.title,type:input.type,notes:input.notes,dueAt,...(series?{seriesId:series._id,occurrenceIndex:index}:{}),...(opportunity?{opportunityId:opportunity._id}:{partyId:party._id})}));
+   const payload=dates.map((dueAt,index)=>({...company,title:input.title,type:input.type,notes:input.notes,objective:input.objective,...(opportunity?{}:location),dueAt,...(series?{seriesId:series._id,occurrenceIndex:index}:{}),...(opportunity?{opportunityId:opportunity._id}:{partyId:party._id})}));
    const rows=opportunity?await OpportunityActivity.create(payload,{session,ordered:true}):await AgendaActivity.create(payload,{session,ordered:true});
    await AgendaAudit.insertMany(rows.map(row=>({...company,actorId:context.userId,entityId:row._id,source:input.link.source,action:'agenda.activity.created'})),{session});
    if(opportunity)await OpportunityHistory.insertMany(rows.map(row=>({...company,actorId:context.userId,opportunityId:opportunity!._id,entityId:row._id,action:'activity.created'})),{session});
@@ -105,7 +120,9 @@ export const agendaService={
   }
   return transaction(async session=>{
    const {activity,party}=await load(context,companyId,source,id,'activity:write',session);
-   if(activity.version!==version)throw new RecordConflict();if('fieldState'in activity&&activity.fieldState!=='none')throw new AgendaRuleRejected();await touch(party,context,companyId,session);
+   if(activity.version!==version)throw new RecordConflict();if('fieldState'in activity&&activity.fieldState!=='none')throw new AgendaRuleRejected();
+   if(Object.hasOwn(changes,'propertyId')||Object.hasOwn(changes,'equipmentId'))await assertServiceLocation(context,companyId,party._id,changes,{propertyId:'propertyId'in activity?activity.propertyId:null,equipmentId:'equipmentId'in activity?activity.equipmentId:null},session);
+   await touch(party,context,companyId,session);
    const nextStatus=changes.status??activity.status;
    if('visitPlanId'in activity&&activity.visitPlanId){
     const linked=await VisitPlan.findOne({_id:activity.visitPlanId,...scope(context,companyId,'activity:write')}).session(session);if(!linked)throw new AgendaRuleRejected();
@@ -117,6 +134,22 @@ export const agendaService={
    if(!row)throw new RecordConflict();await audit(context,companyId,row._id,'party','agenda.activity.updated',session);
    return {id:String(row._id)};
   });
+ },
+ /**
+  * Attendances of a customer, optionally narrowed to a property or equipment: direct activities and opportunity
+  * activities, with the field outcome when executed. Authorizes the live Party before any count.
+  */
+ async attendances(context:AccessContext,companyId:string,partyId:string,raw:unknown):Promise<{items:AttendanceView[];total:number;page:number;pageSize:number}>{
+  const input=attendanceInput.parse(raw),company=scope(context,companyId,'activity:read'),party=await authorizeParty(context,companyId,partyId,'activity:read');
+  const ids={tenantId:new mongoose.Types.ObjectId(company.tenantId),companyId:new mongoose.Types.ObjectId(companyId)};
+  const location={...(input.propertyId?{linkPropertyId:new mongoose.Types.ObjectId(input.propertyId)}:{}),...(input.equipmentId?{linkEquipmentId:new mongoose.Types.ObjectId(input.equipmentId)}:{})};
+  const pipeline:mongoose.PipelineStage[]=[{$match:{...ids,partyId:party._id}},{$set:{source:'party',linkPropertyId:'$propertyId',linkEquipmentId:'$equipmentId',opportunityTitle:''}}];
+  if(context.permissions.includes('pipeline:read'))pipeline.push({$unionWith:{coll:OpportunityActivity.collection.name,pipeline:[{$match:ids},{$lookup:{from:Opportunity.collection.name,localField:'opportunityId',foreignField:'_id',pipeline:[{$match:{...ids,partyId:party._id}}],as:'opportunity'}},{$unwind:'$opportunity'},{$set:{source:'opportunity',linkPropertyId:'$opportunity.propertyId',linkEquipmentId:'$opportunity.equipmentId',opportunityTitle:'$opportunity.title'}}]}});
+  pipeline.push({$match:location},{$sort:{dueAt:-1,_id:-1}},{$facet:{total:[{$count:'count'}],items:[{$skip:(input.page-1)*20},{$limit:20},{$lookup:{from:FieldExecution.collection.name,localField:'_id',foreignField:'activityId',pipeline:[{$match:ids},{$project:{outcome:1,notes:1,nextSteps:1,actorId:1}}],as:'execution'}}]}});
+  const [result]=await AgendaActivity.aggregate(pipeline);
+  const [names,owner]=await Promise.all([locationNames(context,companyId,result.items.map((row:Record<string,unknown>)=>({propertyId:row.linkPropertyId,equipmentId:row.linkEquipmentId}))),User.findById(party.ownerId).select('name')]);
+  return {items:result.items.map((row:Record<string,any>):AttendanceView=>{const execution=row.execution[0],propertyId=row.linkPropertyId?String(row.linkPropertyId):null,equipmentId=row.linkEquipmentId?String(row.linkEquipmentId):null;
+   return {id:String(row._id),source:row.source,title:row.title,type:row.type,status:row.status,dueAt:row.dueAt.toISOString(),completedAt:row.completedAt?.toISOString()??null,ownerName:owner?.name??'Responsável indisponível',opportunityTitle:row.opportunityTitle??'',propertyId,propertyName:propertyId?names.property.get(propertyId)?.name??'Propriedade indisponível':'',equipmentId,equipmentName:equipmentId?names.equipment.get(equipmentId)??'Equipamento indisponível':'',objective:row.objective||(row.visitPlanItemId?row.notes:'')||'',result:row.result||execution?.notes||'',nextAction:row.nextAction||execution?.nextSteps||'',fieldOutcome:execution?.outcome??null};}),total:result.total[0]?.count??0,page:input.page,pageSize:20};
  },
  async cancelSeries(context:AccessContext,companyId:string,id:string,raw:unknown){
   objectId.parse(id);const {version}=cancelSeriesInput.parse(raw),company=scope(context,companyId,'activity:write');

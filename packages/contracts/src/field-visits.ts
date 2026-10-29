@@ -9,7 +9,7 @@ export interface FieldExecutionView {
 }
 export interface FieldStopView {
  offlineReport?:OfflineVisitReportView;canExecute:boolean;canInterrupt:boolean;id:string;partyId:string;partyName:string;ownerId:string;ownerName:string;title:string;
- dueAt:string;status:string;version:number;address:string;execution:FieldExecutionView|null;
+ dueAt:string;status:string;version:number;address:string;propertyName:string;regionName:string;equipmentName:string;objective:string;execution:FieldExecutionView|null;
 }
 
 

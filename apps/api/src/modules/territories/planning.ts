@@ -109,7 +109,7 @@ export const visitPlanning={
     const records=[];
     for(const item of items){
      const client=await validateAssignment(row,context,companyId,String(item.partyId),session);
-     records.push({...company,partyId:client._id,title:('Visita — '+client.name).slice(0,160),type:'visita',dueAt:item.startAt,notes:item.objective,visitPlanId:row._id,visitPlanItemId:item._id,durationMinutes:item.durationMinutes});
+     records.push({...company,partyId:client._id,title:('Visita — '+client.name).slice(0,160),type:'visita',dueAt:item.startAt,notes:item.objective,objective:item.objective.slice(0,500),visitPlanId:row._id,visitPlanItemId:item._id,durationMinutes:item.durationMinutes});
     }
     const activities=await AgendaActivity.create(records,{session,ordered:true});count=activities.length;
     await AgendaAudit.insertMany(activities.map(activity=>({...company,actorId:context.userId,entityId:activity._id,source:'party',action:'agenda.activity.created'})),{session});

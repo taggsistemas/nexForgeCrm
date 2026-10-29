@@ -2,14 +2,15 @@ import {useEffect,useState} from 'react';
 import {Modal} from '../../components/Modal';
 import {HistoryTimeline} from '../../components/HistoryTimeline';
 import {maskPhone,maskTaxId} from '../../../../../packages/contracts/src/customer';
-import {contactChannelNames,contactRoleNames,partyListNames,type ContactView,type PartyHistoryEntry,type PartyListOptionView,type PartyView} from '../../../../../packages/contracts/src/relationships';
+import {contactChannelNames,contactRoleNames,partyListNames,type ContactView,type PartyHistoryEntry,type PartyListOptionView,type PartyView,type PropertyView} from '../../../../../packages/contracts/src/relationships';
 import {relationshipApi} from './api';
 import {classificationFields,optionLabel} from './PartyLists';
 import {qualificationNames} from './QualificationModal';
 import {PartyProperties} from './PartyProperties';
+import {PartyAttendances} from './PartyAttendances';
 import {PartyEquipment,equipmentActionNames,equipmentFieldNames,equipmentValue} from './PartyEquipment';
-type Tab='summary'|'properties'|'equipment'|'contacts'|'history';
-const tabNames:Record<Tab,string>={summary:'Resumo',properties:'Propriedades',equipment:'Equipamentos',contacts:'Contatos',history:'Histórico'};
+type Tab='summary'|'properties'|'equipment'|'attendances'|'contacts'|'history';
+const tabNames:Record<Tab,string>={summary:'Resumo',properties:'Propriedades',equipment:'Equipamentos',attendances:'Atendimentos',contacts:'Contatos',history:'Histórico'};
 const fieldNames:Record<string,string>={name:'Nome',legalName:'Razão social',taxId:'CPF/CNPJ',stateRegistration:'Inscrição estadual',ownerId:'Responsável comercial',technicalOwnerId:'Responsável técnico',originId:'Origem',segmentId:'Segmento',classificationId:'Classificação',potentialId:'Potencial',kind:'Tipo de cadastro',communicationConsent:'Consentimento de comunicação',propertyName:'Propriedade',propertyCity:'Município',propertyRegionId:'Território',propertyCoordinates:'Coordenadas',label:'Nome da opção',active:'Opção ativa'};
 const actionNames:Record<string,string>={'lead.created':'Lead cadastrado','customer.created':'Cliente cadastrado','party.updated':'Cadastro alterado','party.archived':'Cadastro arquivado','lead.converted':'Lead convertido em cliente','customer.regularized':'Cliente regularizado','lead.stage_changed':'Etapa do lead alterada','contact.created':'Contato incluído','contact.updated':'Contato alterado','contact.archived':'Contato arquivado','property.created':'Propriedade cadastrada','property.updated':'Propriedade alterada','property.archived':'Propriedade arquivada','qualification.draft_saved':'Qualificação salva','qualification.submitted':'Qualificação enviada para análise','qualification.returned':'Qualificação devolvida','qualification.approved':'Qualificação aprovada'};
 const shown=(field:string,value:string)=>field.startsWith('equipment.')?equipmentValue(field,value):field==='taxId'&&value?maskTaxId(value,value.length===11?'CPF':'CNPJ'):field==='communicationConsent'?(value==='true'?'Concedido':'Não concedido'):field==='kind'?(value==='lead'?'Lead':value==='customer'?'Cliente':value):value||'vazio';
@@ -18,7 +19,7 @@ export function PartyRecord({companyId,record,lists,people,permissions,onClose,o
  const [tab,setTab]=useState<Tab>('summary'),[contacts,setContacts]=useState<ContactView[]|null>(null),[history,setHistory]=useState<PartyHistoryEntry[]|null>(null),[error,setError]=useState('');
  useEffect(()=>{setTab('summary');setContacts(null);setHistory(null);setError('');},[record?.id]);
  useEffect(()=>{
-  if(!record||['summary','properties','equipment'].includes(tab))return;
+  if(!record||['summary','properties','equipment','attendances'].includes(tab))return;
   const controller=new AbortController();setError('');
   const path=tab==='contacts'?'/parties/'+record.id+'/contacts?page=1':'/parties/'+record.id+'/history';
   relationshipApi(companyId,path,{signal:controller.signal}).then(data=>tab==='contacts'?setContacts(data.items??[]):setHistory(data.items??[])).catch(cause=>{if(!controller.signal.aborted)setError((cause as Error).message);});
@@ -45,8 +46,15 @@ export function PartyRecord({companyId,record,lists,people,permissions,onClose,o
   </dl>}
   {tab==='properties'&&<PartyProperties companyId={companyId} record={record} canWrite={permissions.includes(record.kind==='lead'?'lead:write':'customer:write')}/>}
   {tab==='equipment'&&<PartyEquipment companyId={companyId} record={record} lists={lists} canWrite={permissions.includes(record.kind==='lead'?'lead:write':'customer:write')}/>}
+  {tab==='attendances'&&<RecordAttendances companyId={companyId} partyId={record.id}/>}
   {tab==='contacts'&&(contacts===null?<p role="status">Carregando contatos...</p>:<>{!contacts.length?<p className="nf-muted">Nenhum contato vinculado.</p>:<div className="nf-table-scroll"><table className="nf-admin-table"><thead><tr><th>Nome</th><th>Papéis</th><th>Canal preferido</th><th>Comunicação</th></tr></thead><tbody>{contacts.map(contact=><tr key={contact.id}><td><strong>{contact.name}</strong><small>{contact.email||maskPhone(contact.phone)||'—'}</small></td><td>{contact.roles?.length?contact.roles.map(role=>contactRoleNames[role]).join(', '):'—'}</td><td>{contact.preferredChannel?contactChannelNames[contact.preferredChannel]:'—'}</td><td>{contact.communicationConsent?.granted?'Autorizada':'Não autorizada'}</td></tr>)}</tbody></table></div>}{onManageContacts&&<div className="nf-admin-actions"><button type="button" className="nf-secondary" onClick={()=>onManageContacts(record)}>Gerenciar contatos</button></div>}</>)}
   {tab==='history'&&(history===null?<p role="status">Carregando histórico...</p>:<HistoryTimeline title="Alterações registradas" events={history.map(event=>({action:actionNames[event.action]??equipmentActionNames[event.action]??'Alteração registrada',actor:event.actor,at:event.at,reason:event.reason,detail:event.changes.map(change=>(fieldNames[change.field]??equipmentFieldNames[change.field]??change.field)+': '+shown(change.field,change.before)+' → '+shown(change.field,change.after)).join(' · ')}))}/>)}
   </section>
  </Modal>;
+}
+/** Loads the customer properties once so attendances can be filtered by property. */
+function RecordAttendances({companyId,partyId}:{companyId:string;partyId:string}){
+ const [properties,setProperties]=useState<PropertyView[]>([]);
+ useEffect(()=>{const controller=new AbortController();relationshipApi(companyId,'/parties/'+partyId+'/properties?page=1',{signal:controller.signal}).then(data=>setProperties(data.items??[])).catch(()=>{});return()=>controller.abort();},[companyId,partyId]);
+ return <PartyAttendances companyId={companyId} partyId={partyId} properties={properties}/>;
 }

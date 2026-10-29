@@ -1705,6 +1705,30 @@
       "kind": "test",
       "source": "tests/e2e/proposals.spec.ts",
       "symbol": "proposal is built from catalog items"
+    },
+    {
+      "id": "crm:relationships:locations",
+      "kind": "service",
+      "source": "apps/api/src/modules/relationships/locations.ts",
+      "symbol": "assertServiceLocation"
+    },
+    {
+      "id": "crm:relationships:attendances-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/relationships/PartyAttendances.tsx",
+      "symbol": "PartyAttendances"
+    },
+    {
+      "id": "crm:agenda:attendances-test",
+      "kind": "test",
+      "source": "tests/integration/attendances-mongo.test.ts",
+      "symbol": "attendance history"
+    },
+    {
+      "id": "crm:agenda:attendances-unit",
+      "kind": "test",
+      "source": "tests/unit/attendances.test.ts",
+      "symbol": "agenda location, outcome and territory inputs"
     }
   ],
   "edges": [
@@ -3491,6 +3515,46 @@
     {
       "from": "crm:opportunities:proposals-e2e",
       "to": "apps/web/src/features/opportunities/OpportunityProposals.tsx",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:relationships:locations",
+      "to": "apps/api/src/modules/relationships/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:relationships:locations",
+      "to": "apps/api/src/modules/agenda/service.ts",
+      "kind": "used-by"
+    },
+    {
+      "from": "crm:relationships:locations",
+      "to": "apps/api/src/modules/field-visits/service.ts",
+      "kind": "used-by"
+    },
+    {
+      "from": "crm:relationships:attendances-ui",
+      "to": "apps/web/src/features/relationships/PartyRecord.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:relationships:attendances-ui",
+      "to": "apps/web/src/features/relationships/PartyEquipment.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:agenda:attendances-test",
+      "to": "apps/api/src/modules/agenda/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:agenda:attendances-test",
+      "to": "apps/api/src/modules/field-visits/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:agenda:attendances-unit",
+      "to": "apps/api/src/modules/agenda/input.ts",
       "kind": "tests"
     }
   ]

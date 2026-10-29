@@ -5,7 +5,7 @@ export const opportunityStageNames:Record<OpportunityStage,string>={descoberta:'
 export const activityTypes=['ligacao','email','reuniao','tarefa','visita'] as const;
 export const activityStatuses=['pendente','concluida','cancelada'] as const;
 export interface OpportunityView{id:string;partyId:string;partyName:string;ownerId:string;title:string;amountCents:number;currency:'BRL';expectedCloseDate:string;stage:OpportunityStage;probability:number;weightedAmountCents:number;originId:string|null;propertyId:string|null;propertyName:string;equipmentId:string|null;equipmentName:string;lossReason:string;notes:string;closedAt:string|null;version:number;createdAt:string;updatedAt:string}
-export interface OpportunityActivityView{seriesId?:string;id:string;opportunityId:string;title:string;type:typeof activityTypes[number];status:typeof activityStatuses[number];dueAt:string;completedAt:string|null;notes:string;version:number}
+export interface OpportunityActivityView{seriesId?:string;id:string;opportunityId:string;title:string;type:typeof activityTypes[number];status:typeof activityStatuses[number];dueAt:string;completedAt:string|null;notes:string;objective:string;result:string;nextAction:string;version:number}
 export interface OpportunityHistoryView{id:string;action:string;actorName:string;previousStage?:OpportunityStage;nextStage?:OpportunityStage;detail?:string;createdAt:string}
 export function moneyToCents(value:string):number|undefined{
  const raw=value.trim();

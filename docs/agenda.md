@@ -39,3 +39,10 @@ Consultas também aceitam status, type, ownerId e overdue=true|false. Nenhum DTO
 
 ## Próxima etapa
 Planejamento de visitas por carteira, equipe e região, nos períodos semanal/mensal/trimestral/semestral. Visitas, rotas, check-in/out, notificações, calendários externos e sincronização offline permanecem fora desta entrega. A atividade do tipo e-mail é um registro de tarefa e não envia mensagem automaticamente.
+
+## Propriedade, equipamento, objetivo e território (etapa 7 — 29/10/2026)
+
+- Atividades diretas de lead/cliente podem indicar propriedade e equipamento do mesmo cliente (equipamento na propriedade; informar só o equipamento preenche a propriedade). Atividades de oportunidade usam o local da oportunidade e recusam local próprio (INVALID_REFERENCE).
+- Objetivo (até 500 caracteres) em qualquer atividade; resultado e próxima ação ao atualizar. Visitas em campo continuam registrando resultado e próximos passos no checkout; a edição comum não reescreve execução em campo. Planos publicados levam o objetivo do item.
+- Filtro por território na agenda e no roteiro diário: usa a Região da propriedade da atividade (ou da oportunidade), não a carteira do vendedor; aplicado depois do escopo do cliente e antes de totais/paginação.
+- Histórico de atendimentos (GET /agenda/parties/:partyId/attendances, activity:read): atividades diretas e de oportunidades do cliente atual, filtráveis por propriedade ou equipamento, com resultado da visita em campo quando houver. Aparece na aba Atendimentos da ficha e na linha do tempo do equipamento.

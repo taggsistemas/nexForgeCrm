@@ -3,7 +3,7 @@ import {ZodError} from 'zod';
 import type {IdentityService} from '../identity/service.js';
 import {authorizeCompany,type AuthorizedCompany} from '../../infrastructure/authorization.js';
 import {AccessDenied} from '../../infrastructure/access.js';
-import {RecordNotFound,RecordConflict} from '../relationships/service.js';
+import {RecordNotFound,RecordConflict,InvalidReference} from '../relationships/service.js';
 import {OpportunityRuleRejected} from '../opportunities/service.js';
 import {sourceInput} from './input.js';
 import {agendaService} from './service.js';
@@ -14,6 +14,7 @@ export function createAgendaRouter(identity:IdentityService,origin:string){
  const args=(req:import('express').Request,res:import('express').Response)=>[(res.locals.authorizedCompany as AuthorizedCompany).context,String(req.params.companyId)] as const;
  router.get('/owners',authorizeCompany(identity,'activity:read'),async(req,res)=>res.json(await agendaService.owners(...args(req,res))));
  router.get('/references',authorizeCompany(identity,'activity:write'),async(req,res)=>res.json(await agendaService.references(...args(req,res),req.query)));
+ router.get('/parties/:partyId/attendances',authorizeCompany(identity,'activity:read'),async(req,res)=>res.json(await agendaService.attendances(...args(req,res),String(req.params.partyId),req.query)));
  router.get('/activities',authorizeCompany(identity,'activity:read'),async(req,res)=>res.json(await agendaService.list(...args(req,res),req.query)));
  router.post('/activities',authorizeCompany(identity,'activity:write'),async(req,res)=>res.status(201).json(await agendaService.create(...args(req,res),req.body)));
  router.get('/activities/:source/:id',authorizeCompany(identity,'activity:read'),async(req,res)=>res.json(await agendaService.detail(...args(req,res),sourceInput.parse(req.params.source),String(req.params.id))));
@@ -24,6 +25,7 @@ export function createAgendaRouter(identity:IdentityService,origin:string){
   if(error instanceof RecordNotFound){res.status(404).json({code:'NOT_FOUND'});return;}
   if(error instanceof RecordConflict){res.status(409).json({code:'RECORD_CONFLICT'});return;}
   if(error instanceof OpportunityRuleRejected||error instanceof AgendaRuleRejected){res.status(400).json({code:'AGENDA_RULE_REJECTED'});return;}
+  if(error instanceof InvalidReference){res.status(400).json({code:'INVALID_REFERENCE'});return;}
   if(error instanceof ZodError){res.status(400).json({code:'INVALID_INPUT'});return;}next(error);
  });
  return router;

@@ -12,8 +12,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 4. Propriedades/locais | Implementada; homologação de uso pendente | Vários locais por cliente e vínculos autorizados |
 | 5. Parque instalado | Implementada; homologação de uso pendente | Equipamentos, série, instalação, garantia e histórico |
 | 6. Oportunidades e propostas | Implementada; homologação de uso pendente | Vínculos com local/equipamento e proposta versionada com itens/validade/status |
-| 7. Agenda e visitas | Próxima | Adaptar ao local/equipamento e uniformizar filtros |
-| 8. Chamados e triagem | Pendente | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
+| 7. Agenda e visitas | Implementada; homologação de uso pendente | Adaptar ao local/equipamento e uniformizar filtros |
+| 8. Chamados e triagem | Próxima | Criticidade, primeiro retorno, prazo pactuado, distribuição e escalonamento |
 | 9. OS básica | Pendente | Diagnóstico, execução, horas apontadas, deslocamento, solução e reincidência |
 | 10. Peças utilizadas | Pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
 | 11. Dashboards | Pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
@@ -122,11 +122,22 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [ ] PDF, alçadas de desconto e aprovação interna (RF-CRM-006/007, fase P1).
 - [ ] Homologar com usuários do piloto.
 
-## Próxima etapa — 7. Agenda e visitas
+## Etapa 7 — agenda e visitas
 
-- [ ] Incluir propriedade/equipamento, objetivo, resultado e próxima ação nas atividades e visitas.
-- [ ] Uniformizar filtros por território (da propriedade), responsável e período.
-- [ ] Exibir agendamento e execução no histórico do cliente/propriedade e na linha do tempo do equipamento.
+- [x] Propriedade e equipamento do mesmo cliente nas atividades diretas; atividades de oportunidade usam o local da oportunidade.
+- [x] Objetivo nas atividades (e nos planos publicados); resultado e próxima ação ao atualizar; visitas em campo mantêm resultado no checkout.
+- [x] Filtro por território (Região da propriedade) na agenda e no roteiro diário, junto de responsável e período.
+- [x] Histórico de atendimentos por cliente, propriedade e equipamento, com resultado da visita: aba Atendimentos na ficha e seção na linha do tempo do equipamento.
+- [x] Testes: 3 cenários MongoDB, 3 unitários e cenário de layout em três tamanhos; E2E de agenda/campo mantidos.
+- [x] Verificação completa: check (181 Vitest), MongoDB 76/76, layout 115 aprovados e 2 ignorados, E2E 80/80.
+- [ ] Mapa e sugestão de rotas (RF-VIS-004/005, fases P1/P2).
+- [ ] Homologar com usuários do piloto.
+
+## Próxima etapa — 8. Chamados e triagem
+
+- [ ] Abertura manual por cliente/propriedade/equipamento com origem, descrição e criticidade configurável (crítico, alto, programado).
+- [ ] Primeiro retorno, prazo pactuado, responsável, distribuição e escalonamento com histórico de designações.
+- [ ] Fila da Coordenação Técnica por território da propriedade; tempos calculados com instantes do servidor.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

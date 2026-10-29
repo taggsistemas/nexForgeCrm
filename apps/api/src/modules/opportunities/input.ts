@@ -7,9 +7,9 @@ export const createOpportunityInput=z.object({...fields,partyId:objectId,stage:z
 export const updateOpportunityInput=z.object({...fields,stage:z.enum(opportunityStages),lossReason:z.string().trim().max(1000)}).partial().extend({version:z.number().int().min(0)}).strict();
 export const opportunityListInput=z.object({page:z.coerce.number().int().min(1).max(100000).default(1),search:z.string().trim().max(80).default(''),stage:z.enum(opportunityStages).optional()}).strict();
 export const pageInput=z.object({page:z.coerce.number().int().min(1).max(100000).default(1)}).strict();
-const activityFields={title:fields.title,type:z.enum(activityTypes),dueAt:z.iso.datetime({offset:true}).transform(value=>new Date(value)),notes:fields.notes};
+const activityFields={title:fields.title,type:z.enum(activityTypes),dueAt:z.iso.datetime({offset:true}).transform(value=>new Date(value)),notes:fields.notes,objective:z.string().trim().max(500).default('')};
 export const createActivityInput=z.object(activityFields).strict();
-export const updateActivityInput=z.object({...activityFields,status:z.enum(activityStatuses)}).partial().extend({version:z.number().int().min(0)}).strict();
+export const updateActivityInput=z.object({...activityFields,status:z.enum(activityStatuses),result:z.string().trim().max(2000),nextAction:z.string().trim().max(500)}).partial().extend({version:z.number().int().min(0)}).strict();
 export const pipelineSettingsInput=z.object({version:z.number().int().min(0),stages:z.array(z.object({key:z.enum(openOpportunityStages),label:z.string().trim().min(1).max(40),probability:z.number().int().min(0).max(100)}).strict()).length(openOpportunityStages.length).refine(rows=>new Set(rows.map(row=>row.key)).size===rows.length)}).strict();
 const quantity=z.string().trim().regex(/^(?:0|[1-9]\d{0,8})(?:\.\d{1,3})?$/).refine(value=>Number(value)>0);
 const proposalItemInput=z.object({productId:objectId,quantity,unitPriceCents:z.number().int().min(0).max(1e12),discountCents:z.number().int().min(0).max(1e12).default(0)}).strict();

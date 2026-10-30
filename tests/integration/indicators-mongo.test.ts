@@ -9,7 +9,7 @@ import {AdministrationAudit} from '../../apps/api/src/modules/administration/mod
 import {administrationService} from '../../apps/api/src/modules/administration/service.js';
 import {identityService} from '../../apps/api/src/modules/identity/service.js';
 import {hashPassword} from '../../apps/api/src/modules/identity/security.js';
-import {Party,initializeRelationshipModels} from '../../apps/api/src/modules/relationships/models.js';
+import {Party,Property,initializeRelationshipModels} from '../../apps/api/src/modules/relationships/models.js';
 import {relationshipService} from '../../apps/api/src/modules/relationships/service.js';
 import {propertyService} from '../../apps/api/src/modules/relationships/properties.js';
 import {initializeTerritoryModels,Region} from '../../apps/api/src/modules/territories/models.js';
@@ -25,6 +25,7 @@ import {initializeTicketModels} from '../../apps/api/src/modules/tickets/models.
 import {technicalService} from '../../apps/api/src/modules/technical/service.js';
 import {initializeTechnicalModels,TechnicalWork} from '../../apps/api/src/modules/technical/models.js';
 import {indicatorService} from '../../apps/api/src/modules/indicators/service.js';
+import {indicatorDetails} from '../../apps/api/src/modules/indicators/details.js';
 import {initializeAccountSecurityModels} from '../../apps/api/src/modules/account-security/models.js';
 import {businessDateTimeInput} from '../../packages/contracts/src/business-time.js';
 import type {IndicatorReport} from '../../packages/contracts/src/indicators.js';
@@ -73,7 +74,7 @@ describe.skipIf(!uri)('indicators: values match records within each profile scop
  afterAll(async()=>{try{if(mongoose.connection.name===database)await mongoose.connection.dropDatabase();}finally{await mongoose.disconnect();}});
  it('computes commercial indicators that match the records of the seller scope',async()=>{
   const report=await indicatorService.report(seller.context,company,{view:'comercial'});
-  expect(report.sections.map(item=>item.key)).toEqual(['carteira','visitas','oportunidades','propostas','pedidos']);
+  expect(report.sections.map(item=>item.key)).toEqual(['campo','carteira','visitas','oportunidades','propostas','pedidos']);
   expect([value(report,'carteira','customers'),value(report,'carteira','leads'),value(report,'carteira','upcoming')]).toEqual([2,1,1]);
   expect([value(report,'visitas','planned'),value(report,'visitas','completed'),value(report,'visitas','realized'),value(report,'visitas','coverage')]).toEqual([2,1,1,50]);
   expect([value(report,'oportunidades','open'),value(report,'oportunidades','pipeline'),value(report,'oportunidades','forecast'),value(report,'oportunidades','won'),value(report,'oportunidades','wonAmount'),value(report,'oportunidades','conversion')]).toEqual([1,100000,40000,1,300000,50]);
@@ -91,13 +92,37 @@ describe.skipIf(!uri)('indicators: values match records within each profile scop
  },30000);
  it('shows technical indicators within coordination territory and hides sections a profile cannot read',async()=>{
   const report=await indicatorService.report(coordinator.context,company,{view:'gerencial'});
-  expect(report.sections.map(item=>item.key)).toEqual(['pedidos','chamados','ordens']);
+  expect(report.sections.map(item=>item.key)).toEqual(['campo','pedidos','chamados','ordens']);
   expect([value(report,'chamados','critical'),value(report,'chamados','open'),value(report,'chamados','opened'),value(report,'chamados','resolved'),value(report,'chamados','sla'),value(report,'chamados','repeat')]).toEqual([1,2,3,1,100,33.3]);
   expect(value(report,'chamados','response')).toBeGreaterThanOrEqual(0);
   expect([value(report,'ordens','open'),value(report,'ordens','completed'),value(report,'ordens','closed'),value(report,'ordens','labor'),value(report,'ordens','travel'),value(report,'ordens','billable'),value(report,'ordens','repeat')]).toEqual([1,1,1,120,30,90,50]);
   const elsewhere=await indicatorService.report(coordinator.context,company,{view:'tecnica',regionId:carambei});expect(value(elsewhere,'chamados','open')).toBe(0);expect(value(elsewhere,'ordens','open')).toBe(0);
   const sellerTechnical=await indicatorService.report(seller.context,company,{view:'tecnica'});expect(sellerTechnical.sections.map(item=>item.key)).toEqual(['chamados']);expect(value(sellerTechnical,'chamados','open')).toBe(2);
   expect((await indicatorService.report(otherSeller.context,company,{view:'tecnica'})).sections[0]!.indicators.find(item=>item.key==='open')!.value).toBe(0);
-  const http=await request(app).get('/api/v1/companies/'+company+'/indicators?view=gerencial').set(headers(manager));expect(http.status).toBe(200);expect(http.body.sections).toHaveLength(7);
+  const http=await request(app).get('/api/v1/companies/'+company+'/indicators?view=gerencial').set(headers(manager));expect(http.status).toBe(200);expect(http.body.sections).toHaveLength(8);
+ },30000);
+ it('drills into the records behind each card and shows who is attending where right now',async()=>{
+  const site=(await Property.findOne({tenantId:admin.context.tenantId,name:'Sede A'}))!,partyId=site.partyId;
+  const visit=await AgendaActivity.create({tenantId:admin.context.tenantId,companyId:company,partyId,propertyId:site._id,title:'Visita técnica comercial',type:'visita',status:'pendente',dueAt:new Date()});
+  await FieldExecution.create({tenantId:admin.context.tenantId,companyId:company,activityId:visit._id,partyId,actorId:seller.context.userId,state:'in_progress',checkedInAt:new Date(Date.now()-20*60000),checkIn:point});
+  const service=(await TechnicalWork.findOne({tenantId:admin.context.tenantId}))!.serviceId;
+  const work=await technicalService.create(coordinator.context,company,{title:'Corretiva',partyId:String(partyId),propertyId:String(site._id),serviceId:String(service),technicianId:technician.context.userId,startLocal:businessDateTimeInput(new Date(Date.now()+600000)),durationMinutes:60});
+  await technicalService.act(technician.context,company,work.id,'check-in',{version:0,locationAuthorized:true,position:point});
+  const report=await indicatorService.report(manager.context,company,{view:'gerencial'});
+  expect([value(report,'campo','visits'),value(report,'campo','works')]).toEqual([1,1]);
+  expect(report.charts.map(chart=>chart.key)).toEqual(expect.arrayContaining(['visitasMes','pedidosMes','previsao','chamadosMes','osTecnico']));
+  expect(report.charts.find(chart=>chart.key==='visitasMes')!.points).toHaveLength(6);expect(report.charts.find(chart=>chart.key==='osTecnico')!.points).toEqual([{label:'ind-technician',values:[1]}]);
+  const detail=(login:Login,section:string,key:string,extra:Record<string,unknown>={})=>indicatorDetails(login.context,company,{section,key,...extra});
+  const visits=await detail(manager,'campo','visits');expect(visits.rows.map(row=>row.slice(0,3))).toEqual([['ind-seller','Fazenda Castro','Sede A']]);expect(visits.rows[0]![5]).toBeGreaterThanOrEqual(19);
+  expect((await detail(coordinator,'campo','works')).rows.map(row=>row.slice(0,3))).toEqual([['ind-technician','Fazenda Castro','Sede A']]);
+  expect((await detail(otherSeller,'campo','visits')).rows).toHaveLength(0);expect((await detail(coordinator,'campo','works',{regionId:carambei})).rows).toHaveLength(0);
+  await expect(detail(seller,'campo','works')).rejects.toThrow();await expect(detail(technician,'carteira','customers')).rejects.toThrow();
+  expect((await detail(seller,'carteira','customers')).rows.map(row=>row[0])).toEqual(['Fazenda Carambeí','Fazenda Castro']);
+  expect((await detail(seller,'visitas','realized')).rows.map(row=>[row[1],row[7]])).toEqual([['Fazenda Castro','Realizada']]);
+  expect((await detail(coordinator,'chamados','critical')).rows.map(row=>row[1])).toEqual(['Parado']);
+  expect((await detail(coordinator,'ordens','closed')).rows.map(row=>[row[1],row[4],row[9]])).toEqual([['Preventiva','ind-technician',1.5]]);
+  expect((await detail(manager,'oportunidades','open')).rows.map(row=>[row[0],row[4],row[5]])).toEqual([['Aberta',100000,40]]);
+  const bad=await request(app).get('/api/v1/companies/'+company+'/indicators/details?section=carteira&key=coverage').set(headers(manager));expect(bad.status).toBe(400);
+  const ok=await request(app).get('/api/v1/companies/'+company+'/indicators/details?section=campo&key=visits').set(headers(seller));expect(ok.status).toBe(200);expect(ok.body.rows).toHaveLength(1);
  },30000);
 });

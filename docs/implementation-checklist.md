@@ -184,6 +184,7 @@ Decisão de Giovanni (29/10/2026): cada cliente pertence a uma única empresa do
 - [x] Testes: 3 cenários MongoDB conferindo valores com registros, 4 unitários e E2E em desktop e celular.
 - [x] Verificação completa: check (194 Vitest), MongoDB 89/89, layout 115 aprovados e 2 ignorados, E2E 86/86.
 - [ ] Indicadores financeiros e capacidade técnica (RF-BI-004/005, fase P1); XLSX e relatório gerencial.
+- [x] Cards clicáveis com os registros de cada indicador (Excel), "Em atendimento agora" (check-in aberto de vendedores e técnicos, sem rastreamento) e gráficos por mês, faixa e responsável.
 - [ ] Homologar definições com a direção da Só Leite.
 
 ## Plano revisado em 29/10/2026 (pedidos e offline antes da homologação)

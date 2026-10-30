@@ -1957,6 +1957,30 @@
       "kind": "test",
       "source": "tests/e2e/reports.spec.ts",
       "symbol": "reports are generated from the server rows"
+    },
+    {
+      "id": "crm:indicators:details",
+      "kind": "service",
+      "source": "apps/api/src/modules/indicators/details.ts",
+      "symbol": "indicatorDetails"
+    },
+    {
+      "id": "crm:indicators:scope",
+      "kind": "service",
+      "source": "apps/api/src/modules/indicators/scope.ts",
+      "symbol": "buildFilters"
+    },
+    {
+      "id": "crm:indicators:charts-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/indicators/IndicatorCharts.tsx",
+      "symbol": "IndicatorCharts"
+    },
+    {
+      "id": "crm:report-table",
+      "kind": "component",
+      "source": "apps/web/src/components/ReportTable.tsx",
+      "symbol": "ReportTable"
     }
   ],
   "edges": [
@@ -4023,6 +4047,36 @@
     {
       "from": "crm:reports:e2e",
       "to": "apps/web/src/features/reports/Reports.tsx",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:indicators:details",
+      "to": "apps/api/src/modules/indicators/scope.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:indicators:service",
+      "to": "apps/api/src/modules/indicators/details.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:indicators:details",
+      "to": "apps/api/src/modules/orders/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:indicators:charts-ui",
+      "to": "apps/web/src/features/indicators/Indicators.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:report-table",
+      "to": "apps/web/src/features/reports/Reports.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:indicators:test",
+      "to": "apps/api/src/modules/indicators/details.ts",
       "kind": "tests"
     }
   ]

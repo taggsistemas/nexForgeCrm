@@ -342,3 +342,9 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Impressão do pedido (sem custo/margem), menu Relatórios com Excel gerado no navegador (pedidos, vendas, serviços, itens, a faturar, faturamento, previsão), filtros alinhados em Pedidos e controles do menu lateral restritos ao celular (no desktop apareciam sem efeito).
 - Corrigido fuso nos testes `orders-mongo` e `proposals-mongo` (data UTC após 21h em São Paulo).
 - `npm run check`: aprovado, 202 Vitest, grafo declarado (326 nós/413 arestas, não Graphify AST). `npm run test:db`: 94/94. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 94/94.
+
+## Central gerencial — detalhamento, atendimento agora e gráficos (29/10/2026)
+
+- Cards de contagem/valor abrem os registros por trás do número (mesmo escopo e filtros, Excel); "Em atendimento agora" lista check-ins abertos de visitas e OS com cliente/propriedade, sem coordenadas; gráficos mensais, por faixa e por responsável calculados no servidor.
+- `indicators-mongo` ganhou caso real de detalhamento (atendimento agora por perfil e território, carteira, visitas, chamados, OS, oportunidades, recusa de chave não detalhável e de perfil sem acesso) e gráficos; E2E novo do clique, detalhe e Excel em desktop/celular.
+- `npm run check`: aprovado, 202 Vitest, grafo declarado (330 nós/419 arestas, não Graphify AST). `npm run test:db`: 95/95. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 96/96.

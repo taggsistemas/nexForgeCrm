@@ -130,8 +130,8 @@ describe.skipIf(!uri)('sales and service orders: origins, approval rules, delive
   await expect(orderService.act(coordinator.context,company,service[0]!.id,'deliver',{version:service[0]!.version})).rejects.toThrow();
   expect((await orderService.detail(coordinator.context,company,service[0]!.id)).record).not.toHaveProperty('costCents');
   const keys=async(login:Login,view:string)=>(await indicatorService.report(login.context,company,{view})).sections.map(section=>section.key);
-  expect(await keys(salesAdmin,'gerencial')).toEqual(['carteira','visitas','oportunidades','propostas','pedidos']);
-  expect(await keys(coordinator,'tecnica')).toEqual(['pedidos','chamados','ordens']);expect(await keys(technician,'gerencial')).not.toContain('pedidos');
+  expect(await keys(salesAdmin,'gerencial')).toEqual(['campo','carteira','visitas','oportunidades','propostas','pedidos']);
+  expect(await keys(coordinator,'tecnica')).toEqual(['campo','pedidos','chamados','ordens']);expect(await keys(technician,'gerencial')).not.toContain('pedidos');
   const report=(login:Login,type:string)=>orderReport(login.context,company,{type});
   const all=await report(manager,'pedidos'),managerTotal=(await orderService.list(manager.context,company,{})).total;
   expect(all.rows).toHaveLength(managerTotal);expect(all.columns.map(column=>column.label)).toContain('Margem');

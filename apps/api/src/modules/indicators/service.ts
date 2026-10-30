@@ -19,22 +19,12 @@ import {pipeline as workOrderScope} from '../technical/service.js';
 import {SalesOrder} from '../orders/models.js';
 import {orderKinds,orderScope} from '../orders/service.js';
 import {orderPendingInstallments} from '../../../../../packages/contracts/src/orders.js';
-const zone='America/Sao_Paulo';
-const oid=(id:string)=>new mongoose.Types.ObjectId(id);
+import {buildFilters,commercialParties,count,oid,regionParties,sum,zone,type Filters} from './scope.js';
+import {fieldSection,indicatorCharts} from './details.js';
 export const indicatorInput=z.object({view:z.enum(indicatorViews).default('gerencial'),startDate:calendarDate.optional(),endDate:calendarDate.optional(),regionId:objectId.optional(),ownerId:objectId.optional()}).strict().superRefine((value,ctx)=>{
  if(value.startDate&&value.endDate&&(value.endDate<value.startDate||(Date.parse(value.endDate)-Date.parse(value.startDate))/86400000>366))ctx.addIssue({code:'custom',path:['endDate'],message:'Período de até 366 dias.'});
 });
-type Filters={tenant:mongoose.Types.ObjectId;company:mongoose.Types.ObjectId;from:Date;to:Date;regionId:string|null;ownerId:string|null};
-const sum=(rows:{total?:number}[]|undefined)=>rows?.[0]?.total??0;
-const count=(rows:{count?:number}[]|undefined)=>rows?.[0]?.count??0;
 const avg=(rows:{value?:number|null}[]|undefined)=>rows?.[0]?.value===undefined||rows?.[0]?.value===null?null:Math.round(rows[0].value);
-/** Customers/leads of the live commercial scope; territory = customer has an active property in the region. */
-async function commercialParties(ctx:AccessContext,companyId:string,filters:Filters){
- const kinds=[...(ctx.permissions.includes('lead:read')?['lead']:[]),...(ctx.permissions.includes('customer:read')?['customer']:[])];
- const regionParties=filters.regionId?await Property.distinct('partyId',{tenantId:filters.tenant,companyId:filters.company,archived:false,regionId:oid(filters.regionId)}):null;
- const query=Party.find(commercialFilter(ctx,companyId,kinds.includes('lead')?'lead:read':'customer:read',{archived:false,kind:{$in:kinds},...(filters.ownerId?{ownerId:filters.ownerId}:{}),...(regionParties?{_id:{$in:regionParties}}:{})}));query.cast(Party);
- return query.getFilter();
-}
 async function commercial(ctx:AccessContext,companyId:string,filters:Filters):Promise<IndicatorSection[]>{
  const partyFilter=await commercialParties(ctx,companyId,filters),ids={tenantId:filters.tenant,companyId:filters.company},period={$gte:filters.from,$lt:filters.to};
  const today=dateParts(new Date(),zone).date,week=addCalendarDays(today,7),scoped=(local:string)=>[{$lookup:{from:Party.collection.name,localField:local,foreignField:'_id',pipeline:[{$match:partyFilter},{$project:{kind:1}}],as:'party'}},{$unwind:'$party'}];
@@ -167,14 +157,12 @@ async function technical(ctx:AccessContext,companyId:string,filters:Filters):Pro
 }
 export const indicatorService={
  async report(ctx:AccessContext,companyId:string,raw:unknown):Promise<IndicatorReport>{
-  const input=indicatorInput.parse(raw),scope=companyScope(ctx,companyId,'company:read');
-  const today=dateParts(new Date(),zone).date,endDate=input.endDate??today,startDate=input.startDate??addCalendarDays(endDate,-29);
-  if(endDate<startDate)throw new AccessDenied();
-  const filters:Filters={tenant:oid(scope.tenantId),company:oid(companyId),from:dayBoundary(startDate,zone),to:dayBoundary(addCalendarDays(endDate,1),zone),regionId:input.regionId??null,ownerId:input.ownerId??null};
+  const input=indicatorInput.parse(raw),{filters,startDate,endDate,today}=buildFilters(ctx,companyId,input);
   const wantsCommercial=input.view!=='tecnica'&&(ctx.permissions.includes('lead:read')||ctx.permissions.includes('customer:read'));
   const wantsTechnical=input.view!=='comercial';
   const wantsOrders=ctx.permissions.includes('order:read')&&orderKinds(ctx).length>0&&(input.view!=='tecnica'||!orderKinds(ctx).includes('venda'));
-  const sections=[...(wantsCommercial?await commercial(ctx,companyId,filters):[]),...(wantsOrders?await orders(ctx,companyId,filters,startDate,endDate,today):[]),...(wantsTechnical?await technical(ctx,companyId,filters):[])];
-  return {asOf:new Date().toISOString(),view:input.view,filters:{startDate,endDate,regionId:filters.regionId,ownerId:filters.ownerId},sections};
+  const field=await fieldSection(ctx,companyId,filters,input.view);
+  const sections=[...field,...(wantsCommercial?await commercial(ctx,companyId,filters):[]),...(wantsOrders?await orders(ctx,companyId,filters,startDate,endDate,today):[]),...(wantsTechnical?await technical(ctx,companyId,filters):[])];
+  return {asOf:new Date().toISOString(),view:input.view,filters:{startDate,endDate,regionId:filters.regionId,ownerId:filters.ownerId},sections,charts:await indicatorCharts(ctx,companyId,filters,input.view,endDate,sections)};
  },
 };

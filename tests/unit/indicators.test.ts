@@ -10,7 +10,7 @@ describe('indicator definitions',()=>{
   expect(indicatorText({key:'a',label:'',value:null,unit:'percent',definition:''})).toBe('sem base');
  });
  it('exports the same values with escaped quotes and the period',()=>{
-  const report:IndicatorReport={asOf:'2030-01-01T00:00:00Z',view:'comercial',filters:{startDate:'2030-01-01',endDate:'2030-01-31',regionId:null,ownerId:null},sections:[{key:'carteira',title:'Carteira',indicators:[{key:'c',label:'Clientes "ativos"',value:3,unit:'count',definition:'Definição'}]}]};
+  const report:IndicatorReport={asOf:'2030-01-01T00:00:00Z',view:'comercial',filters:{startDate:'2030-01-01',endDate:'2030-01-31',regionId:null,ownerId:null},sections:[{key:'carteira',title:'Carteira',indicators:[{key:'c',label:'Clientes "ativos"',value:3,unit:'count',definition:'Definição'}]}],charts:[]};
   const csv=indicatorCsv(report).split('\r\n');expect(csv[1]).toBe('"Carteira";"Clientes ""ativos""";"3";"Definição"');expect(csv.at(-1)).toContain('2030-01-01 a 2030-01-31');
  });
  it('accepts only the shared filters and bounded periods',()=>{

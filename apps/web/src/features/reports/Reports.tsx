@@ -1,18 +1,8 @@
 import {useState,type FormEvent} from 'react';
 import {addCalendarDays,dateParts} from '../../../../../packages/contracts/src/agenda';
 import {availableOrderReports,orderReportInfo,type OrderReport,type OrderReportType} from '../../../../../packages/contracts/src/reports';
-import {buildXlsx,type XlsxCell,type XlsxColumnKind} from '../../../../../packages/contracts/src/xlsx';
+import {ReportTable,downloadXlsx} from '../../components/ReportTable';
 type Account={companies:{id:string;name:string}[];permissions?:string[]};
-const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
-function text(value:XlsxCell,kind:XlsxColumnKind){
- if(value===null||value==='')return '—';
- if(kind==='cents')return money(Number(value));
- if(kind==='date')return String(value).split('-').reverse().join('/');
- if(kind==='datetime')return new Date(String(value)).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
- if(kind==='percent')return Number(value).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
- if(kind==='number')return Number(value).toLocaleString('pt-BR',{maximumFractionDigits:3});
- return String(value);
-}
 /** Order reports: rows come from the server already limited to the profile (order kinds and live portfolio); the Excel file holds exactly those rows. */
 export function Reports({account}:{account:Account}){
  const types=availableOrderReports(account.permissions??[]),today=dateParts(new Date(),'America/Sao_Paulo').date;
@@ -29,8 +19,7 @@ export function Reports({account}:{account:Account}){
  }
  function download(){
   if(!report)return;
-  const bytes=buildXlsx(report.title,report.columns,report.rows),blob=new Blob([bytes as BlobPart],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),link=document.createElement('a');
-  link.href=url;link.download='relatorio-'+report.type.replace('_','-')+'-'+(orderReportInfo[report.type].period==='current'?today:report.filters.startDate+'-a-'+report.filters.endDate)+'.xlsx';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+  downloadXlsx('relatorio-'+report.type.replace('_','-')+'-'+(orderReportInfo[report.type].period==='current'?today:report.filters.startDate+'-a-'+report.filters.endDate)+'.xlsx',report.title,report.columns,report.rows);
  }
  if(!types.length)return <section className="nf-panel"><p className="nf-muted">Seu perfil não possui relatórios disponíveis.</p></section>;
  return <section className="nf-crm nf-reports">
@@ -43,9 +32,7 @@ export function Reports({account}:{account:Account}){
   {error&&<p role="alert" className="nf-error">{error}</p>}
   {report&&<section className="nf-panel" aria-labelledby="report-title"><div className="nf-section-heading"><h2 id="report-title">{report.title}</h2><span>{report.rows.length} linha(s)</span><button type="button" className="nf-primary" disabled={!report.rows.length} onClick={download}>Baixar Excel</button></div>
    {report.truncated&&<p className="nf-warning">O relatório foi limitado a 5.000 pedidos. Reduza o período para obter todos os registros.</p>}
-   {!report.rows.length?<p className="nf-muted">Nenhum registro neste filtro.</p>:<><div className="nf-table-scroll"><table className="nf-admin-table nf-report-table"><thead><tr>{report.columns.map(column=><th key={column.key}>{column.label}</th>)}</tr></thead>
-    <tbody>{report.rows.slice(0,50).map((row,index)=><tr key={index}>{report.columns.map((column,position)=><td key={column.key} data-label={column.label}>{text(row[position]??null,column.kind)}</td>)}</tr>)}</tbody></table></div>
-    {report.rows.length>50&&<p className="nf-muted">Exibindo as primeiras 50 linhas. O arquivo Excel contém todas as {report.rows.length}.</p>}</>}
+   {!report.rows.length?<p className="nf-muted">Nenhum registro neste filtro.</p>:<ReportTable columns={report.columns} rows={report.rows}/>}
   </section>}
  </section>;
 }

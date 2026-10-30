@@ -40,3 +40,12 @@ GET `/api/v1/companies/:companyId/indicators?view=comercial|tecnica|gerencial&st
 | Ordens de serviço | Pendentes/em execução; concluídas e encerradas no período; horas trabalhadas, deslocamento, horas faturáveis autorizadas; reincidência de OS |
 
 Percentuais sem denominador aparecem como "sem base", nunca como zero inventado. Exportação CSV (separador ;) gerada no navegador com os mesmos números exibidos e o período. Indicadores financeiros (receita, margem, inadimplência) dependem de integração e ficam para a fase P1.
+
+## Central gerencial — detalhamento, atendimento agora e gráficos (29/10/2026)
+
+- **Cards clicáveis**: indicadores de contagem/valor abrem, na própria página, a lista de registros por trás do número (`GET /indicators/details?section&key&view&startDate&endDate&regionId&ownerId`), com exatamente o escopo do perfil e os filtros do card. Até 500 registros na tela; "Baixar Excel" exporta as mesmas linhas. Percentuais e médias não abrem lista.
+- Detalhamentos: carteira (clientes, leads, próximas ações), visitas (planejadas, concluídas, qualificadas, com check-in/checkout do servidor e resultado), oportunidades abertas/ganhas, propostas, pedidos (confirmados, faturado por nota, carteira a faturar, aguardando aprovação/entrega, previsão por faixa = quem está para faturar), chamados (críticos, abertos, vencidos, abertos/resolvidos no período) e OS (pendentes, concluídas, encerradas).
+- **Em atendimento agora**: vendedores com visita em andamento e técnicos com OS em execução, com cliente e propriedade do registro e horário do check-in no servidor. É o atendimento registrado, não posição em tempo real nem rastreamento contínuo; coordenadas do aparelho não são exibidas.
+- **Gráficos** (calculados no servidor, mesmo escopo): visitas planejadas × concluídas por mês, pedidos confirmados × faturado por mês, previsão de faturamento por faixa, pedidos confirmados por responsável, chamados abertos × resolvidos por mês e OS concluídas por técnico. Cada gráfico traz a tabela de valores.
+- Quem vê o quê: vendedor só a própria carteira e os próprios atendimentos; supervisor os seus e da equipe; Gerencial, Direção e Administrador a empresa; Coordenação Técnica a equipe e regiões; técnico apenas as próprias OS e chamados; Administrativo de vendas sem seções de serviço.
+

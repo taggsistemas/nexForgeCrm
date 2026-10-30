@@ -18,6 +18,9 @@ import {authorizeOpportunity,history as opportunityHistory} from '../opportuniti
 import {TechnicalWork,WorkOrderPart} from '../technical/models.js';
 import {pipeline as technicalScope} from '../technical/service.js';
 import {SalesOrder,SalesOrderEvent,SalesOrderSequence} from './models.js';
+import {moveStock} from '../supply/stock.js';
+import {addressLine,type CompanyAddress} from '../../../../../packages/contracts/src/supply.js';
+import type {DocumentCustomer} from '../../../../../packages/contracts/src/documents.js';
 import {orderActionInput,orderDirectInput,orderFromProposalInput,orderFromWorkOrderInput,orderInvoiceInput,orderListInput,orderUpdateInput,OrderRuleRejected} from './input.js';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 const literal=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -138,7 +141,10 @@ export const orderService={
   const events=await SalesOrderEvent.find({tenantId:ctx.tenantId,companyId,orderId:row._id}).sort({createdAt:1,_id:1}).limit(200);
   const names=await auditActorNames(ctx.tenantId,events.map(item=>String(item.actorId)));
   const history:OrderEventView[]=events.map(item=>({action:item.action,actor:auditActorLabel(names,String(item.actorId),ctx.userId),at:item.createdAt.toISOString(),note:item.note}));
-  return {record:await view(ctx,row,party.name),history};
+  // Customer block for the printed order (already authorized through the live portfolio above).
+  const data=await Party.findById(row.partyId).select('name legalName taxId stateRegistration address phone email').lean();
+  const customer:DocumentCustomer|null=data?{name:data.name,legalName:data.legalName??'',taxId:data.taxId??'',stateRegistration:data.stateRegistration??'',address:addressLine(data.address as Partial<CompanyAddress>),phone:data.phone??'',email:data.email??''}:null;
+  return {record:await view(ctx,row,party.name),history,customer};
  },
  async createDirect(ctx:AccessContext,companyId:string,raw:unknown){
   const input=orderDirectInput.parse(raw);companyScope(ctx,companyId,'order:write');
@@ -202,6 +208,7 @@ export const orderService={
     if(!current.canApprove)throw new OrderRuleRejected('STATUS');row.status='rascunho';row.decisionNote=input.note;row.submittedAt=null;
    }else if(action==='deliver'){
     if(!current.canDeliver)throw new OrderRuleRejected('STATUS');row.deliveredAt=now;if(row.status==='confirmado')row.status='entregue';
+    for(const [index,item] of row.items.entries())await moveStock(ctx,companyId,{productId:item.productId,direction:'saida',quantityMilli:quantityToMilli(item.quantity),source:'pedido_venda',sourceKey:'pedido:'+String(row._id)+':'+index,reference:row.number,referenceId:row._id,note:'Entrega do pedido',allowNegative:true},session);
    }else{
     if(!current.canCancel)throw new OrderRuleRejected('STATUS');row.status='cancelado';row.cancelledAt=now;row.decisionNote=input.note;
    }

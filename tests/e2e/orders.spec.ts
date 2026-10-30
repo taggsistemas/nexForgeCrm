@@ -1,4 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
 const company='a'.repeat(24),party='b'.repeat(24),product='c'.repeat(24);
 const account=(permissions:string[])=>({user:{id:'d'.repeat(24),name:'Usuário',email:'usuario@example.invalid'},tenant:{name:'Cliente Teste'},companies:[{id:company,name:'Empresa Teste'}],permissions,security:{mustChangePassword:false,privacyAcceptanceRequired:false}});
 const order=(id:string,status:string,extra:Record<string,unknown>={})=>({id,number:'PV-00000'+id.slice(-1),kind:'venda',origin:'direto',partyId:party,partyName:'Fazenda Boa Vista',opportunityId:null,proposalId:null,proposalNumber:'',workOrderId:null,workOrderNumber:'',status,
@@ -30,12 +31,10 @@ test('management approves an exception and finance registers an invoice without 
  await page.getByRole('button',{name:'Lançar nota'}).click();await page.getByRole('dialog',{name:/Pedido PV-000002/}).getByRole('button',{name:'Lançar nota fiscal'}).click();
  const invoice=page.getByRole('dialog',{name:/Lançar nota fiscal/});await invoice.getByLabel('Número da nota').fill('NF-1001');await invoice.getByLabel('Valor (R$)').fill('4.250,00');await invoice.getByRole('button',{name:'Lançar nota'}).click();
  await expect.poll(()=>posts.length).toBe(2);expect(posts[1]!.url).toMatch(/\/invoices$/);expect(Object.keys(posts[1]!.body).sort()).toEqual(['amountCents','issueDate','number','version']);expect(posts[1]!.body.amountCents).toBe(425000);
- const printed=page.getByRole('dialog',{name:/Pedido PV-000002/});
- await page.evaluate(()=>{(window as unknown as {printed:number}).printed=0;window.print=()=>{(window as unknown as {printed:number}).printed++;};});
- await printed.getByRole('button',{name:'Imprimir'}).click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {printed:number}).printed)).toBe(1);
- const sheet=page.locator('body > .nf-print-area');await expect(sheet).toContainText('PV-000002');await expect(sheet).toContainText('Robô de ordenha');await expect(sheet).not.toContainText('Custo');await expect(sheet).not.toContainText('Margem');
- await page.emulateMedia({media:'print'});await expect(sheet).toBeVisible();await expect(page.locator('#root')).toBeHidden();await page.emulateMedia({media:'screen'});
- await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));await expect(sheet).toHaveCount(0);
+ const detailDialog=page.getByRole('dialog',{name:/Pedido PV-000002/});
+ await page.route('**/api/v1/companies/*/supply/company-profile',route=>route.fulfill({json:{record:{legalName:'Só Leite Equipamentos Ltda',tradeName:'Só Leite',taxId:'11222333000181',stateRegistration:'',municipalRegistration:'',address:{street:'Rua A',number:'1',complement:'',district:'',city:'Castro',state:'PR',zip:''},phone:'',email:'',website:'',logo:null,documentNotes:'',purchaseApprovalLimitCents:0,version:1,updatedAt:null}}}));
+ const download=page.waitForEvent('download');await detailDialog.getByRole('button',{name:'Baixar PDF'}).click();const file=await download;expect(file.suggestedFilename()).toBe('PV-000002.pdf');
+ const pdf=await readFile((await file.path())!);expect(pdf.subarray(0,5).toString()).toBe('%PDF-');const text=pdf.toString('latin1');expect(text).toContain('(S\\363 Leite)');expect(text).toContain('PV-000002');expect(text).not.toContain('Custo');expect(text).not.toContain('Margem');
  await page.screenshot({path:'artifacts/orders-'+test.info().project.name+'.png',fullPage:true});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });

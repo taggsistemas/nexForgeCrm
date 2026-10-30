@@ -51,7 +51,7 @@
 
 - Work orders come from a ticket or scheduled maintenance on a property of the live Party; territory is the property region. Keep attendance time (server check-in/out), reported labor/travel and billable hours (authorized only at coordination closing) separate. A ticket cannot be resolved while linked work orders are open.
 
-- Work order parts are an immutable consumption/return ledger of active catalog products with integer-thousandth balances; returns never exceed the net. Only the assigned technician or coordination writes, until closing. Reference prices are server snapshots shown only to catalog readers. Never move stock or bill from this ledger.
+- Work order parts are an immutable consumption/return ledger of active catalog products with integer-thousandth balances; returns never exceed the net. Only the assigned technician or coordination writes, until closing. Reference prices are server snapshots shown only to catalog readers. Each part entry moves the warehouse in the same transaction (consumption out, return in) through the idempotent stock ledger; never bill from this ledger.
 
 - Indicators are computed only on the server after the same profile scopes used by each module (portfolio, ticket queue, technical scope) and the shared filters (São Paulo calendar period, property-region territory, responsible). Return each value with its definition; ratios without a denominator are null. Commercial values are never revenue.
 
@@ -62,3 +62,5 @@
 - Indicator drill-downs return the records behind a value with the same scope and filters; percentages/averages are not drillable. "Em atendimento agora" lists open server check-ins (visit or work order) with customer/property only — never device coordinates or continuous tracking.
 
 - Offline is automatic and passwordless: the vault key is a non-extractable device CryptoKey in IndexedDB bound to tenant+user; snapshots refresh while online and the outbox syncs on reconnection. Offline orders/tickets go through the same server services and rules (approval, credit, live Party, server numbers/instants) inside the receipt transaction. Never overwrite another user's pending vault.
+
+- Warehouse: one per company; StockMovement is an immutable ledger and the only way to change StockBalance (moveStock inside the caller's transaction, unique source key for automatic moves). Manual exits never go negative; delivery and work-order parts may, flagged with an alert. Services are not stocked. Purchases compute totals/numbers on the server, need approval only above the company limit (not by the submitter) and receipts update the weighted average cost with audit. Company data (company:manage) heads every generated PDF; PDFs are built from the same view data and never include cost or margin of sales orders.

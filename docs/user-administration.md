@@ -32,6 +32,7 @@ validados no banco a cada autenticação; "próprio" = ownerId/atribuição do u
 | Coordenação Técnica | Equipe técnica + regiões | Atendimentos dos técnicos vinculados; clientes aprovados das regiões; chamados do território; pedidos de serviço das OS do seu escopo | Agendar atendimentos; abrir chamados no território | Cancelar/interromper atendimentos da equipe; triar, designar, escalonar e encerrar chamados | Carteira comercial, crédito, catálogo, executar atendimento |
 | Técnico | Próprio | Atendimentos e chamados designados | Check-in/out dos próprios atendimentos | — | Carteira comercial, preços, aprovações |
 | Financeiro | Empresa | Clientes, qualificação, oportunidades, propostas, pedidos, custos e margem, relatórios | Lançar notas fiscais emitidas no sistema financeiro | — | Criar/aprovar pedidos; operação comercial; editar custos |
+| Almoxarifado e compras | Empresa | Catálogo, custos, pedidos, saldos | Entradas e saídas manuais, fornecedores, pedidos de compra e recebimentos | — | Aprovar compras acima do limite; operação comercial |
 | Auditoria | Empresa | Comercial, financeiro do cliente, técnico, pedidos, relatórios | Nada | Nada | Comissões, metas, forecast, pacote offline |
 
 Somente a Coordenação Técnica (e o Administrador) distribui atendimentos técnicos.

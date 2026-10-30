@@ -19,7 +19,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 11. Dashboards | Implementada; homologação de uso pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
 | 12. Pedidos de venda e serviço | Implementada; homologação de uso pendente | Custo no catálogo, pedido de proposta/direto/OS, aprovação fora da regra, entrega, notas do Financeiro, previsão de faturamento e margem |
 | 13. Offline automático | Implementada; homologação em aparelhos pendente | Salvamento criptografado no aparelho sem senha local, sincronização automática de visitas, atividades, pedidos e chamados |
-| 14. Homologação e piloto | Próxima | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
+| 14. Almoxarifado, compras e documentos | Implementada; homologação de uso pendente | Dados da empresa, fornecedores, almoxarifado com baixas automáticas, compras com aprovação e recebimento, PDFs de pedido de venda, compra e OS |
+| 15. Homologação e piloto | Próxima | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
 
 ## Etapa 1 — checklist de implementação
 
@@ -217,7 +218,20 @@ Decisões de Giovanni: pedido de venda a partir de proposta aceita ou direto, se
 - [x] Verificação completa: check (203 Vitest), MongoDB 96/96, layout 115 aprovados e 2 ignorados, E2E 92/92.
 - [ ] Homologar em Android/iPhone físicos.
 
-## Próxima etapa — 14. Homologação e piloto
+## Etapa 14 — almoxarifado, compras e documentos
+
+- [x] Dados da empresa (razão social, CNPJ, IE/IM, endereço, contatos, logotipo, rodapé e limite de aprovação de compras), editáveis pela administração.
+- [x] Fornecedores com CPF/CNPJ válido e único; ativos/inativos.
+- [x] Almoxarifado único por empresa: saldos, razão imutável de movimentações, entradas e saídas manuais com motivo (saída sem saldo recusada).
+- [x] Baixas automáticas idempotentes: entrega do pedido de venda, peças da OS (consumo/devolução) e recebimento de compras; saldo negativo automático sinalizado.
+- [x] Compras: rascunho, aprovação acima do limite (outra pessoa), envio, recebimento parcial/total com custo médio ponderado, cancelamento sem recebimento.
+- [x] PDFs gerados no navegador (sem dependência) para pedido de venda/serviço, pedido de compra e OS, com cabeçalho da empresa em todas as páginas; impressão HTML do pedido substituída pelo PDF.
+- [x] Novo perfil Almoxarifado e compras; Direção aprova compras; demais perfis consultam saldos.
+- [x] Testes: 4 cenários MongoDB reais, 5 unitários (PDF estrutural, acentos, JPEG, custo médio, validações) e 2 E2E (desktop/celular); PDFs conferidos com leitor independente.
+- [x] Verificação completa: check (208 Vitest), MongoDB 100/100, layout 115 aprovados e 2 ignorados, E2E 96/96.
+- [ ] Homologar layout dos documentos e regras de estoque com a Só Leite.
+
+## Próxima etapa — 15. Homologação e piloto
 
 - [ ] Executar testes integrados e ponta a ponta do roteiro T01–T08 (T01 por cadastro manual).
 - [ ] Revisar acessibilidade, testar aparelhos reais, exportação, backup e restauração demonstrada.

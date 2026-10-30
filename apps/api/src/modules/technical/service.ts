@@ -21,6 +21,7 @@ import {dayBoundary,wallTimeToInstant} from '../agenda/recurrence.js';
 import {addCalendarDays} from '../../../../../packages/contracts/src/agenda.js';
 import {TechnicalWork,TechnicalAudit,WorkOrderSequence,WorkOrderPart} from './models.js';
 import {technicalOptionsInput,technicalListInput,technicalCreateInput,technicalCheckIn,technicalCheckOut,technicalClose,technicalOrdersInput,technicalReason,workOrderPartInput,workOrderPartOptionsInput,TechnicalRuleRejected} from './input.js';
+import {moveStock} from '../supply/stock.js';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 const literal=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 async function transact<T>(fn:(session:mongoose.ClientSession)=>Promise<T>){try{return await mongoose.connection.transaction(fn);}catch(error){if((error as {code?:number}).code===11000)throw new RecordConflict();throw error;}}
@@ -144,6 +145,7 @@ export const technicalService={
    const quantityMilli=quantityToMilli(input.quantity);
    if(input.kind==='devolucao'){const net=(await WorkOrderPart.find({tenantId:ctx.tenantId,companyId:company,workId:row._id,productId:product._id}).session(session)).reduce((sum,entry)=>sum+(entry.kind==='consumo'?entry.quantityMilli:-entry.quantityMilli),0);if(quantityMilli>net)throw new TechnicalRuleRejected();}
    const [entry]=await WorkOrderPart.create([{tenantId:ctx.tenantId,companyId:company,workId:row._id,productId:product._id,code:product.code,description:product.description,unit:product.unit,quantityDecimals:product.quantityDecimals,kind:input.kind,quantityMilli,note:input.note,actorId:ctx.userId,referencePriceCents:await referencePrice(ctx,company,party,String(product._id))}],{session});
+   await moveStock(ctx,company,{productId:product._id,direction:input.kind==='consumo'?'saida':'entrada',quantityMilli,source:'os',sourceKey:'os-part:'+String(entry!._id),reference:row.number??'OS',referenceId:row._id,note:input.note,allowNegative:true},session);
    await audit(ctx,company,row._id,'technical.part',session,(input.kind==='consumo'?'Consumo':'Devolução')+' de '+input.quantity+' '+product.unit+' — '+product.code+' '+product.description);
    return {id:String(entry!._id)};
   });

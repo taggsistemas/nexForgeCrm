@@ -1941,12 +1941,6 @@
       "symbol": "Reports"
     },
     {
-      "id": "crm:orders:print",
-      "kind": "component",
-      "source": "apps/web/src/features/orders/OrderPrint.tsx",
-      "symbol": "OrderPrint"
-    },
-    {
       "id": "crm:reports:unit",
       "kind": "test",
       "source": "tests/unit/reports.test.ts",
@@ -1987,6 +1981,90 @@
       "kind": "service",
       "source": "apps/web/src/features/offline/engine.ts",
       "symbol": "runEngine"
+    },
+    {
+      "id": "crm:supply:models",
+      "kind": "model",
+      "source": "apps/api/src/modules/supply/models.ts",
+      "symbol": "StockMovement"
+    },
+    {
+      "id": "crm:supply:stock",
+      "kind": "service",
+      "source": "apps/api/src/modules/supply/stock.ts",
+      "symbol": "moveStock"
+    },
+    {
+      "id": "crm:supply:service",
+      "kind": "service",
+      "source": "apps/api/src/modules/supply/service.ts",
+      "symbol": "purchaseService"
+    },
+    {
+      "id": "crm:supply:http",
+      "kind": "endpoint-group",
+      "source": "apps/api/src/modules/supply/router.ts",
+      "symbol": "createSupplyRouter"
+    },
+    {
+      "id": "crm:supply:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/supply.ts",
+      "symbol": "averageCost"
+    },
+    {
+      "id": "crm:pdf:writer",
+      "kind": "contract",
+      "source": "packages/contracts/src/pdf.ts",
+      "symbol": "PdfDocument"
+    },
+    {
+      "id": "crm:pdf:documents",
+      "kind": "contract",
+      "source": "packages/contracts/src/documents.ts",
+      "symbol": "renderBusinessDocument"
+    },
+    {
+      "id": "crm:supply:warehouse-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/supply/Warehouse.tsx",
+      "symbol": "Warehouse"
+    },
+    {
+      "id": "crm:supply:purchases-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/supply/Purchases.tsx",
+      "symbol": "Purchases"
+    },
+    {
+      "id": "crm:supply:suppliers-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/supply/Suppliers.tsx",
+      "symbol": "Suppliers"
+    },
+    {
+      "id": "crm:supply:company-ui",
+      "kind": "component",
+      "source": "apps/web/src/features/supply/CompanyData.tsx",
+      "symbol": "CompanyData"
+    },
+    {
+      "id": "crm:supply:test",
+      "kind": "test",
+      "source": "tests/integration/supply-mongo.test.ts",
+      "symbol": "one ledger, automatic movements"
+    },
+    {
+      "id": "crm:supply:unit",
+      "kind": "test",
+      "source": "tests/unit/supply.test.ts",
+      "symbol": "warehouse, purchases and documents"
+    },
+    {
+      "id": "crm:supply:e2e",
+      "kind": "test",
+      "source": "tests/e2e/supply.spec.ts",
+      "symbol": "partial receipt and a PDF"
     }
   ],
   "edges": [
@@ -4041,11 +4119,6 @@
       "kind": "rendered-by"
     },
     {
-      "from": "crm:orders:print",
-      "to": "apps/web/src/features/orders/Orders.tsx",
-      "kind": "rendered-by"
-    },
-    {
       "from": "crm:reports:unit",
       "to": "packages/contracts/src/xlsx.ts",
       "kind": "tests"
@@ -4104,6 +4177,76 @@
       "from": "crm:offline:service",
       "to": "apps/api/src/modules/tickets/service.ts",
       "kind": "depends-on"
+    },
+    {
+      "from": "crm:supply:stock",
+      "to": "apps/api/src/modules/supply/models.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:supply:service",
+      "to": "apps/api/src/modules/supply/stock.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:supply:http",
+      "to": "apps/api/src/app.ts",
+      "kind": "mounted-by"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/supply/stock.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:technical:service",
+      "to": "apps/api/src/modules/supply/stock.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:pdf:documents",
+      "to": "packages/contracts/src/pdf.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:ui",
+      "to": "packages/contracts/src/documents.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:supply:warehouse-ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:supply:purchases-ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:supply:suppliers-ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:supply:company-ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:supply:test",
+      "to": "apps/api/src/modules/supply/service.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:supply:unit",
+      "to": "packages/contracts/src/pdf.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:supply:e2e",
+      "to": "apps/web/src/features/supply/Purchases.tsx",
+      "kind": "tests"
     }
   ]
 }

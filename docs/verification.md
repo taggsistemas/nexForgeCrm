@@ -355,3 +355,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - `offline-mongo` ganhou caso real de pedido/chamado offline (idempotência concorrente com mesmo número, aprovação por desconto, campos forjados recusados, lead não aprovado, propriedade de outro cliente, replay com número, outro vendedor sem acesso); unitários dos novos DTOs; E2E offline reescrito (5 cenários × desktop/celular) para o fluxo sem senha.
 - Primeira rodada: o layout do offline acusou rejeição não tratada do IndexedDB em documento de origem opaca; o acesso ao armazenamento passou a recusar limpo e a tratar os eventos de erro.
 - `npm run check`: aprovado, 203 Vitest, grafo declarado (331 nós/423 arestas, não Graphify AST). `npm run test:db`: 96/96. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 92/92.
+
+## Etapa 14 — almoxarifado, compras e documentos (30/10/2026)
+
+- Dados da empresa com logotipo, fornecedores, almoxarifado único com razão imutável e baixas automáticas idempotentes (entrega de pedido, peças da OS, recebimento de compra), compras com aprovação acima do limite e custo médio, PDFs de pedido de venda, compra e OS gerados no navegador.
+- Nova suíte `supply-mongo` (4 casos reais): dados da empresa só pela administração (CPF e logo PNG recusados, versão), fornecedor com CNPJ válido e único, saída manual sem saldo recusada, custo visível só com `cost:read`, aprovação acima do limite por outra pessoa, recebimento parcial/total com custo médio ponderado, cancelamento após recebimento recusado, entrega e peças da OS com saldo negativo sinalizado e regularização manual.
+- PDFs conferidos com leitor independente (pypdf em modo estrito e renderização PyMuPDF): xref válido, acentos, logotipo JPEG e quebra de página com cabeçalho repetido. 5 unitários e 2 E2E novos; E2E de pedidos passou a baixar o PDF no lugar da impressão HTML.
+- `npm run check`: aprovado, 208 Vitest, grafo declarado (344 nós/436 arestas, não Graphify AST). `npm run test:db`: 100/100. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 96/96.

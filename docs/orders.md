@@ -63,9 +63,9 @@ Perfis restritos a pedidos de venda (Administrativo de vendas) não recebem as s
 
 Fora do escopo: emissão fiscal, estoque/expedição, contas a receber e comissões. O fluxo de produção/separação/expedição de `commercial-roadmap.ts` continua planejado.
 
-## Impressão
+## Impressão (PDF)
 
-O detalhe do pedido tem o botão **Imprimir**: documento com cliente, origem, datas, itens, total, parcelas, notas e observações. Custo e margem nunca são impressos.
+O detalhe do pedido tem o botão **Baixar PDF**: documento com os dados da empresa, cliente, origem, datas, itens, total, parcelas, notas e observações. Custo e margem nunca são impressos. Ver [supply.md](supply.md).
 
 ## Relatórios (Excel)
 

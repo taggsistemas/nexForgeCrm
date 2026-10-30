@@ -1,6 +1,7 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
-import {OrderPrint} from './OrderPrint';
+import {companyProfile,downloadPdf} from '../../components/documentPdf';
+import {salesOrderPdf,type DocumentCustomer} from '../../../../../packages/contracts/src/documents';
 import {moneyToCents,proposalLineCents} from '../../../../../packages/contracts/src/opportunities';
 import {orderApprovalReasonNames,orderKindNames,orderOriginNames,orderPaymentMethodNames,orderStatusNames,parsePaymentTerms,type OrderAction,type OrderEventView,type OrderView} from '../../../../../packages/contracts/src/orders';
 import {paymentMethods} from '../../../../../packages/contracts/src/qualification';
@@ -65,11 +66,11 @@ export function Orders({account}:{account:Account}){
  const permissions=account.permissions??[],[company,setCompany]=useState(account.companies[0]?.id??'');
  const [rows,setRows]=useState<OrderView[]>([]),[total,setTotal]=useState(0),[page,setPage]=useState(1),[status,setStatus]=useState('open'),[search,setSearch]=useState(''),[searchDraft,setSearchDraft]=useState(''),[loading,setLoading]=useState(true),[refresh,setRefresh]=useState(0);
  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[formError,setFormError]=useState('');
- const [detail,setDetail]=useState<{record:OrderView;history:OrderEventView[]}|null>(null),[action,setAction]=useState<OrderAction|null>(null),[note,setNote]=useState('');
+ const [detail,setDetail]=useState<{record:OrderView;history:OrderEventView[];customer?:DocumentCustomer|null}|null>(null),[action,setAction]=useState<OrderAction|null>(null),[note,setNote]=useState('');
  const [editor,setEditor]=useState<{row?:OrderView}|null>(null),[terms,setTerms]=useState(blankTerms()),[lines,setLines]=useState<Line[]>([]);
  const [parties,setParties]=useState<{id:string;name:string}[]>([]),[partySearch,setPartySearch]=useState(''),[partyId,setPartyId]=useState('');
  const [products,setProducts]=useState<ProductView[]>([]),[productSearch,setProductSearch]=useState('');
- const [printing,setPrinting]=useState(false);
+ async function pdf(){if(!detail)return;try{downloadPdf(detail.record.number+'.pdf',salesOrderPdf(detail.record,await companyProfile(company),detail.customer));}catch(cause){setNotice('');setError((cause as Error).message);}}
  const [invoice,setInvoice]=useState<{number:string;issueDate:string;amount:string}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();setLoading(true);
@@ -137,9 +138,9 @@ export function Orders({account}:{account:Account}){
     <div className="nf-crm-row-actions"><button type="button" className={row.canApprove||row.canInvoice?'nf-primary':'nf-secondary'} onClick={()=>void openDetail(row.id)}>{row.canApprove?'Analisar aprovação':row.canInvoice?'Lançar nota':'Ver pedido'}</button></div></li>)}</ul>}
    <div className="nf-crm-pagination"><button className="nf-secondary" disabled={loading||page<=1} onClick={()=>setPage(value=>value-1)}>Anterior</button><span>Página {page}</span><button className="nf-secondary" disabled={loading||page*20>=total} onClick={()=>setPage(value=>value+1)}>Próxima</button></div>
   </section>
-  <Modal open={Boolean(record)} title={record?'Pedido '+record.number+' — '+record.partyName:''} onClose={()=>{setDetail(null);setNotice('');}}>
+  <Modal open={Boolean(record)} title={record?'Pedido '+record.number+' — '+record.partyName:''} onClose={()=>{setDetail(null);setNotice('');setError('');}}>
    {record&&<div className="nf-order-detail">
-    {notice&&<p role="status" className="nf-admin-success">{notice}</p>}
+    {notice&&<p role="status" className="nf-admin-success">{notice}</p>}{error&&<p role="alert" className="nf-error">{error}</p>}
     <p><span className="nf-badge">{orderStatusNames[record.status]}</span> {orderKindNames[record.kind]} · {orderOriginNames[record.origin]}{record.proposalNumber?' '+record.proposalNumber:''}{record.workOrderNumber?' '+record.workOrderNumber:''}</p>
     {record.status==='aguardando_aprovacao'&&<p className="nf-warning">Aprovação necessária: {record.approvalReasons.map(item=>orderApprovalReasonNames[item]).join('; ')}.</p>}
     {record.decisionNote&&<p>Observação da decisão: {record.decisionNote}</p>}
@@ -150,13 +151,12 @@ export function Orders({account}:{account:Account}){
     {record.notes&&<p>Observações: {record.notes}</p>}
     <h3>Previsão de faturamento</h3><ul className="nf-order-installments">{record.installments.map((item,index)=><li key={index}>{day(item.dueDate)} · {money(item.amountCents)}</li>)}</ul>
     <h3>Notas fiscais lançadas</h3>{!record.invoices.length?<p className="nf-muted">Nenhuma nota lançada.</p>:<ul className="nf-order-installments">{record.invoices.map(item=><li key={item.number}>NF {item.number} · emitida {day(item.issueDate)} · {money(item.amountCents)} · lançada por {item.registeredBy}</li>)}</ul>}
-    <div className="nf-crm-row-actions"><button type="button" className="nf-secondary" onClick={()=>setPrinting(true)}>Imprimir</button>{record.canEdit&&<button type="button" className="nf-secondary" onClick={()=>openEditor(record)}>Editar rascunho</button>}
+    <div className="nf-crm-row-actions"><button type="button" className="nf-secondary" onClick={()=>void pdf()}>Baixar PDF</button>{record.canEdit&&<button type="button" className="nf-secondary" onClick={()=>openEditor(record)}>Editar rascunho</button>}
      {(Object.keys(actionTexts) as OrderAction[]).filter(key=>record[flags[key]]).map(key=><button key={key} type="button" className={['submit','approve','deliver'].includes(key)?'nf-primary':'nf-secondary'} onClick={()=>{setNote('');setFormError('');setAction(key);}}>{actionTexts[key].label}</button>)}
      {record.canInvoice&&<button type="button" className="nf-primary" onClick={()=>{setFormError('');setInvoice({number:'',issueDate:today(),amount:asInput(record.remainingCents)});}}>Lançar nota fiscal</button>}</div>
     <h3>Histórico</h3><ul className="nf-order-installments">{detail!.history.map((item,index)=><li key={index}>{when(item.at)} · {eventNames[item.action]??item.action} · {item.actor}{item.note?' — '+item.note:''}</li>)}</ul>
    </div>}
   </Modal>
-  {printing&&record&&<OrderPrint order={record} companyName={account.companies.find(item=>item.id===company)?.name??''} onDone={()=>setPrinting(false)}/>}
   <Modal open={Boolean(action)} title={action&&record?actionTexts[action].title+' — '+record.number:''} busy={busy} size="compact" onClose={()=>setAction(null)}>
    <form className="nf-form" onSubmit={act}><fieldset disabled={busy}><p>{action&&actionTexts[action].text}</p>
     {action&&actionTexts[action].note&&<label>{actionTexts[action].note==='required'?'Motivo':'Observação'}<textarea required={actionTexts[action].note==='required'} minLength={actionTexts[action].note==='required'?5:undefined} maxLength={1000} value={note} onChange={event=>setNote(event.target.value)}/></label>}

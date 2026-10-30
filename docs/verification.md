@@ -335,3 +335,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Pedidos de proposta aceita, OS encerrada ou direto para cliente aprovado; aprovação só fora da regra (desconto, pagamento, crédito) por outra pessoa; entrega e notas do Financeiro com instantes do servidor; custo no catálogo, margem congelada e previsão de faturamento pelos prazos; seção "Pedidos e faturamento" nos indicadores.
 - Nova suíte `orders-mongo` (4 casos reais): custo confidencial, confirmação dentro da regra com parcelas e margem, motivos de aprovação e bloqueio de autoaprovação, campos forjados recusados, pedido de proposta (ganha a oportunidade) e de OS (horas + peças líquidas) únicos, notas (403 sem `billing:write`, duplicata, futura, acima do total), faturado na cobertura total, indicadores por escopo e arquivamento bloqueado. `indicators-mongo` ajustada para a nova seção. 5 testes unitários e 2 E2E (desktop/celular); E2E de fundação deixou de usar o módulo provisório removido.
 - `npm run check`: aprovado, 199 Vitest, grafo declarado (319 nós/405 arestas, não Graphify AST). `npm run test:db`: 93/93. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 90/90.
+
+## Etapa 12 — ajustes pós-revisão (29/10/2026)
+
+- Escopo por papel: permissões `order:sales`/`order:service` (Administrativo de vendas só venda; Coordenação Técnica só serviço das OS do seu escopo) aplicadas em lista, detalhe, ações, indicadores e relatórios; perfis só de venda não recebem seções de chamados/OS nos indicadores.
+- Impressão do pedido (sem custo/margem), menu Relatórios com Excel gerado no navegador (pedidos, vendas, serviços, itens, a faturar, faturamento, previsão), filtros alinhados em Pedidos e controles do menu lateral restritos ao celular (no desktop apareciam sem efeito).
+- Corrigido fuso nos testes `orders-mongo` e `proposals-mongo` (data UTC após 21h em São Paulo).
+- `npm run check`: aprovado, 202 Vitest, grafo declarado (326 nós/413 arestas, não Graphify AST). `npm run test:db`: 94/94. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 94/94.

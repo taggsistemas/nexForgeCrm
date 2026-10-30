@@ -202,6 +202,7 @@ Decisões de Giovanni: pedido de venda a partir de proposta aceita ou direto, se
 - [x] Telas: módulo de pedidos, "Gerar pedido" na proposta aceita e na OS encerrada, custo no catálogo, lançamento de notas.
 - [x] Testes: 4 cenários MongoDB reais, 5 unitários e 2 E2E (desktop/celular).
 - [x] Verificação completa: check (199 Vitest), MongoDB 93/93, layout 115 aprovados e 2 ignorados, E2E 90/90.
+- [x] Ajustes pós-revisão: escopo por papel (venda/serviço, carteira, equipe, escopo técnico) em pedidos, indicadores e relatórios; impressão do pedido; menu Relatórios com Excel (pedidos, vendas, serviços, itens, a faturar, faturamento, previsão); filtros alinhados; controles do menu lateral só no celular.
 - [ ] Homologar regras de aprovação, prazos e indicadores com a Só Leite.
 
 ## Próxima etapa — 13. Offline automático

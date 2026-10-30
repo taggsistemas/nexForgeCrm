@@ -1,4 +1,5 @@
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import {addCalendarDays,dateParts} from '../../packages/contracts/src/agenda.js';
 import mongoose from 'mongoose';
 import {randomUUID} from 'node:crypto';
 import request from 'supertest';
@@ -27,7 +28,7 @@ type Login=NonNullable<Awaited<ReturnType<typeof identityService.login>>>;
 const uri=process.env.MONGODB_TEST_URI,database='nexforge_crm_test_'+randomUUID().replaceAll('-',''),origin='http://localhost:5173',password='proposals-test-password';
 let admin:Login,seller:Login,otherSeller:Login,auditor:Login,manager:Login,company:string,customer:string,otherCustomer:string,property:string,secondProperty:string,equipment:string,foreignEquipment:string,product:string,service:string;
 const app=createApp({origin,databaseReady:()=>true,identity:identityService}),headers=(login:Login)=>({Origin:origin,Cookie:'nf_session='+login.token});
-const future=(days:number)=>new Date(Date.now()+days*86400000).toISOString().slice(0,10);
+const future=(days:number)=>addCalendarDays(dateParts(new Date(),'America/Sao_Paulo').date,days);
 const opportunity=(extra:Record<string,unknown>={})=>({partyId:customer,title:'Robô de ordenha',amountCents:150000000,expectedCloseDate:future(60),...extra});
 const items=()=>[{productId:product,quantity:'2',unitPriceCents:50000000,discountCents:1000000},{productId:service,quantity:'1.5',unitPriceCents:30001}];
 describe.skipIf(!uri)('opportunity links, configurable pipeline and versioned proposals',()=>{

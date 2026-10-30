@@ -6,6 +6,7 @@ import {AccessDenied} from '../../infrastructure/access.js';
 import {RecordConflict,RecordNotFound} from '../relationships/service.js';
 import {OrderRuleRejected} from './input.js';
 import {orderService} from './service.js';
+import {orderReport} from './reports.js';
 export function createOrderRouter(identity:IdentityService,origin:string){
  const router=Router({mergeParams:true});
  router.use((req,res,next)=>{if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.get('origin')!==origin){res.status(403).json({code:'ORIGIN_REJECTED'});return;}next();});
@@ -14,6 +15,7 @@ export function createOrderRouter(identity:IdentityService,origin:string){
  router.post('/',authorizeCompany(identity,'order:write'),async(req,res)=>res.status(201).json(await orderService.createDirect(...args(req,res),req.body)));
  router.post('/from-proposal',authorizeCompany(identity,'order:write'),async(req,res)=>res.status(201).json(await orderService.createFromProposal(...args(req,res),req.body)));
  router.post('/from-work-order',authorizeCompany(identity,'order:write'),async(req,res)=>res.status(201).json(await orderService.createFromWorkOrder(...args(req,res),req.body)));
+ router.get('/reports/:type',authorizeCompany(identity,'order:read'),async(req,res)=>res.json(await orderReport(...args(req,res),{...req.query,type:req.params.type})));
  router.get('/:id',authorizeCompany(identity,'order:read'),async(req,res)=>res.json(await orderService.detail(...args(req,res),String(req.params.id))));
  router.patch('/:id',authorizeCompany(identity,'order:write'),async(req,res)=>res.json({record:await orderService.update(...args(req,res),String(req.params.id),req.body)}));
  router.post('/:id/invoices',authorizeCompany(identity,'billing:write'),async(req,res)=>res.json({record:await orderService.registerInvoice(...args(req,res),String(req.params.id),req.body)}));

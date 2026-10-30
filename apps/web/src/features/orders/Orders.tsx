@@ -1,5 +1,6 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
+import {OrderPrint} from './OrderPrint';
 import {moneyToCents,proposalLineCents} from '../../../../../packages/contracts/src/opportunities';
 import {orderApprovalReasonNames,orderKindNames,orderOriginNames,orderPaymentMethodNames,orderStatusNames,parsePaymentTerms,type OrderAction,type OrderEventView,type OrderView} from '../../../../../packages/contracts/src/orders';
 import {paymentMethods} from '../../../../../packages/contracts/src/qualification';
@@ -14,7 +15,7 @@ const asInput=(cents:number)=>(cents/100).toFixed(2).replace('.',',');
 const centsOrZero=(value:string)=>value.trim()?moneyToCents(value):0;
 const today=()=>new Date(Date.now()-3*3600000).toISOString().slice(0,10);
 const blankTerms=():Terms=>({expectedDeliveryDate:new Date(Date.now()+15*86400000).toISOString().slice(0,10),paymentMethod:'boleto',terms:'30',notes:''});
-const reasons:Record<string,string>={CUSTOMER_NOT_APPROVED:'O cliente precisa estar com a qualificação aprovada para receber pedidos.',PROPOSAL_NOT_ACCEPTED:'Somente propostas aceitas pelo cliente geram pedido.',WORK_ORDER_NOT_CLOSED:'A OS precisa estar encerrada pela coordenação.',NOTHING_BILLABLE:'A OS não tem horas faturáveis nem peças a cobrar.',INVALID_PRODUCT:'Um produto não está mais ativo no catálogo.',INVALID_QUANTITY:'A quantidade não respeita as casas decimais do produto.',INVALID_LINE:'O desconto não pode superar o valor da linha.',ITEMS_FROM_SOURCE:'Os itens de pedidos gerados por proposta ou OS não podem ser alterados.',REASON_REQUIRED:'Informe o motivo (mínimo de 5 caracteres).',SELF_APPROVAL:'Quem enviou o pedido não pode aprová-lo.',DUPLICATE_INVOICE:'Esta nota fiscal já foi lançada.',INVOICE_ABOVE_TOTAL:'A soma das notas não pode ultrapassar o total do pedido.',FUTURE_INVOICE:'A data de emissão não pode estar no futuro.',STATUS:'A situação atual do pedido não permite esta ação.'};
+const reasons:Record<string,string>={CUSTOMER_NOT_APPROVED:'O cliente precisa estar com a qualificação aprovada para receber pedidos.',PROPOSAL_NOT_ACCEPTED:'Somente propostas aceitas pelo cliente geram pedido.',WORK_ORDER_NOT_CLOSED:'A OS precisa estar encerrada pela coordenação.',NOTHING_BILLABLE:'A OS não tem horas faturáveis nem peças a cobrar.',INVALID_PRODUCT:'Um produto não está mais ativo no catálogo.',INVALID_QUANTITY:'A quantidade não respeita as casas decimais do produto.',INVALID_LINE:'O desconto não pode superar o valor da linha.',ITEMS_FROM_SOURCE:'Os itens de pedidos gerados por proposta ou OS não podem ser alterados.',REASON_REQUIRED:'Informe o motivo (mínimo de 5 caracteres).',SELF_APPROVAL:'Quem enviou o pedido não pode aprová-lo.',KIND_NOT_ALLOWED:'Seu perfil não trabalha com este tipo de pedido (venda ou serviço).',DUPLICATE_INVOICE:'Esta nota fiscal já foi lançada.',INVOICE_ABOVE_TOTAL:'A soma das notas não pode ultrapassar o total do pedido.',FUTURE_INVOICE:'A data de emissão não pode estar no futuro.',STATUS:'A situação atual do pedido não permite esta ação.'};
 async function call(company:string,path:string,options:RequestInit={}){
  const response=await fetch('/api/v1/companies/'+company+path,{...options,cache:'no-store',credentials:'same-origin',headers:{'Content-Type':'application/json',...options.headers}});
  if(!response.ok){const data=await response.json().catch(()=>({}));
@@ -68,6 +69,7 @@ export function Orders({account}:{account:Account}){
  const [editor,setEditor]=useState<{row?:OrderView}|null>(null),[terms,setTerms]=useState(blankTerms()),[lines,setLines]=useState<Line[]>([]);
  const [parties,setParties]=useState<{id:string;name:string}[]>([]),[partySearch,setPartySearch]=useState(''),[partyId,setPartyId]=useState('');
  const [products,setProducts]=useState<ProductView[]>([]),[productSearch,setProductSearch]=useState('');
+ const [printing,setPrinting]=useState(false);
  const [invoice,setInvoice]=useState<{number:string;issueDate:string;amount:string}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();setLoading(true);
@@ -127,8 +129,8 @@ export function Orders({account}:{account:Account}){
   {!editor&&!detail&&error&&<p role="alert" className="nf-error">{error}</p>}{!detail&&notice&&<p role="status" className="nf-admin-success">{notice}</p>}
   <section className="nf-panel"><div className="nf-section-heading"><h2>Pedidos de venda e serviço</h2><span>{total} pedido(s)</span></div>
    <p className="nf-field-hint">Pedidos nascem de proposta aceita, de OS encerrada ou por lançamento direto. As notas fiscais são emitidas pelo financeiro no sistema próprio e lançadas aqui.</p>
-   <div className="nf-admin-grid"><label>Situação<select value={status} onChange={event=>{setStatus(event.target.value);setPage(1);}}><option value="open">Em andamento</option>{Object.entries(orderStatusNames).map(([key,name])=><option key={key} value={key}>{name}</option>)}<option value="all">Todos</option></select></label>
-    <form className="nf-crm-search" onSubmit={event=>{event.preventDefault();setSearch(searchDraft.trim());setPage(1);}}><label>Número do pedido<input value={searchDraft} maxLength={80} onChange={event=>setSearchDraft(event.target.value)}/></label><button className="nf-secondary">Buscar</button></form></div>
+   <form className="nf-filter-bar" onSubmit={event=>{event.preventDefault();setSearch(searchDraft.trim());setPage(1);}}><label>Situação<select value={status} onChange={event=>{setStatus(event.target.value);setPage(1);}}><option value="open">Em andamento</option>{Object.entries(orderStatusNames).map(([key,name])=><option key={key} value={key}>{name}</option>)}<option value="all">Todos</option></select></label>
+    <label>Número do pedido<input value={searchDraft} maxLength={80} onChange={event=>setSearchDraft(event.target.value)}/></label><button className="nf-secondary">Buscar</button></form>
    {loading?<p role="status">Carregando pedidos...</p>:!rows.length?<p className="nf-muted">Nenhum pedido neste filtro.</p>:<ul className="nf-property-list">{rows.map(row=><li key={row.id}><div><strong>{row.number} · {row.partyName}</strong><span className="nf-badge">{orderStatusNames[row.status]}</span></div>
     <p>{orderKindNames[row.kind]} · {orderOriginNames[row.origin]}{row.proposalNumber?' '+row.proposalNumber:''}{row.workOrderNumber?' '+row.workOrderNumber:''} · {money(row.totalCents)}</p>
     <small>Entrega prevista {day(row.expectedDeliveryDate)} · Faturado {money(row.invoicedCents)} · A faturar {money(row.remainingCents)}{row.approvalReasons.length&&row.status==='aguardando_aprovacao'?' · '+row.approvalReasons.map(item=>orderApprovalReasonNames[item]).join('; '):''}</small>
@@ -148,12 +150,13 @@ export function Orders({account}:{account:Account}){
     {record.notes&&<p>Observações: {record.notes}</p>}
     <h3>Previsão de faturamento</h3><ul className="nf-order-installments">{record.installments.map((item,index)=><li key={index}>{day(item.dueDate)} · {money(item.amountCents)}</li>)}</ul>
     <h3>Notas fiscais lançadas</h3>{!record.invoices.length?<p className="nf-muted">Nenhuma nota lançada.</p>:<ul className="nf-order-installments">{record.invoices.map(item=><li key={item.number}>NF {item.number} · emitida {day(item.issueDate)} · {money(item.amountCents)} · lançada por {item.registeredBy}</li>)}</ul>}
-    <div className="nf-crm-row-actions">{record.canEdit&&<button type="button" className="nf-secondary" onClick={()=>openEditor(record)}>Editar rascunho</button>}
+    <div className="nf-crm-row-actions"><button type="button" className="nf-secondary" onClick={()=>setPrinting(true)}>Imprimir</button>{record.canEdit&&<button type="button" className="nf-secondary" onClick={()=>openEditor(record)}>Editar rascunho</button>}
      {(Object.keys(actionTexts) as OrderAction[]).filter(key=>record[flags[key]]).map(key=><button key={key} type="button" className={['submit','approve','deliver'].includes(key)?'nf-primary':'nf-secondary'} onClick={()=>{setNote('');setFormError('');setAction(key);}}>{actionTexts[key].label}</button>)}
      {record.canInvoice&&<button type="button" className="nf-primary" onClick={()=>{setFormError('');setInvoice({number:'',issueDate:today(),amount:asInput(record.remainingCents)});}}>Lançar nota fiscal</button>}</div>
     <h3>Histórico</h3><ul className="nf-order-installments">{detail!.history.map((item,index)=><li key={index}>{when(item.at)} · {eventNames[item.action]??item.action} · {item.actor}{item.note?' — '+item.note:''}</li>)}</ul>
    </div>}
   </Modal>
+  {printing&&record&&<OrderPrint order={record} companyName={account.companies.find(item=>item.id===company)?.name??''} onDone={()=>setPrinting(false)}/>}
   <Modal open={Boolean(action)} title={action&&record?actionTexts[action].title+' — '+record.number:''} busy={busy} size="compact" onClose={()=>setAction(null)}>
    <form className="nf-form" onSubmit={act}><fieldset disabled={busy}><p>{action&&actionTexts[action].text}</p>
     {action&&actionTexts[action].note&&<label>{actionTexts[action].note==='required'?'Motivo':'Observação'}<textarea required={actionTexts[action].note==='required'} minLength={actionTexts[action].note==='required'?5:undefined} maxLength={1000} value={note} onChange={event=>setNote(event.target.value)}/></label>}

@@ -26,15 +26,17 @@ import {initializeTicketModels} from '../../apps/api/src/modules/tickets/models.
 import {orderService} from '../../apps/api/src/modules/orders/service.js';
 import {initializeOrderModels} from '../../apps/api/src/modules/orders/models.js';
 import {indicatorService} from '../../apps/api/src/modules/indicators/service.js';
+import {orderReport} from '../../apps/api/src/modules/orders/reports.js';
 import {initializeAccountSecurityModels} from '../../apps/api/src/modules/account-security/models.js';
+import {addCalendarDays,dateParts} from '../../packages/contracts/src/agenda.js';
 import {businessDateTimeInput} from '../../packages/contracts/src/business-time.js';
 import {customerRegistrationFixture} from '../fixtures/customer.js';
 import {prepareAccount} from '../fixtures/ready-account.js';
 type Login=NonNullable<Awaited<ReturnType<typeof identityService.login>>>;
 const uri=process.env.MONGODB_TEST_URI,database='nexforge_crm_test_'+randomUUID().replaceAll('-',''),origin='http://localhost:5173',password='orders-test-password',point={latitude:-24.79,longitude:-50.01,accuracy:10};
-let admin:Login,manager:Login,seller:Login,otherSeller:Login,finance:Login,coordinator:Login,technician:Login,company:string,customer:string,sede:string,robot:string,service:string,valve:string;
+let salesAdmin:Login,admin:Login,manager:Login,seller:Login,otherSeller:Login,finance:Login,coordinator:Login,technician:Login,company:string,customer:string,sede:string,robot:string,service:string,valve:string;
 const app=createApp({origin,databaseReady:()=>true,identity:identityService}),headers=(login:Login)=>({Origin:origin,Cookie:'nf_session='+login.token});
-const future=(days:number)=>new Date(Date.now()+days*86400000).toISOString().slice(0,10);
+const future=(days:number)=>addCalendarDays(dateParts(new Date(),'America/Sao_Paulo').date,days);
 const terms={expectedDeliveryDate:future(20),paymentMethod:'boleto',paymentTermDays:[30,60]};
 const direct=(items:Record<string,unknown>[],extra:Record<string,unknown>={})=>({partyId:customer,items,...terms,...extra});
 describe.skipIf(!uri)('sales and service orders: origins, approval rules, delivery, invoices, forecast and margin',()=>{
@@ -45,7 +47,7 @@ describe.skipIf(!uri)('sales and service orders: origins, approval rules, delive
   admin=(await identityService.login(created.admin!.email,password))!;company=admin.context.companyIds[0]!;
   const castro=String((await Region.create({tenantId:admin.context.tenantId,companyId:company,name:'Castro',nameKey:'castro'}))._id);
   const user=async(name:string,profileKey:string,extra:Record<string,unknown>={})=>{const row=await administrationService.create(admin.context,{name,email:name+'@example.invalid',password,profileKey,companyIds:[company],...extra});await prepareAccount(row.email);return (await identityService.login(row.email,password))!;};
-  manager=await user('so-manager','manager');seller=await user('so-seller','seller');otherSeller=await user('so-other','seller');finance=await user('so-finance','finance');
+  manager=await user('so-manager','manager');seller=await user('so-seller','seller');otherSeller=await user('so-other','seller');finance=await user('so-finance','finance');salesAdmin=await user('so-sales-admin','sales_admin');
   coordinator=await user('so-coordinator','technical_coordinator',{regionIds:[castro]});technician=await user('so-technician','technician',{regionIds:[castro],supervisorId:coordinator.context.userId});
   coordinator=(await identityService.login('so-coordinator@example.invalid',password))!;
   customer=String((await Party.create({tenantId:admin.context.tenantId,companyId:company,ownerId:seller.context.userId,kind:'customer',name:'Fazenda Pedidos',stage:'qualificado',qualificationState:'approved',customerType:'atacado',commercial:{creditLimitCents:2000000,paymentMethods:['boleto','pix'],paymentTermDays:[0,30,60]},address:{country:'Brasil'}}))._id);
@@ -120,5 +122,26 @@ describe.skipIf(!uri)('sales and service orders: origins, approval rules, delive
   expect(managerView).toMatchObject({invoiced:20000,pendingApproval:0});expect(managerView.confirmed).toBeGreaterThanOrEqual(5);expect(managerView.margin).toBeGreaterThan(0);
   expect(sellerView.invoiced).toBe(20000);expect(sellerView).not.toHaveProperty('margin');expect(otherView).toMatchObject({confirmed:0,invoiced:0,backlog:0});
   const party=(await Party.findById(customer))!;await expect(relationshipService.archive(admin.context,company,'customer',customer,{version:party.version})).rejects.toThrow();
+ },30000);
+ it('limits orders and indicators to the order kinds and live scope of each role',async()=>{
+  const sales=(await orderService.list(salesAdmin.context,company,{})).items;expect(sales.length).toBeGreaterThan(0);expect(sales.every(item=>item.kind==='venda')).toBe(true);
+  const service=(await orderService.list(coordinator.context,company,{})).items;expect(service.map(item=>[item.kind,item.origin])).toEqual([['servico','os']]);
+  await expect(orderService.detail(coordinator.context,company,sales[0]!.id)).rejects.toThrow();await expect(orderService.detail(salesAdmin.context,company,service[0]!.id)).rejects.toThrow();
+  await expect(orderService.act(coordinator.context,company,service[0]!.id,'deliver',{version:service[0]!.version})).rejects.toThrow();
+  expect((await orderService.detail(coordinator.context,company,service[0]!.id)).record).not.toHaveProperty('costCents');
+  const keys=async(login:Login,view:string)=>(await indicatorService.report(login.context,company,{view})).sections.map(section=>section.key);
+  expect(await keys(salesAdmin,'gerencial')).toEqual(['carteira','visitas','oportunidades','propostas','pedidos']);
+  expect(await keys(coordinator,'tecnica')).toEqual(['pedidos','chamados','ordens']);expect(await keys(technician,'gerencial')).not.toContain('pedidos');
+  const report=(login:Login,type:string)=>orderReport(login.context,company,{type});
+  const all=await report(manager,'pedidos'),managerTotal=(await orderService.list(manager.context,company,{})).total;
+  expect(all.rows).toHaveLength(managerTotal);expect(all.columns.map(column=>column.label)).toContain('Margem');
+  const salesRows=await report(salesAdmin,'pedidos');expect(salesRows.rows.length).toBe(sales.length);expect(salesRows.rows.every(row=>row[3]==='Venda')).toBe(true);expect(salesRows.columns.map(column=>column.label)).not.toContain('Custo');
+  await expect(report(salesAdmin,'servicos')).rejects.toThrow();await expect(report(technician,'pedidos')).rejects.toThrow();
+  expect((await report(coordinator,'servicos')).rows.map(row=>row[0])).toEqual(service.map(item=>item.number));
+  expect((await report(otherSeller,'pedidos')).rows).toHaveLength(0);
+  expect((await report(finance,'faturamento')).rows.map(row=>row[4])).toEqual(['1001','1002']);
+  const items=await report(manager,'itens');expect(items.rows.length).toBeGreaterThan(0);
+  const http=await request(app).get('/api/v1/companies/'+company+'/orders/reports/vendas').set(headers(seller));expect(http.status).toBe(200);expect(http.body.rows.length).toBeGreaterThan(0);
+  expect((await request(app).get('/api/v1/companies/'+company+'/orders/reports/servicos').set(headers(salesAdmin))).status).toBe(403);
  },30000);
 });

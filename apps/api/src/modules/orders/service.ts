@@ -3,9 +3,9 @@ import type {AccessContext,Permission} from '../../../../../packages/contracts/s
 import {decimalQuantityValid} from '../../../../../packages/contracts/src/catalog.js';
 import {proposalLineCents} from '../../../../../packages/contracts/src/opportunities.js';
 import {milliToQuantity,quantityToMilli} from '../../../../../packages/contracts/src/technical.js';
-import {orderInstallments,orderMargin,type OrderAction,type OrderEventView,type OrderView} from '../../../../../packages/contracts/src/orders.js';
+import {orderApprovalReasonNames,orderInstallments,orderMargin,type OrderAction,type OrderEventView,type OrderView} from '../../../../../packages/contracts/src/orders.js';
 import {dateParts} from '../../../../../packages/contracts/src/agenda.js';
-import {companyScope} from '../../infrastructure/access.js';
+import {companyScope,AccessDenied} from '../../infrastructure/access.js';
 import {auditActorLabel,auditActorNames} from '../../infrastructure/audit-actors.js';
 import {commercialFilter} from '../identity/profile-access.js';
 import {Party} from '../relationships/models.js';
@@ -16,6 +16,7 @@ import {catalogService} from '../catalog/service.js';
 import {Opportunity,Proposal} from '../opportunities/models.js';
 import {authorizeOpportunity,history as opportunityHistory} from '../opportunities/service.js';
 import {TechnicalWork,WorkOrderPart} from '../technical/models.js';
+import {pipeline as technicalScope} from '../technical/service.js';
 import {SalesOrder,SalesOrderEvent,SalesOrderSequence} from './models.js';
 import {orderActionInput,orderDirectInput,orderFromProposalInput,orderFromWorkOrderInput,orderInvoiceInput,orderListInput,orderUpdateInput,OrderRuleRejected} from './input.js';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
@@ -26,6 +27,22 @@ async function transact<T>(fn:(session:mongoose.ClientSession)=>Promise<T>){try{
 type Line={productId:string;quantity:string;unitPriceCents:number;discountCents:number};
 /** Approved customers of the live commercial portfolio; reading uses order:read, writing order:write. */
 function partyFilter(ctx:AccessContext,companyId:string,permission:Permission,extra:Record<string,unknown>={}){return commercialFilter(ctx,companyId,permission,{kind:'customer',...extra});}
+/** Order kinds a profile works with: order:sales (venda) and/or order:service (serviço). */
+export function orderKinds(ctx:AccessContext){return [...(ctx.permissions.includes('order:sales')?['venda']:[]),...(ctx.permissions.includes('order:service')?['servico']:[])];}
+/** Live scope of orders before any count: kind permission, then the customer portfolio (commercial and finance profiles)
+ * or, for technical coordination without customer access, the work orders of its technical scope. */
+export async function orderScope(ctx:AccessContext,companyId:string,permission:Permission,partyExtra:Record<string,unknown>={}){
+ const scope=companyScope(ctx,companyId,permission),kinds=orderKinds(ctx);if(!kinds.length)throw new AccessDenied();
+ const match:Record<string,unknown>={tenantId:oid(scope.tenantId),companyId:oid(companyId),kind:{$in:kinds}};
+ let parties:Record<string,unknown>;
+ if(ctx.permissions.includes('customer:read')){const query=Party.find(partyFilter(ctx,companyId,permission,partyExtra));query.cast(Party);parties=query.getFilter();}
+ else if(ctx.permissions.includes('technical:read')&&permission==='order:read'){
+  const works=await TechnicalWork.aggregate([...await technicalScope(ctx,companyId),{$project:{_id:1}}]);
+  match.workOrderId={$in:works.map(item=>item._id)};const query=Party.find({tenantId:scope.tenantId,companyId,...partyExtra});query.cast(Party);parties=query.getFilter();
+ }else throw new AccessDenied();
+ return {match,parties};
+}
+function assertKind(ctx:AccessContext,kind:string){if(!orderKinds(ctx).includes(kind))throw new OrderRuleRejected('KIND_NOT_ALLOWED');}
 async function approvedParty(ctx:AccessContext,companyId:string,partyId:unknown,session:mongoose.ClientSession){
  const party=await Party.findOne(partyFilter(ctx,companyId,'order:write',{_id:partyId,archived:false,qualificationState:'approved'})).session(session);
  if(!party)throw new OrderRuleRejected('CUSTOMER_NOT_APPROVED');
@@ -65,8 +82,9 @@ async function view(ctx:AccessContext,row:InstanceType<typeof SalesOrder>,partyN
   canCancel:['rascunho','aguardando_aprovacao','confirmado'].includes(row.status)&&!row.invoices.length&&(write||ctx.permissions.includes('order:approve')),version:row.version,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()};
 }
 async function load(ctx:AccessContext,companyId:string,id:string,permission:Permission,session?:mongoose.ClientSession){
- objectId.parse(id);const row=await SalesOrder.findOne({_id:id,tenantId:ctx.tenantId,companyId}).session(session??null);if(!row)throw new RecordNotFound();
- const party=await Party.findOne(partyFilter(ctx,companyId,permission,{_id:row.partyId})).select('name commercial version').session(session??null);if(!party)throw new RecordNotFound();
+ objectId.parse(id);const scope=await orderScope(ctx,companyId,permission);
+ const row=await SalesOrder.findOne({...scope.match,_id:id}).session(session??null);if(!row)throw new RecordNotFound();
+ const party=await Party.findOne({$and:[scope.parties,{_id:row.partyId}]}).select('name commercial version').session(session??null);if(!party)throw new RecordNotFound();
  return {row,party};
 }
 /** Credit, discount and payment rules decide whether the order needs approval; confirmation freezes unit costs. */
@@ -92,10 +110,9 @@ async function winOpportunity(ctx:AccessContext,companyId:string,row:InstanceTyp
 }
 export const orderService={
  async list(ctx:AccessContext,companyId:string,raw:unknown){
-  const input=orderListInput.parse(raw);companyScope(ctx,companyId,'order:read');
-  const parties=Party.find(partyFilter(ctx,companyId,'order:read',{...(input.partyId?{_id:input.partyId}:{})}));parties.cast(Party);
+  const input=orderListInput.parse(raw),scope=await orderScope(ctx,companyId,'order:read',input.partyId?{_id:input.partyId}:{});
   const status=input.status==='all'?{}:input.status==='open'?{status:{$in:['rascunho','aguardando_aprovacao','confirmado','entregue']}}:{status:input.status};
-  const [result]=await SalesOrder.aggregate([{$match:{tenantId:oid(ctx.tenantId),companyId:oid(companyId),...status,...(input.search?{number:{$regex:literal(input.search),$options:'i'}}:{})}},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:parties.getFilter()},{$project:{name:1}}],as:'party'}},{$unwind:'$party'},{$sort:{createdAt:-1,_id:-1}},{$facet:{total:[{$count:'count'}],items:[{$skip:(input.page-1)*20},{$limit:20}]}}]);
+  const [result]=await SalesOrder.aggregate([{$match:{...scope.match,...status,...(input.search?{number:{$regex:literal(input.search),$options:'i'}}:{})}},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:scope.parties},{$project:{name:1}}],as:'party'}},{$unwind:'$party'},{$sort:{createdAt:-1,_id:-1}},{$facet:{total:[{$count:'count'}],items:[{$skip:(input.page-1)*20},{$limit:20}]}}]);
   const items=[];for(const row of result.items)items.push(await view(ctx,SalesOrder.hydrate(row),row.party.name));
   return {items,total:result.total[0]?.count??0,page:input.page,pageSize:20};
  },
@@ -109,7 +126,7 @@ export const orderService={
  async createDirect(ctx:AccessContext,companyId:string,raw:unknown){
   const input=orderDirectInput.parse(raw);companyScope(ctx,companyId,'order:write');
   return transact(async session=>{
-   const party=await approvedParty(ctx,companyId,input.partyId,session),built=await buildItems(ctx,companyId,party._id,input.items,session);
+   const party=await approvedParty(ctx,companyId,input.partyId,session),built=await buildItems(ctx,companyId,party._id,input.items,session);assertKind(ctx,built.kind);
    const [row]=await SalesOrder.create([{tenantId:ctx.tenantId,companyId,number:await nextNumber(ctx,companyId,session),kind:built.kind,origin:'direto',partyId:party._id,items:built.items,totalCents:built.totalCents,paymentMethod:input.paymentMethod,paymentTermDays:input.paymentTermDays,expectedDeliveryDate:input.expectedDeliveryDate,notes:input.notes,createdBy:ctx.userId}],{session});
    await event(ctx,companyId,row!._id,'created',session,'Lançamento direto');return {id:String(row!._id),number:row!.number};
   });
@@ -120,14 +137,14 @@ export const orderService={
    const {row:opportunity}=await authorizeOpportunity(ctx,companyId,input.opportunityId,'pipeline:read',session);
    const proposal=await Proposal.findOne({_id:input.proposalId,tenantId:ctx.tenantId,companyId,opportunityId:opportunity._id,status:'aceita'}).session(session);if(!proposal)throw new OrderRuleRejected('PROPOSAL_NOT_ACCEPTED');
    const party=await approvedParty(ctx,companyId,opportunity.partyId,session);
-   const built=await buildItems(ctx,companyId,party._id,proposal.items.map(item=>({productId:String(item.productId),quantity:item.quantity,unitPriceCents:item.unitPriceCents,discountCents:item.discountCents})),session);
+   const built=await buildItems(ctx,companyId,party._id,proposal.items.map(item=>({productId:String(item.productId),quantity:item.quantity,unitPriceCents:item.unitPriceCents,discountCents:item.discountCents})),session);assertKind(ctx,built.kind);
    const [row]=await SalesOrder.create([{tenantId:ctx.tenantId,companyId,number:await nextNumber(ctx,companyId,session),kind:built.kind,origin:'proposta',partyId:party._id,opportunityId:opportunity._id,proposalId:proposal._id,items:built.items,totalCents:built.totalCents,paymentMethod:input.paymentMethod,paymentTermDays:input.paymentTermDays,expectedDeliveryDate:input.expectedDeliveryDate,notes:input.notes||proposal.notes,createdBy:ctx.userId}],{session});
    await event(ctx,companyId,row!._id,'created',session,'Proposta '+proposal.number+' rev. '+proposal.revision);return {id:String(row!._id),number:row!.number};
   });
  },
  /** Service order from a closed work order: authorized billable hours at the service price plus net parts at their reference price. */
  async createFromWorkOrder(ctx:AccessContext,companyId:string,raw:unknown){
-  const input=orderFromWorkOrderInput.parse(raw);companyScope(ctx,companyId,'order:write');
+  const input=orderFromWorkOrderInput.parse(raw);companyScope(ctx,companyId,'order:write');assertKind(ctx,'servico');
   return transact(async session=>{
    const work=await TechnicalWork.findOne({_id:input.workOrderId,tenantId:ctx.tenantId,companyId,closedAt:{$ne:null}}).session(session);if(!work)throw new OrderRuleRejected('WORK_ORDER_NOT_CLOSED');
    const party=await approvedParty(ctx,companyId,work.partyId,session),lines:Line[]=[];
@@ -149,7 +166,7 @@ export const orderService={
    const {row}=await load(ctx,companyId,id,'order:write',session);if(row.version!==input.version)throw new RecordConflict();if(row.status!=='rascunho')throw new OrderRuleRejected('STATUS');
    const party=await approvedParty(ctx,companyId,row.partyId,session),set:Record<string,unknown>={};
    for(const key of ['expectedDeliveryDate','paymentMethod','paymentTermDays','notes'] as const)if(Object.hasOwn(raw as object,key))set[key]=input[key];
-   if(input.items){if(row.origin!=='direto')throw new OrderRuleRejected('ITEMS_FROM_SOURCE');const built=await buildItems(ctx,companyId,party._id,input.items,session);Object.assign(set,{items:built.items,totalCents:built.totalCents});}
+   if(input.items){if(row.origin!=='direto')throw new OrderRuleRejected('ITEMS_FROM_SOURCE');const built=await buildItems(ctx,companyId,party._id,input.items,session);assertKind(ctx,built.kind);Object.assign(set,{items:built.items,totalCents:built.totalCents});}
    const updated=await SalesOrder.findOneAndUpdate({_id:row._id,version:input.version,status:'rascunho'},{$set:set,$inc:{version:1}},{new:true,session,runValidators:true});if(!updated)throw new RecordConflict();
    await event(ctx,companyId,row._id,'updated',session);return view(ctx,updated,party.name);
   });
@@ -177,7 +194,7 @@ export const orderService={
    }else{
     if(!current.canCancel)throw new OrderRuleRejected('STATUS');row.status='cancelado';row.cancelledAt=now;row.decisionNote=input.note;
    }
-   row.version++;await row.save({session});await event(ctx,companyId,row._id,action,session,action==='submit'&&row.approvalReasons.length?'Aprovação necessária: '+row.approvalReasons.join(', '):input.note);
+   row.version++;await row.save({session});await event(ctx,companyId,row._id,action,session,action==='submit'&&row.approvalReasons.length?'Aprovação necessária: '+row.approvalReasons.map(reason=>orderApprovalReasonNames[reason as keyof typeof orderApprovalReasonNames]).join('; '):input.note);
    return view(ctx,row,party.name);
   });
  },

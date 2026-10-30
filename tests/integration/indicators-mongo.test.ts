@@ -91,7 +91,7 @@ describe.skipIf(!uri)('indicators: values match records within each profile scop
  },30000);
  it('shows technical indicators within coordination territory and hides sections a profile cannot read',async()=>{
   const report=await indicatorService.report(coordinator.context,company,{view:'gerencial'});
-  expect(report.sections.map(item=>item.key)).toEqual(['chamados','ordens']);
+  expect(report.sections.map(item=>item.key)).toEqual(['pedidos','chamados','ordens']);
   expect([value(report,'chamados','critical'),value(report,'chamados','open'),value(report,'chamados','opened'),value(report,'chamados','resolved'),value(report,'chamados','sla'),value(report,'chamados','repeat')]).toEqual([1,2,3,1,100,33.3]);
   expect(value(report,'chamados','response')).toBeGreaterThanOrEqual(0);
   expect([value(report,'ordens','open'),value(report,'ordens','completed'),value(report,'ordens','closed'),value(report,'ordens','labor'),value(report,'ordens','travel'),value(report,'ordens','billable'),value(report,'ordens','repeat')]).toEqual([1,1,1,120,30,90,50]);

@@ -1915,6 +1915,48 @@
       "kind": "test",
       "source": "tests/e2e/orders.spec.ts",
       "symbol": "management approves an exception and finance registers an invoice"
+    },
+    {
+      "id": "crm:orders:reports",
+      "kind": "service",
+      "source": "apps/api/src/modules/orders/reports.ts",
+      "symbol": "orderReport"
+    },
+    {
+      "id": "crm:reports:contract",
+      "kind": "contract",
+      "source": "packages/contracts/src/reports.ts",
+      "symbol": "availableOrderReports"
+    },
+    {
+      "id": "crm:xlsx:writer",
+      "kind": "contract",
+      "source": "packages/contracts/src/xlsx.ts",
+      "symbol": "buildXlsx"
+    },
+    {
+      "id": "crm:reports:ui",
+      "kind": "component",
+      "source": "apps/web/src/features/reports/Reports.tsx",
+      "symbol": "Reports"
+    },
+    {
+      "id": "crm:orders:print",
+      "kind": "component",
+      "source": "apps/web/src/features/orders/OrderPrint.tsx",
+      "symbol": "OrderPrint"
+    },
+    {
+      "id": "crm:reports:unit",
+      "kind": "test",
+      "source": "tests/unit/reports.test.ts",
+      "symbol": "order reports and Excel export"
+    },
+    {
+      "id": "crm:reports:e2e",
+      "kind": "test",
+      "source": "tests/e2e/reports.spec.ts",
+      "symbol": "reports are generated from the server rows"
     }
   ],
   "edges": [
@@ -3941,6 +3983,46 @@
     {
       "from": "crm:orders:e2e",
       "to": "apps/web/src/features/orders/Orders.tsx",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:orders:reports",
+      "to": "apps/api/src/modules/orders/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:reports",
+      "to": "packages/contracts/src/reports.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:orders:service",
+      "to": "apps/api/src/modules/technical/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:reports:ui",
+      "to": "packages/contracts/src/xlsx.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:reports:ui",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:orders:print",
+      "to": "apps/web/src/features/orders/Orders.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:reports:unit",
+      "to": "packages/contracts/src/xlsx.ts",
+      "kind": "tests"
+    },
+    {
+      "from": "crm:reports:e2e",
+      "to": "apps/web/src/features/reports/Reports.tsx",
       "kind": "tests"
     }
   ]

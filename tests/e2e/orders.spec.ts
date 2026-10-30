@@ -18,7 +18,8 @@ test('management approves an exception and finance registers an invoice without 
   if(request.method()==='POST'){posts.push({url:url.pathname,body:request.postDataJSON()});return route.fulfill({json:{record:rows[0]}});}
   const id=url.pathname.split('/').at(-1)!;if(id!=='orders')return route.fulfill({json:{record:rows.find(row=>row.id===id),history:[{action:'submit',actor:'Vendedor',at:'2030-10-29T12:00:00.000Z',note:'Aprovação necessária: discount'}]}});
   return route.fulfill({json:{items:rows,total:2,page:1,pageSize:20}});});
- await openOrders(page,['company:read','customer:read','order:read','order:approve','billing:write','cost:read']);
+ await openOrders(page,['company:read','customer:read','order:read','order:sales','order:service','order:approve','billing:write','cost:read']);
+ const filters=page.locator('.nf-filter-bar');const [status,number]=await Promise.all([filters.getByLabel('Situação').boundingBox(),filters.getByLabel('Número do pedido').boundingBox()]);if(test.info().project.name!=='mobile')expect(Math.abs(status!.y+status!.height-(number!.y+number!.height))).toBeLessThanOrEqual(1);
  await expect(page.getByText('PV-000001 · Fazenda Boa Vista')).toBeVisible();await expect(page.getByRole('button',{name:'Novo pedido'})).toHaveCount(0);
  await page.getByRole('button',{name:'Analisar aprovação'}).click();
  const detail=page.getByRole('dialog',{name:/Pedido PV-000001/});await expect(detail.getByText('Aprovação necessária: Preço abaixo da tabela.')).toBeVisible();await expect(detail.getByText('R$ 2.500,00 (29,4%)')).toBeVisible();
@@ -29,6 +30,12 @@ test('management approves an exception and finance registers an invoice without 
  await page.getByRole('button',{name:'Lançar nota'}).click();await page.getByRole('dialog',{name:/Pedido PV-000002/}).getByRole('button',{name:'Lançar nota fiscal'}).click();
  const invoice=page.getByRole('dialog',{name:/Lançar nota fiscal/});await invoice.getByLabel('Número da nota').fill('NF-1001');await invoice.getByLabel('Valor (R$)').fill('4.250,00');await invoice.getByRole('button',{name:'Lançar nota'}).click();
  await expect.poll(()=>posts.length).toBe(2);expect(posts[1]!.url).toMatch(/\/invoices$/);expect(Object.keys(posts[1]!.body).sort()).toEqual(['amountCents','issueDate','number','version']);expect(posts[1]!.body.amountCents).toBe(425000);
+ const printed=page.getByRole('dialog',{name:/Pedido PV-000002/});
+ await page.evaluate(()=>{(window as unknown as {printed:number}).printed=0;window.print=()=>{(window as unknown as {printed:number}).printed++;};});
+ await printed.getByRole('button',{name:'Imprimir'}).click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {printed:number}).printed)).toBe(1);
+ const sheet=page.locator('body > .nf-print-area');await expect(sheet).toContainText('PV-000002');await expect(sheet).toContainText('Robô de ordenha');await expect(sheet).not.toContainText('Custo');await expect(sheet).not.toContainText('Margem');
+ await page.emulateMedia({media:'print'});await expect(sheet).toBeVisible();await expect(page.locator('#root')).toBeHidden();await page.emulateMedia({media:'screen'});
+ await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));await expect(sheet).toHaveCount(0);
  await page.screenshot({path:'artifacts/orders-'+test.info().project.name+'.png',fullPage:true});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
@@ -38,7 +45,7 @@ test('seller creates a direct order from approved customers and catalog items wi
  await page.route('**/api/v1/companies/*/catalog/products**',route=>route.fulfill({json:{items:[{id:product,code:'P-0001',description:'Robô de ordenha',active:true}],total:1}}));
  await page.route('**/api/v1/companies/*/catalog/resolve**',route=>route.fulfill({json:{price:{priceCents:900000}}}));
  await page.route('**/api/v1/companies/*/orders**',route=>{if(route.request().method()==='POST'){created=route.request().postDataJSON();return route.fulfill({status:201,json:{id:'1'.repeat(24),number:'PV-000003'}});}return route.fulfill({json:{items:[],total:0,page:1,pageSize:20}});});
- await openOrders(page,['company:read','customer:read','catalog:read','order:read','order:write']);
+ await openOrders(page,['company:read','customer:read','catalog:read','order:read','order:write','order:sales','order:service']);
  await page.getByRole('button',{name:'Novo pedido'}).click();const editor=page.getByRole('dialog',{name:'Novo pedido'});
  await editor.getByRole('combobox',{name:'Cliente'}).selectOption(party);await editor.getByRole('combobox',{name:'Incluir item'}).selectOption(product);
  await expect(editor.getByLabel('Preço unitário de P-0001 — Robô de ordenha')).toHaveValue('9000,00');await expect(editor.getByText('Total previsto: R$ 9.000,00')).toBeVisible();

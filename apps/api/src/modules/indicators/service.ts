@@ -17,6 +17,7 @@ import {authority as ticketAuthority,scopeStages as ticketScope} from '../ticket
 import {TechnicalWork} from '../technical/models.js';
 import {pipeline as workOrderScope} from '../technical/service.js';
 import {SalesOrder} from '../orders/models.js';
+import {orderKinds,orderScope} from '../orders/service.js';
 import {orderPendingInstallments} from '../../../../../packages/contracts/src/orders.js';
 const zone='America/Sao_Paulo';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
@@ -81,9 +82,9 @@ async function commercial(ctx:AccessContext,companyId:string,filters:Filters):Pr
 /** Orders of the live customer scope (order:read); territory = active property region; responsible = portfolio owner. */
 async function orders(ctx:AccessContext,companyId:string,filters:Filters,startDate:string,endDate:string,today:string):Promise<IndicatorSection[]>{
  const regionParties=filters.regionId?await Property.distinct('partyId',{tenantId:filters.tenant,companyId:filters.company,archived:false,regionId:oid(filters.regionId)}):null;
- const query=Party.find(commercialFilter(ctx,companyId,'order:read',{kind:'customer',...(filters.ownerId?{ownerId:filters.ownerId}:{}),...(regionParties?{_id:{$in:regionParties}}:{})}));query.cast(Party);
- const ids={tenantId:filters.tenant,companyId:filters.company},period={$gte:filters.from,$lt:filters.to},showCost=ctx.permissions.includes('cost:read');
- const [row]=await SalesOrder.aggregate([{$match:ids},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:query.getFilter()},{$project:{_id:1}}],as:'party'}},{$unwind:'$party'},{$facet:{
+ const scope=await orderScope(ctx,companyId,'order:read',{...(filters.ownerId?{ownerId:oid(filters.ownerId)}:{}),...(regionParties?{_id:{$in:regionParties}}:{})});
+ const period={$gte:filters.from,$lt:filters.to},showCost=ctx.permissions.includes('cost:read');
+ const [row]=await SalesOrder.aggregate([{$match:scope.match},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:scope.parties},{$project:{_id:1}}],as:'party'}},{$unwind:'$party'},{$facet:{
   confirmed:[{$match:{confirmedAt:period}},{$group:{_id:null,count:{$sum:1},total:{$sum:'$totalCents'}}}],
   pending:[{$match:{status:'aguardando_aprovacao'}},{$count:'count'}],
   undelivered:[{$match:{status:{$in:['confirmado','faturado']},deliveredAt:null}},{$count:'count'}],
@@ -118,7 +119,9 @@ async function orders(ctx:AccessContext,companyId:string,filters:Filters,startDa
 }
 async function technical(ctx:AccessContext,companyId:string,filters:Filters):Promise<IndicatorSection[]>{
  const sections:IndicatorSection[]=[],period={$gte:filters.from,$lt:filters.to},now=new Date();
- if(ctx.permissions.includes('ticket:read')){
+ // Profiles restricted to sales orders (sales administration) do not see service indicators.
+ const salesOnly=ctx.permissions.includes('order:read')&&!orderKinds(ctx).includes('servico');
+ if(ctx.permissions.includes('ticket:read')&&!salesOnly){
   const access=await ticketAuthority(ctx,companyId);
   const minutes=(from:string,to:string)=>({$divide:[{$subtract:['$'+to,'$'+from]},60000]});
   const [row]=await Ticket.aggregate([{$match:{tenantId:filters.tenant,companyId:filters.company,...(filters.ownerId?{assigneeId:oid(filters.ownerId)}:{})}},...ticketScope(ctx,companyId,access),...(filters.regionId?[{$match:{'property.regionId':oid(filters.regionId)}}]:[]),{$facet:{
@@ -142,7 +145,7 @@ async function technical(ctx:AccessContext,companyId:string,filters:Filters):Pro
    {key:'repeat',label:'Reincidência de chamados',value:percent(count(row.repeat),count(row.opened)),unit:'percent',definition:'Chamados abertos no período ligados a um chamado anterior resolvido ÷ chamados abertos no período.'},
   ]});
  }
- if(ctx.permissions.includes('technical:read')){
+ if(ctx.permissions.includes('technical:read')&&!salesOnly){
   const stages=await workOrderScope(ctx,companyId,{...(filters.ownerId?{technicianId:oid(filters.ownerId)}:{})});
   const [row]=await TechnicalWork.aggregate([...stages,...(filters.regionId?[{$lookup:{from:Property.collection.name,localField:'propertyId',foreignField:'_id',pipeline:[{$match:{tenantId:filters.tenant,companyId:filters.company,regionId:oid(filters.regionId)}},{$project:{_id:1}}],as:'orderTerritory'}},{$unwind:'$orderTerritory'}]:[]),{$facet:{
    open:[{$match:{state:{$in:['pending','in_progress']}}},{$count:'count'}],
@@ -170,7 +173,7 @@ export const indicatorService={
   const filters:Filters={tenant:oid(scope.tenantId),company:oid(companyId),from:dayBoundary(startDate,zone),to:dayBoundary(addCalendarDays(endDate,1),zone),regionId:input.regionId??null,ownerId:input.ownerId??null};
   const wantsCommercial=input.view!=='tecnica'&&(ctx.permissions.includes('lead:read')||ctx.permissions.includes('customer:read'));
   const wantsTechnical=input.view!=='comercial';
-  const wantsOrders=input.view!=='tecnica'&&ctx.permissions.includes('order:read');
+  const wantsOrders=ctx.permissions.includes('order:read')&&orderKinds(ctx).length>0&&(input.view!=='tecnica'||!orderKinds(ctx).includes('venda'));
   const sections=[...(wantsCommercial?await commercial(ctx,companyId,filters):[]),...(wantsOrders?await orders(ctx,companyId,filters,startDate,endDate,today):[]),...(wantsTechnical?await technical(ctx,companyId,filters):[])];
   return {asOf:new Date().toISOString(),view:input.view,filters:{startDate,endDate,regionId:filters.regionId,ownerId:filters.ownerId},sections};
  },

@@ -40,16 +40,35 @@ A seção **Pedidos e faturamento** da Central gerencial (`order:read`) aplica a
 
 ## Perfis
 
-| Perfil | Pedidos |
-|---|---|
-| Vendedor, Supervisor, Administrativo de vendas | Criar, editar rascunho, enviar, registrar entrega, cancelar (na carteira) |
-| Gerencial | Os anteriores e aprovar/devolver; ver e editar custo |
-| Direção | Consultar, aprovar/devolver; ver custo |
-| Financeiro | Consultar pedidos da empresa, lançar notas, ver custo e margem |
-| Auditoria | Consultar |
+Tipos de pedido por perfil: `order:sales` (venda) e `order:service` (serviço). O escopo é aplicado no servidor antes de contagens, listas, detalhes, indicadores e relatórios.
+
+| Perfil | Tipos | Escopo | Pedidos |
+|---|---|---|---|
+| Vendedor | Venda e serviço | Própria carteira | Criar, editar rascunho, enviar, registrar entrega, cancelar |
+| Supervisor | Venda e serviço | Própria carteira e da equipe | Idem vendedor |
+| Administrativo de vendas | Só venda | Empresa | Idem vendedor; não vê nem gera pedidos de serviço |
+| Gerencial | Venda e serviço | Empresa | Os anteriores e aprovar/devolver; ver e editar custo |
+| Direção | Venda e serviço | Empresa | Consultar, aprovar/devolver; ver custo |
+| Financeiro | Venda e serviço | Empresa | Consultar, lançar notas, ver custo e margem |
+| Coordenação Técnica | Só serviço | OS do seu escopo técnico (equipe e regiões) | Consultar, sem custo |
+| Auditoria | Venda e serviço | Empresa | Consultar |
+| Técnico | — | — | Sem acesso a pedidos; indicadores apenas das próprias OS e chamados |
+| Administrador do sistema | Todos | Empresa | Tudo |
+
+Perfis restritos a pedidos de venda (Administrativo de vendas) não recebem as seções de chamados e OS da Central gerencial.
 
 ## API
 
-`/api/v1/companies/:companyId/orders`: `GET /`, `POST /`, `POST /from-proposal`, `POST /from-work-order`, `GET /:id`, `PATCH /:id`, `POST /:id/{submit|approve|reject|deliver|cancel}`, `POST /:id/invoices`. Custo: `PUT /catalog/products/:id/cost`. Totais, status, número e instantes enviados pelo cliente são recusados (`strict`).
+`/api/v1/companies/:companyId/orders`: `GET /`, `POST /`, `POST /from-proposal`, `POST /from-work-order`, `GET /:id`, `PATCH /:id`, `POST /:id/{submit|approve|reject|deliver|cancel}`, `POST /:id/invoices`, `GET /reports/:type`. Custo: `PUT /catalog/products/:id/cost`. Totais, status, número e instantes enviados pelo cliente são recusados (`strict`).
 
 Fora do escopo: emissão fiscal, estoque/expedição, contas a receber e comissões. O fluxo de produção/separação/expedição de `commercial-roadmap.ts` continua planejado.
+
+## Impressão
+
+O detalhe do pedido tem o botão **Imprimir**: documento com cliente, origem, datas, itens, total, parcelas, notas e observações. Custo e margem nunca são impressos.
+
+## Relatórios (Excel)
+
+Menu **Gestão → Relatórios** (`order:read`). Tipos: Pedidos, Vendas, Serviços, Itens de pedidos, A faturar, Faturamento (notas por emissão) e Previsão de faturamento. As linhas vêm de `GET /orders/reports/:type?startDate&endDate` com o mesmo escopo do perfil (tipos permitidos e carteira viva ou escopo técnico); relatórios de um tipo que o perfil não trabalha são recusados (403). Período de até 366 dias em datas de São Paulo; "A faturar" e "Previsão" refletem o momento atual. Limite de 5.000 pedidos por geração (avisado na tela). Custo, margem e margem % só para `cost:read`.
+
+O arquivo `.xlsx` é gerado no navegador (`packages/contracts/src/xlsx.ts`, sem dependência externa) com exatamente as linhas recebidas: cabeçalho fixo com filtro, valores em reais, datas e data/hora reais do Excel em horário de São Paulo.

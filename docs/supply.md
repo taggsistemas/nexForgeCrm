@@ -40,3 +40,6 @@ Botão **Baixar PDF** no pedido de venda/serviço, no pedido de compra e na OS. 
 Novo perfil **Almoxarifado e compras** (estoque, compras e fornecedores; lê catálogo, custo e pedidos). Gerencial: tudo, inclusive aprovar compras. Direção: consulta e aprova compras. Financeiro e Auditoria: consulta. Vendedores, supervisores, administrativo de vendas, coordenação e técnicos: consultam saldos.
 
 Fora do escopo: vários locais/transferências, lotes e números de série, reservas por pedido, inventário cíclico, emissão fiscal, contas a pagar e explosão de kits em componentes (o kit é estocado como item próprio).
+
+### Ajuste de 30/10/2026
+No pedido de compra, o campo **Incluir item** aceita digitar código, descrição ou SKU e mostra a lista filtrada do catálogo para escolher com o mouse ou com as setas + Enter (Enter sozinho escolhe o primeiro resultado).

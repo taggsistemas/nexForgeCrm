@@ -1,4 +1,5 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useState} from 'react';
+import {Modal} from '../../components/Modal';
 import {IndicatorCharts} from './IndicatorCharts';
 import {ReportTable,downloadXlsx} from '../../components/ReportTable';
 import {addCalendarDays,dateParts} from '../../../../../packages/contracts/src/agenda';
@@ -11,7 +12,7 @@ export function Indicators({account}:{account:Account}){
  const permissions=account.permissions??[],commercial=permissions.includes('lead:read')||permissions.includes('customer:read'),technical=permissions.includes('ticket:read')||permissions.includes('technical:read');
  const today=dateParts(new Date(),'America/Sao_Paulo').date;
  const [company,setCompany]=useState(account.companies[0]?.id??''),[view,setView]=useState<IndicatorView>(commercial&&technical?'gerencial':commercial?'comercial':'tecnica'),[startDate,setStartDate]=useState(addCalendarDays(today,-29)),[endDate,setEndDate]=useState(today),[regionId,setRegionId]=useState(''),[ownerId,setOwnerId]=useState(''),[refresh,setRefresh]=useState(0);
- const [detail,setDetail]=useState<{section:IndicatorSectionKey;key:string;data:IndicatorDetail|null;error:string}|null>(null),detailHeading=useRef<HTMLHeadingElement>(null);
+ const [detail,setDetail]=useState<{section:IndicatorSectionKey;key:string;data:IndicatorDetail|null;error:string}|null>(null);
  const [report,setReport]=useState<IndicatorReport|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState(''),[regions,setRegions]=useState<Option[]>([]),[owners,setOwners]=useState<Option[]>([]);
  useEffect(()=>{
   const controller=new AbortController();setRegions([]);setOwners([]);setRegionId('');setOwnerId('');
@@ -30,11 +31,10 @@ export function Indicators({account}:{account:Account}){
   return()=>controller.abort();
  },[company,view,startDate,endDate,regionId,ownerId,refresh]);
  async function openDetail(section:IndicatorSectionKey,key:string){
-  if(detail?.section===section&&detail.key===key){setDetail(null);return;}
   setDetail({section,key,data:null,error:''});
   try{const query=new URLSearchParams({section,key,view,startDate,endDate,...(regionId?{regionId}:{}),...(ownerId?{ownerId}:{})}),response=await fetch('/api/v1/companies/'+company+'/indicators/details?'+query,{credentials:'same-origin',cache:'no-store'});
    if(!response.ok)throw Error(response.status===403?'Seu perfil não tem acesso a estes registros.':'Não foi possível carregar os registros.');
-   const data=await response.json() as IndicatorDetail;setDetail(current=>current?.section===section&&current.key===key?{section,key,data,error:''}:current);requestAnimationFrame(()=>detailHeading.current?.focus());}
+   const data=await response.json() as IndicatorDetail;setDetail(current=>current?.section===section&&current.key===key?{section,key,data,error:''}:current);}
   catch(cause){setDetail(current=>current?.section===section&&current.key===key?{section,key,data:null,error:(cause as Error).message}:current);}
  }
  function exportCsv(){
@@ -57,15 +57,16 @@ export function Indicators({account}:{account:Account}){
   {report&&<IndicatorCharts charts={report.charts??[]}/>}
   {loading&&!report?<p role="status">Calculando indicadores...</p>:report&&(!report.sections.length?<p className="nf-muted">Seu perfil não possui indicadores nesta visão.</p>:report.sections.map(section=><section key={section.key} className="nf-panel nf-indicator-section" aria-labelledby={'indicator-'+section.key}>
    <h2 id={'indicator-'+section.key}>{section.title}</h2>
-   <div className="nf-indicator-grid">{section.indicators.map(item=>indicatorDrillable(section.key,item.key)?<button type="button" key={item.key} className={'nf-indicator-card is-drill'+(detail?.section===section.key&&detail.key===item.key?' is-active':'')} aria-expanded={detail?.section===section.key&&detail.key===item.key} aria-controls={'indicator-detail-'+section.key} onClick={()=>void openDetail(section.key,item.key)}><span>{item.label}</span><strong>{indicatorText(item)}</strong><small>{item.definition}</small><em>Ver registros</em></button>:<article key={item.key} className="nf-indicator-card"><span>{item.label}</span><strong>{indicatorText(item)}</strong><small>{item.definition}</small></article>)}</div>
-   {detail?.section===section.key&&<section id={'indicator-detail-'+section.key} className="nf-indicator-detail" aria-labelledby={'indicator-detail-title-'+section.key}>
-    <div className="nf-section-heading"><h3 ref={detailHeading} tabIndex={-1} id={'indicator-detail-title-'+section.key}>{detail.data?.title??section.indicators.find(item=>item.key===detail.key)?.label}</h3>{detail.data&&<span>{detail.data.rows.length} registro(s)</span>}
-     {detail.data&&detail.data.rows.length>0&&<button type="button" className="nf-secondary" onClick={()=>downloadXlsx('detalhe-'+detail.section+'-'+detail.key+'-'+startDate+'-a-'+endDate+'.xlsx',detail.data!.title,detail.data!.columns,detail.data!.rows)}>Baixar Excel</button>}
-     <button type="button" className="nf-secondary" onClick={()=>setDetail(null)}>Fechar detalhe</button></div>
-    {detail.error?<p role="alert" className="nf-error">{detail.error}</p>:!detail.data?<p role="status">Carregando registros...</p>:<><p className="nf-muted">{detail.data.note}</p>{detail.data.truncated&&<p className="nf-warning">Exibindo os primeiros 500 registros. Refine os filtros para ver todos.</p>}
-     {!detail.data.rows.length?<p className="nf-muted">Nenhum registro.</p>:<ReportTable columns={detail.data.columns} rows={detail.data.rows} limit={100}/>}</>}
-   </section>}
+   <div className="nf-indicator-grid">{section.indicators.map(item=>indicatorDrillable(section.key,item.key)?<button type="button" key={item.key} className={'nf-indicator-card is-drill'+(detail?.section===section.key&&detail.key===item.key?' is-active':'')} aria-haspopup="dialog" onClick={()=>void openDetail(section.key,item.key)}><span>{item.label}</span><strong>{indicatorText(item)}</strong><small>{item.definition}</small><em>Ver registros</em></button>:<article key={item.key} className="nf-indicator-card"><span>{item.label}</span><strong>{indicatorText(item)}</strong><small>{item.definition}</small></article>)}</div>
   </section>))}
+  <Modal open={Boolean(detail)} title={detail?detail.data?.title??report?.sections.find(item=>item.key===detail.section)?.indicators.find(item=>item.key===detail.key)?.label??'Registros':''} onClose={()=>setDetail(null)}>
+   {detail&&<div className="nf-indicator-detail">
+    {detail.error?<p role="alert" className="nf-error">{detail.error}</p>:!detail.data?<p role="status">Carregando registros...</p>:<>
+     <div className="nf-section-heading"><p className="nf-muted">{detail.data.note}</p><span>{detail.data.rows.length} registro(s)</span>{detail.data.rows.length>0&&<button type="button" className="nf-secondary" onClick={()=>downloadXlsx('detalhe-'+detail.section+'-'+detail.key+'-'+startDate+'-a-'+endDate+'.xlsx',detail.data!.title,detail.data!.columns,detail.data!.rows)}>Baixar Excel</button>}</div>
+     {detail.data.truncated&&<p className="nf-warning">Exibindo os primeiros 500 registros. Refine os filtros para ver todos.</p>}
+     {!detail.data.rows.length?<p className="nf-muted">Nenhum registro.</p>:<ReportTable columns={detail.data.columns} rows={detail.data.rows} limit={100}/>}</>}
+   </div>}
+  </Modal>
   {report&&<p className="nf-muted">Atualizado em {new Date(report.asOf).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'})}.</p>}
  </section>;
 }

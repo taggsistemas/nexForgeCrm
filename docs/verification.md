@@ -362,3 +362,9 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Nova suíte `supply-mongo` (4 casos reais): dados da empresa só pela administração (CPF e logo PNG recusados, versão), fornecedor com CNPJ válido e único, saída manual sem saldo recusada, custo visível só com `cost:read`, aprovação acima do limite por outra pessoa, recebimento parcial/total com custo médio ponderado, cancelamento após recebimento recusado, entrega e peças da OS com saldo negativo sinalizado e regularização manual.
 - PDFs conferidos com leitor independente (pypdf em modo estrito e renderização PyMuPDF): xref válido, acentos, logotipo JPEG e quebra de página com cabeçalho repetido. 5 unitários e 2 E2E novos; E2E de pedidos passou a baixar o PDF no lugar da impressão HTML.
 - `npm run check`: aprovado, 208 Vitest, grafo declarado (344 nós/436 arestas, não Graphify AST). `npm run test:db`: 100/100. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 96/96.
+
+## Ajuste — gráficos, detalhamento em modal e produto digitável na compra (30/10/2026)
+
+- Central gerencial com linhas suaves (faturamento ano × ano anterior, visitas), barras agrupadas de 12 meses e pizzas por responsável e técnico; detalhamento dos cards em modal acessível; campo de produto com digitação e lista filtrada no pedido de compra.
+- `indicators-mongo` confere os tipos e os 12 pontos dos gráficos; E2E da central verifica linha, pizza, ranking, modal com foco e devolução do foco; E2E de compras escolhe o produto digitando.
+- `npm run check`: aprovado, 208 Vitest, grafo declarado (345 nós/437 arestas, não Graphify AST). `npm run test:db`: 100/100. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 96/96.

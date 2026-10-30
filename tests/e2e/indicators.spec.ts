@@ -36,17 +36,19 @@ test('cards open the records behind each value, including who is attending where
  await page.route('**/api/v1/companies/*/indicators?**',route=>route.fulfill({json:{asOf:'2030-10-29T15:00:00.000Z',view:'gerencial',filters:{startDate:'2030-10-01',endDate:'2030-10-29',regionId:null,ownerId:null},
   sections:[{key:'campo',title:'Em atendimento agora',indicators:[{key:'visits',label:'Vendedores em visita',value:2,unit:'count',definition:'Visitas com check-in sem checkout.'}]},{key:'visitas',title:'Visitas',indicators:[{key:'coverage',label:'Cobertura da carteira',value:50,unit:'percent',definition:'Clientes visitados ÷ ativos.'}]}],
   charts:[{key:'pedidosMes',title:'Pedidos confirmados × faturado',subtitle:'Últimos 6 meses',kind:'bars',unit:'cents',series:['Confirmado','Faturado'],points:['2030-05','2030-06','2030-07','2030-08','2030-09','2030-10'].map((label,index)=>({label,values:[index*100000,index*50000]}))},
-   {key:'osTecnico',title:'OS concluídas por técnico',subtitle:'Período filtrado',kind:'ranking',unit:'count',series:['OS concluídas'],points:[{label:'Técnico 1',values:[4]},{label:'Técnico 2',values:[1]}]}]}}));
+   {key:'osTecnico',title:'OS concluídas por técnico',subtitle:'Período filtrado',kind:'pie',unit:'count',series:['OS concluídas'],points:[{label:'Técnico 1',values:[4]},{label:'Técnico 2',values:[1]}]},
+   {key:'faturamentoAno',title:'Faturamento',subtitle:'2030 × 2029',kind:'line',unit:'cents',series:['2030','2029'],points:['01','02','03'].map((month,index)=>({label:'2030-'+month,values:[(index+1)*90000,index*40000]}))},
+   {key:'pedidosResponsavel',title:'Por responsável',subtitle:'',kind:'ranking',unit:'cents',series:['Valor'],points:[{label:'Vendedor 1',values:[100000]}]}]}}));
  await page.goto('/');
  if(test.info().project.name==='mobile')await page.getByRole('button',{name:'Abrir ou fechar menu'}).click();
  await page.getByRole('navigation').getByRole('button',{name:'Central gerencial',exact:true}).click();
- await expect(page.getByRole('heading',{name:'Pedidos confirmados × faturado'})).toBeVisible();await expect(page.locator('.nf-ranking li').first()).toContainText('Técnico 1');
+ await expect(page.getByRole('heading',{name:'Pedidos confirmados × faturado'})).toBeVisible();await expect(page.locator('.nf-pie-legend li').first()).toContainText('Técnico 1');await expect(page.locator('.nf-pie-legend li').first()).toContainText('80%');await expect(page.locator('.is-line svg path')).toHaveCount(4);await expect(page.locator('.nf-ranking li').first()).toContainText('Vendedor 1');
  await expect(page.getByRole('article').filter({hasText:'Cobertura da carteira'})).toBeVisible();
- const card=page.getByRole('button',{name:/Vendedores em visita/});await card.click();await expect(card).toHaveAttribute('aria-expanded','true');
- const detail=page.locator('#indicator-detail-campo');await expect(detail.getByRole('cell',{name:'Fazenda X'})).toBeVisible();await expect(detail.getByRole('cell',{name:'Cliente Y'})).toBeVisible();await expect(detail).toContainText('Não é posição em tempo real');
+ const card=page.getByRole('button',{name:/Vendedores em visita/});await expect(card).toHaveAttribute('aria-haspopup','dialog');await card.click();
+ const detail=page.getByRole('dialog',{name:'Vendedores em visita agora'});await expect(detail.locator('h2')).toBeFocused();await expect(detail.getByRole('cell',{name:'Fazenda X'})).toBeVisible();await expect(detail.getByRole('cell',{name:'Cliente Y'})).toBeVisible();await expect(detail).toContainText('Não é posição em tempo real');
  expect(details[0]!.get('section')).toBe('campo');expect(details[0]!.get('key')).toBe('visits');expect(details[0]!.get('startDate')).toBeTruthy();
  const download=page.waitForEvent('download');await detail.getByRole('button',{name:'Baixar Excel'}).click();expect((await download).suggestedFilename()).toMatch(/^detalhe-campo-visits-.*\.xlsx$/);
  await page.screenshot({path:'artifacts/indicators-detail-'+test.info().project.name+'.png',fullPage:true});
- await detail.getByRole('button',{name:'Fechar detalhe'}).click();await expect(detail).toHaveCount(0);
+ await detail.getByRole('button',{name:'Fechar formulário'}).click();await expect(detail).not.toBeVisible();await expect(card).toBeFocused();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });

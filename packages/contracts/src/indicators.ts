@@ -11,8 +11,8 @@ export const indicatorDrillKeys:Readonly<Record<IndicatorSectionKey,readonly str
  pedidos:['confirmed','invoiced','backlog','pendingApproval','undelivered','forecastOverdue','forecast30','forecast60','forecast90','forecastLater'],chamados:['critical','open','overdue','opened','resolved'],ordens:['open','completed','closed'],
 };
 export function indicatorDrillable(section:IndicatorSectionKey,key:string){return indicatorDrillKeys[section]?.includes(key)??false;}
-/** Chart data computed on the server: grouped bars (monthly) or a ranking. Values follow the unit. */
-export interface IndicatorChart{key:string;title:string;subtitle:string;kind:'bars'|'ranking';unit:IndicatorUnit;series:string[];points:{label:string;values:number[]}[]}
+/** Chart data computed on the server: monthly lines/bars, share (pie) or ranking. Values follow the unit. */
+export interface IndicatorChart{key:string;title:string;subtitle:string;kind:'bars'|'line'|'pie'|'ranking';unit:IndicatorUnit;series:string[];points:{label:string;values:number[]}[]}
 export interface IndicatorSection{key:IndicatorSectionKey;title:string;indicators:IndicatorValue[]}
 export interface IndicatorReport{asOf:string;view:IndicatorView;filters:{startDate:string;endDate:string;regionId:string|null;ownerId:string|null};sections:IndicatorSection[];charts:IndicatorChart[]}
 /** Ratio as a percentage with one decimal; null when there is no denominator, never a fabricated zero. */

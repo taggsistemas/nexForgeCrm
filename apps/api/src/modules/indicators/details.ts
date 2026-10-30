@@ -64,25 +64,29 @@ function bars(key:string,title:string,subtitle:string,unit:IndicatorChart['unit'
 const toMap=(rows:{_id:string;value:number}[])=>new Map(rows.map(row=>[row._id,row.value]));
 /** Charts follow the sections the profile received and use the same scopes and filters. */
 export async function indicatorCharts(ctx:AccessContext,companyId:string,filters:Filters,view:IndicatorView,endDate:string,sections:IndicatorSection[]):Promise<IndicatorChart[]>{
- const charts:IndicatorChart[]=[],keys=new Set(sections.map(section=>section.key)),months=lastMonths(endDate),range={$gte:dayBoundary(months[0]+'-01',zone),$lt:dayBoundary(addCalendarDays(endDate,1),zone)},subtitle='Últimos 6 meses até '+endDate.split('-').reverse().join('/');
- const ids={tenantId:filters.tenant,companyId:filters.company};
+ const charts:IndicatorChart[]=[],keys=new Set(sections.map(section=>section.key)),months=lastMonths(endDate,12),range={$gte:dayBoundary(months[0]+'-01',zone),$lt:dayBoundary(addCalendarDays(endDate,1),zone)},subtitle='Últimos 12 meses até '+endDate.split('-').reverse().join('/');
+ const ids={tenantId:filters.tenant,companyId:filters.company},year=Number(endDate.slice(0,4));
  if(keys.has('visitas')){
   const partyFilter=await commercialParties(ctx,companyId,filters);
   const [row]=await AgendaActivity.aggregate([{$match:{...ids,type:'visita',dueAt:range}},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:partyFilter},{$project:{_id:1}}],as:'party'}},{$unwind:'$party'},
    {$facet:{planned:[{$group:{_id:month('dueAt'),value:{$sum:1}}}],completed:[{$match:{status:'concluida'}},{$group:{_id:month('dueAt'),value:{$sum:1}}}]}}]);
-  charts.push(bars('visitasMes','Visitas por mês',subtitle,'count',['Planejadas','Concluídas'],months,[toMap(row.planned),toMap(row.completed)]));
+  charts.push({...bars('visitasMes','Visitas por mês',subtitle,'count',['Planejadas','Concluídas'],months,[toMap(row.planned),toMap(row.completed)]),kind:'line'});
  }
  if(keys.has('pedidos')){
   const inRegion=await regionParties(filters),scope=await orderScope(ctx,companyId,'order:read',{...(filters.ownerId?{ownerId:oid(filters.ownerId)}:{}),...(inRegion?{_id:{$in:inRegion}}:{})});
   const [row]=await SalesOrder.aggregate([{$match:scope.match},{$lookup:{from:Party.collection.name,localField:'partyId',foreignField:'_id',pipeline:[{$match:scope.parties},{$project:{ownerId:1}}],as:'party'}},{$unwind:'$party'},{$facet:{
    confirmed:[{$match:{confirmedAt:range}},{$group:{_id:month('confirmedAt'),value:{$sum:'$totalCents'}}}],
    invoiced:[{$unwind:'$invoices'},{$match:{'invoices.issueDate':{$gte:months[0]+'-01',$lte:endDate}}},{$group:{_id:{$substrBytes:['$invoices.issueDate',0,7]},value:{$sum:'$invoices.amountCents'}}}],
+   yearly:[{$unwind:'$invoices'},{$match:{'invoices.issueDate':{$gte:(year-1)+'-01-01',$lte:year+'-12-31'}}},{$group:{_id:{$substrBytes:['$invoices.issueDate',0,7]},value:{$sum:'$invoices.amountCents'}}}],
    owners:[{$match:{confirmedAt:{$gte:filters.from,$lt:filters.to}}},{$group:{_id:'$party.ownerId',value:{$sum:'$totalCents'}}},{$sort:{value:-1}},{$limit:10}]}}]);
+  // Invoiced amount per month: selected year against the previous one (line), as in a revenue chart.
+  const yearly=toMap(row.yearly),monthKeys=Array.from({length:12},(_,index)=>String(index+1).padStart(2,'0'));
+  charts.push({key:'faturamentoAno',title:'Faturamento',subtitle:'Notas lançadas por mês de emissão · '+year+' × '+(year-1),kind:'line',unit:'cents',series:[String(year),String(year-1)],points:monthKeys.map(month=>({label:year+'-'+month,values:[yearly.get(year+'-'+month)??0,yearly.get((year-1)+'-'+month)??0]}))});
   charts.push(bars('pedidosMes','Pedidos confirmados × faturado',subtitle,'cents',['Confirmado','Faturado'],months,[toMap(row.confirmed),toMap(row.invoiced)]));
   const section=sections.find(item=>item.key==='pedidos')!,value=(key:string)=>Number(section.indicators.find(item=>item.key===key)?.value??0);
   charts.push({key:'previsao',title:'Previsão de faturamento',subtitle:'Parcelas não faturadas por vencimento, hoje',kind:'bars',unit:'cents',series:['Valor previsto'],points:[['Vencida','forecastOverdue'],['Até 30 dias','forecast30'],['31–60','forecast60'],['61–90','forecast90'],['+90','forecastLater']].map(([label,key])=>({label:label!,values:[value(key!)]}))});
   if(row.owners.length){const names=await auditActorNames(String(filters.tenant),row.owners.map((item:{_id:unknown})=>String(item._id)));
-   charts.push({key:'pedidosResponsavel',title:'Pedidos confirmados por responsável',subtitle:'Período filtrado · responsável da carteira',kind:'ranking',unit:'cents',series:['Valor confirmado'],points:row.owners.map((item:{_id:unknown;value:number})=>({label:names.get(String(item._id))??'Usuário indisponível',values:[item.value]}))});}
+   charts.push({key:'pedidosResponsavel',title:'Pedidos confirmados por responsável',subtitle:'Período filtrado · responsável da carteira',kind:'pie',unit:'cents',series:['Valor confirmado'],points:row.owners.map((item:{_id:unknown;value:number})=>({label:names.get(String(item._id))??'Usuário indisponível',values:[item.value]}))});}
  }
  if(keys.has('chamados')){
   const [row]=await Ticket.aggregate([...await scopedTickets(ctx,companyId,filters),{$facet:{opened:[{$match:{openedAt:range}},{$group:{_id:month('openedAt'),value:{$sum:1}}}],resolved:[{$match:{status:'resolvido',resolvedAt:range}},{$group:{_id:month('resolvedAt'),value:{$sum:1}}}]}}]);
@@ -91,7 +95,7 @@ export async function indicatorCharts(ctx:AccessContext,companyId:string,filters
  if(keys.has('ordens')){
   const rows=await TechnicalWork.aggregate([...await scopedWorks(ctx,companyId,filters,{state:'completed'}),{$match:{checkedOutAt:{$gte:filters.from,$lt:filters.to}}},{$group:{_id:'$technicianId',value:{$sum:1}}},{$sort:{value:-1}},{$limit:10}]);
   if(rows.length){const names=await auditActorNames(String(filters.tenant),rows.map(item=>String(item._id)));
-   charts.push({key:'osTecnico',title:'OS concluídas por técnico',subtitle:'Período filtrado',kind:'ranking',unit:'count',series:['OS concluídas'],points:rows.map(item=>({label:names.get(String(item._id))??'Usuário indisponível',values:[item.value]}))});}
+   charts.push({key:'osTecnico',title:'OS concluídas por técnico',subtitle:'Período filtrado',kind:'pie',unit:'count',series:['OS concluídas'],points:rows.map(item=>({label:names.get(String(item._id))??'Usuário indisponível',values:[item.value]}))});}
  }
  return charts;
 }

@@ -64,3 +64,5 @@
 - Offline is automatic and passwordless: the vault key is a non-extractable device CryptoKey in IndexedDB bound to tenant+user; snapshots refresh while online and the outbox syncs on reconnection. Offline orders/tickets go through the same server services and rules (approval, credit, live Party, server numbers/instants) inside the receipt transaction. Never overwrite another user's pending vault.
 
 - Warehouse: one per company; StockMovement is an immutable ledger and the only way to change StockBalance (moveStock inside the caller's transaction, unique source key for automatic moves). Manual exits never go negative; delivery and work-order parts may, flagged with an alert. Services are not stocked. Purchases compute totals/numbers on the server, need approval only above the company limit (not by the submitter) and receipts update the weighted average cost with audit. Company data (company:manage) heads every generated PDF; PDFs are built from the same view data and never include cost or margin of sales orders.
+
+- Indicator drill-downs open in an accessible modal (read-only view, at the user's request); editable lists and search stay in-page.

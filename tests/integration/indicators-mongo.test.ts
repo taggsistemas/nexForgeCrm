@@ -110,8 +110,8 @@ describe.skipIf(!uri)('indicators: values match records within each profile scop
   await technicalService.act(technician.context,company,work.id,'check-in',{version:0,locationAuthorized:true,position:point});
   const report=await indicatorService.report(manager.context,company,{view:'gerencial'});
   expect([value(report,'campo','visits'),value(report,'campo','works')]).toEqual([1,1]);
-  expect(report.charts.map(chart=>chart.key)).toEqual(expect.arrayContaining(['visitasMes','pedidosMes','previsao','chamadosMes','osTecnico']));
-  expect(report.charts.find(chart=>chart.key==='visitasMes')!.points).toHaveLength(6);expect(report.charts.find(chart=>chart.key==='osTecnico')!.points).toEqual([{label:'ind-technician',values:[1]}]);
+  expect(report.charts.map(chart=>chart.key)).toEqual(expect.arrayContaining(['visitasMes','faturamentoAno','pedidosMes','previsao','chamadosMes','osTecnico']));expect(Object.fromEntries(report.charts.map(chart=>[chart.key,chart.kind]))).toMatchObject({visitasMes:'line',faturamentoAno:'line',pedidosMes:'bars',osTecnico:'pie'});expect(report.charts.find(chart=>chart.key==='faturamentoAno')!.points).toHaveLength(12);
+  expect(report.charts.find(chart=>chart.key==='visitasMes')!.points).toHaveLength(12);expect(report.charts.find(chart=>chart.key==='osTecnico')!.points).toEqual([{label:'ind-technician',values:[1]}]);
   const detail=(login:Login,section:string,key:string,extra:Record<string,unknown>={})=>indicatorDetails(login.context,company,{section,key,...extra});
   const visits=await detail(manager,'campo','visits');expect(visits.rows.map(row=>row.slice(0,3))).toEqual([['ind-seller','Fazenda Castro','Sede A']]);expect(visits.rows[0]![5]).toBeGreaterThanOrEqual(19);
   expect((await detail(coordinator,'campo','works')).rows.map(row=>row.slice(0,3))).toEqual([['ind-technician','Fazenda Castro','Sede A']]);

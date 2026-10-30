@@ -2065,6 +2065,12 @@
       "kind": "test",
       "source": "tests/e2e/supply.spec.ts",
       "symbol": "partial receipt and a PDF"
+    },
+    {
+      "id": "crm:product-picker",
+      "kind": "component",
+      "source": "apps/web/src/components/ProductPicker.tsx",
+      "symbol": "ProductPicker"
     }
   ],
   "edges": [
@@ -4247,6 +4253,11 @@
       "from": "crm:supply:e2e",
       "to": "apps/web/src/features/supply/Purchases.tsx",
       "kind": "tests"
+    },
+    {
+      "from": "crm:product-picker",
+      "to": "apps/web/src/features/supply/Purchases.tsx",
+      "kind": "rendered-by"
     }
   ]
 }

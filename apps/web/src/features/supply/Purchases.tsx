@@ -1,5 +1,6 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {Modal} from '../../components/Modal';
+import {ProductPicker} from '../../components/ProductPicker';
 import {companyProfile,downloadPdf} from '../../components/documentPdf';
 import {purchaseOrderPdf} from '../../../../../packages/contracts/src/documents';
 import {moneyToCents,proposalLineCents} from '../../../../../packages/contracts/src/opportunities';
@@ -24,18 +25,18 @@ export function Purchases({account}:{account:Account}){
  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[formError,setFormError]=useState('');
  const [detail,setDetail]=useState<{record:PurchaseView;supplier:SupplierView|null;history:PurchaseEventView[]}|null>(null),[action,setAction]=useState<PurchaseAction|null>(null),[note,setNote]=useState('');
  const [editor,setEditor]=useState<{row?:PurchaseView}|null>(null),[draft,setDraft]=useState({supplierId:'',expectedDate:'',paymentTerms:'',notes:''}),[lines,setLines]=useState<Line[]>([]);
- const [suppliers,setSuppliers]=useState<SupplierView[]>([]),[supplierSearch,setSupplierSearch]=useState(''),[products,setProducts]=useState<ProductView[]>([]),[productSearch,setProductSearch]=useState('');
+ const [suppliers,setSuppliers]=useState<SupplierView[]>([]),[supplierSearch,setSupplierSearch]=useState('');
  const [receiving,setReceiving]=useState<Record<string,string>|null>(null),[receiveNote,setReceiveNote]=useState('');
  useEffect(()=>{const controller=new AbortController();setLoading(true);
   supplyCall(company,'/purchases?'+new URLSearchParams({page:String(page),status,search}),{signal:controller.signal}).then(data=>{setRows(data.items);setTotal(data.total);setError('');}).catch(cause=>{if(!controller.signal.aborted)setError((cause as Error).message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
   return()=>controller.abort();},[company,page,status,search,refresh]);
  useEffect(()=>{if(!editor)return;const controller=new AbortController(),timer=setTimeout(()=>{supplyCall(company,'/suppliers?active=true&search='+encodeURIComponent(supplierSearch),{signal:controller.signal}).then(data=>setSuppliers(data.items??[])).catch(()=>{});},250);return()=>{controller.abort();clearTimeout(timer);};},[company,editor,supplierSearch]);
- useEffect(()=>{if(!editor)return;const controller=new AbortController(),timer=setTimeout(()=>{supplyCall(company,'/catalog/products?page=1&search='+encodeURIComponent(productSearch),{signal:controller.signal}).then(data=>setProducts((data.items??[]).filter((item:ProductView)=>item.active))).catch(()=>{});},250);return()=>{controller.abort();clearTimeout(timer);};},[company,editor,productSearch]);
+ const searchProducts=async(text:string,signal:AbortSignal)=>((await supplyCall(company,'/catalog/products?page=1&search='+encodeURIComponent(text),{signal})).items??[]).filter((item:ProductView)=>item.active) as ProductView[];
  async function openDetail(id:string){setNotice('');setError('');try{setDetail(await supplyCall(company,'/purchases/'+id));}catch(cause){setError((cause as Error).message);}}
- function openEditor(row?:PurchaseView){setFormError('');setNotice('');setSupplierSearch('');setProductSearch('');
+ function openEditor(row?:PurchaseView){setFormError('');setNotice('');setSupplierSearch('');
   setDraft({supplierId:row?.supplierId??'',expectedDate:row?.expectedDate??new Date(Date.now()+10*86400000).toISOString().slice(0,10),paymentTerms:row?.paymentTerms??'',notes:row?.notes??''});
   setLines(row?row.items.map(item=>({productId:item.productId,label:item.code+' — '+item.description,unit:item.unit,quantity:item.quantity.replace('.',','),cost:asInput(item.unitCostCents)})):[]);setEditor({row});}
- function addProduct(id:string){const product=products.find(item=>item.id===id);if(!product||lines.some(line=>line.productId===id))return;setLines(current=>[...current,{productId:id,label:product.code+' — '+product.description,unit:product.unit,quantity:'1',cost:product.costCents===null||product.costCents===undefined?'':asInput(product.costCents)}]);}
+ function addProduct(product:ProductView){const id=product.id;if(lines.some(line=>line.productId===id))return;setLines(current=>[...current,{productId:id,label:product.code+' — '+product.description,unit:product.unit,quantity:'1',cost:product.costCents===null||product.costCents===undefined?'':asInput(product.costCents)}]);}
  const preview=(line:Line)=>{try{const cost=moneyToCents(line.cost);return cost===undefined?null:proposalLineCents(line.quantity.replace(',','.'),cost,0);}catch{return null;}};
  async function save(event:FormEvent){event.preventDefault();if(!editor)return;setFormError('');
   try{if(!lines.length)throw Error('Inclua pelo menos um item.');const items=lines.map(line=>{const unitCostCents=moneyToCents(line.cost);if(unitCostCents===undefined||preview(line)===null)throw Error('Confira quantidade e custo de '+line.label+'.');return {productId:line.productId,quantity:line.quantity.replace(',','.'),unitCostCents};});
@@ -92,8 +93,8 @@ export function Purchases({account}:{account:Account}){
    <form className="nf-form" onSubmit={save}><fieldset disabled={busy}>
     <div className="nf-admin-grid"><label>Buscar fornecedor<input value={supplierSearch} maxLength={80} onChange={event=>setSupplierSearch(event.target.value)}/></label>
      <label>Fornecedor<select required value={draft.supplierId} onChange={event=>setDraft({...draft,supplierId:event.target.value})}><option value="">Selecione</option>{editor?.row&&!suppliers.some(item=>item.id===editor.row!.supplierId)&&<option value={editor.row.supplierId}>{editor.row.supplierName}</option>}{suppliers.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-     <label>Buscar no catálogo<input value={productSearch} maxLength={80} onChange={event=>setProductSearch(event.target.value)} placeholder="Código, descrição ou SKU"/></label>
-     <label>Incluir item<select value="" onChange={event=>addProduct(event.target.value)}><option value="">Selecione um produto ou serviço</option>{products.filter(item=>!lines.some(line=>line.productId===item.id)).map(item=><option key={item.id} value={item.id}>{item.code} — {item.description}</option>)}</select></label></div>
+    </div>
+    <ProductPicker label="Incluir item" exclude={lines.map(line=>line.productId)} search={searchProducts} onSelect={addProduct}/>
     {!lines.length?<p className="nf-muted">Nenhum item incluído.</p>:<div className="nf-table-scroll"><table className="nf-admin-table nf-proposal-items"><thead><tr><th>Item</th><th>Quantidade</th><th>Custo unitário (R$)</th><th>Total</th><th><span className="nf-sr-only">Remover</span></th></tr></thead><tbody>{lines.map((line,index)=><tr key={line.productId}><td>{line.label}</td>
      <td data-label="Quantidade"><input aria-label={'Quantidade de '+line.label} inputMode="decimal" maxLength={13} value={line.quantity} onChange={event=>setLines(current=>current.map((row,position)=>position===index?{...row,quantity:event.target.value}:row))}/></td>
      <td data-label="Custo unitário (R$)"><input aria-label={'Custo unitário de '+line.label} inputMode="decimal" maxLength={20} value={line.cost} onChange={event=>setLines(current=>current.map((row,position)=>position===index?{...row,cost:event.target.value}:row))}/></td>

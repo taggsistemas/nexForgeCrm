@@ -6,6 +6,7 @@ import {Reports} from './features/reports/Reports';
 import {Catalog} from './features/catalog/Catalog';
 import {Dashboard} from './features/dashboard/Dashboard';
 import {OfflineWorkspace} from './features/offline/OfflineWorkspace';
+import {runEngine,subscribe,type EngineStatus} from './features/offline/engine';
 import {FieldVisits} from './features/field-visits/FieldVisits';
 import {Territories} from './features/territories/Territories';
 import {Agenda} from './features/agenda/Agenda';
@@ -23,7 +24,7 @@ const modules = [
   {id:'pipeline',group:'COMERCIAL',title:'Pipeline comercial',icon:'PC',description:'Captação, contato e qualificação de leads.'},
   {id:'opportunities',group:'COMERCIAL',title:'Oportunidades',icon:'OP',description:'Valores, fechamento, ganho/perda e atividades vinculadas.'},
   {id:'visits',group:'ATIVIDADES E VISITAS',title:'Agenda e visitas',icon:'AV',description:'Planejamento, roteiros e registro em campo.'},
-  {id:'offline',group:'ATIVIDADES E VISITAS',title:'Operação offline',icon:'OF',description:'Carteira criptografada, registros locais e sincronização.'},
+  {id:'offline',group:'ATIVIDADES E VISITAS',title:'Operação offline',icon:'OF',description:'Registros sem internet salvos no aparelho e sincronizados automaticamente.'},
   {id:'field',group:'ATIVIDADES E VISITAS',title:'Rotas e visitas em campo',icon:'RV',description:'Roteiro diário, check-in, check-out e resultados.'},
   {id:'territories',group:'ATIVIDADES E VISITAS',title:'Carteiras e planejamento',icon:'CP',description:'Regiões, vendedores, carteiras e planos de visitas.'},
   {id:'catalog',group:'VENDAS',title:'Catálogo e preços',icon:'CT',description:'Produtos, caixas e tabelas de preços por abrangência.'},
@@ -41,6 +42,10 @@ export function App() {
   const [menu,setMenu] = useState(false);
   const menuRef=useRef<HTMLElement>(null),menuButton=useRef<HTMLButtonElement>(null);
   useEffect(()=>{if(!menu)return;const media=window.matchMedia('(max-width:800px)');if(!media.matches)return;const panel=menuRef.current;panel?.querySelector<HTMLButtonElement>('button')?.focus();const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.preventDefault();setMenu(false);}if(event.key==='Tab'){const items=[...panel!.querySelectorAll<HTMLElement>('button,input,a[href]')].filter(el=>!el.hasAttribute('disabled'));const first=items[0],last=items.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}};const resize=()=>{if(!media.matches)setMenu(false);};document.addEventListener('keydown',key);media.addEventListener('change',resize);return()=>{document.removeEventListener('keydown',key);media.removeEventListener('change',resize);menuButton.current?.focus({preventScroll:true});};},[menu]);
+  const [sync,setSync]=useState<EngineStatus|null>(null);
+  useEffect(()=>subscribe(setSync),[]);
+  // Offline data is prepared and synchronized automatically: on sign-in, on reconnection and every 5 minutes while open.
+  useEffect(()=>{const account=identity.account;if(!account||account.security?.mustChangePassword||account.security?.privacyAcceptanceRequired)return;void runEngine(account);const again=()=>void runEngine(account),timer=setInterval(again,5*60000);window.addEventListener('online',again);return()=>{clearInterval(timer);window.removeEventListener('online',again);};},[identity.account]);
   const [search,setSearch] = useState('');
   const [selected,setSelected] = useState('overview');
   useEffect(() => {
@@ -50,7 +55,7 @@ export function App() {
   },[selected]);
   useEffect(()=>{if(identity.networkUnavailable&&selected!=='offline')setOfflinePortal(true);},[identity.networkUnavailable,selected]);
   useEffect(()=>{setSelected('overview');setMenu(false);},[identity.account?.user.id,identity.account?.tenant.id]);
-  const connection=<span className="nf-connection" role="status"><i className={online ? 'nf-dot' : 'nf-dot offline'}/>{online ? 'Conexão disponível' : 'Sem conexão'}</span>;
+  const connection=<span className="nf-connection" role="status"><i className={online ? 'nf-dot' : 'nf-dot offline'}/>{online ? 'Conexão disponível' : 'Sem conexão'}{sync?.phase==='syncing'?' · sincronizando…':sync?.pending?' · '+sync.pending+' registro(s) no aparelho':''}</span>;
   if(offlinePortal)return <main className="nf-content"><OfflineWorkspace networkUnavailable={identity.networkUnavailable} account={identity.account??undefined} onClose={()=>setOfflinePortal(false)}/></main>;
   if(identity.checking) return <div className="nf-loading" role="status">Verificando sessão...</div>;
   if(!identity.account) return <main className="nf-login"><div className="nf-login-tools">{connection}<ThemeToggle/></div><div className="nf-login-layout"><BrandPanel/><div><IdentityPanel identity={identity}/></div></div></main>;

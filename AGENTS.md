@@ -60,3 +60,5 @@
 - Order kind visibility comes from order:sales/order:service and is enforced with the live scope (portfolio, or the coordination technical scope) in lists, details, writes, indicators and reports before counts. Reports export exactly the server rows; cost columns require cost:read. Printing never includes cost or margin. The sidebar menu controls exist only for the phone overlay.
 
 - Indicator drill-downs return the records behind a value with the same scope and filters; percentages/averages are not drillable. "Em atendimento agora" lists open server check-ins (visit or work order) with customer/property only — never device coordinates or continuous tracking.
+
+- Offline is automatic and passwordless: the vault key is a non-extractable device CryptoKey in IndexedDB bound to tenant+user; snapshots refresh while online and the outbox syncs on reconnection. Offline orders/tickets go through the same server services and rules (approval, credit, live Party, server numbers/instants) inside the receipt transaction. Never overwrite another user's pending vault.

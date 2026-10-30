@@ -108,6 +108,23 @@ async function winOpportunity(ctx:AccessContext,companyId:string,row:InstanceTyp
  await Opportunity.updateOne({_id:opportunity._id,version:opportunity.version},{$set:{stage:'ganha',probability:100,closedAt:new Date(),lossReason:''},$inc:{version:1}},{session});
  await opportunityHistory(ctx,companyId,opportunity._id,opportunity._id,'opportunity.stage_changed',session,{previousStage:opportunity.stage,nextStage:'ganha'},'Pedido '+row.number+' confirmado');
 }
+/** Direct order inside an existing transaction; the server computes items, totals and number. Used online and by offline sync. */
+export async function createDirectOrder(ctx:AccessContext,companyId:string,input:ReturnType<typeof orderDirectInput.parse>,session:mongoose.ClientSession,note='Lançamento direto'){
+ const party=await approvedParty(ctx,companyId,input.partyId,session),built=await buildItems(ctx,companyId,party._id,input.items,session);assertKind(ctx,built.kind);
+ const [row]=await SalesOrder.create([{tenantId:ctx.tenantId,companyId,number:await nextNumber(ctx,companyId,session),kind:built.kind,origin:'direto',partyId:party._id,items:built.items,totalCents:built.totalCents,paymentMethod:input.paymentMethod,paymentTermDays:input.paymentTermDays,expectedDeliveryDate:input.expectedDeliveryDate,notes:input.notes,createdBy:ctx.userId}],{session});
+ await event(ctx,companyId,row!._id,'created',session,note);return row!;
+}
+/** Submission evaluates table price, approved payment conditions and credit; approval is required only for exceptions. */
+async function applySubmit(ctx:AccessContext,companyId:string,row:InstanceType<typeof SalesOrder>,now:Date,session:mongoose.ClientSession){
+ const fresh=await approvedParty(ctx,companyId,row.partyId,session),reasons=await evaluate(ctx,companyId,row,fresh,session);
+ row.submittedBy=new mongoose.Types.ObjectId(ctx.userId);row.submittedAt=now;row.approvalReasons=reasons as never;
+ if(reasons.length)row.status='aguardando_aprovacao';else{row.status='confirmado';row.confirmedAt=now;await winOpportunity(ctx,companyId,row,session);}
+}
+/** Submits a just-created draft inside the caller's transaction (offline sync), with the same rules as the online action. */
+export async function submitOrderIn(ctx:AccessContext,companyId:string,row:InstanceType<typeof SalesOrder>,session:mongoose.ClientSession){
+ await applySubmit(ctx,companyId,row,new Date(),session);row.version++;await row.save({session});
+ await event(ctx,companyId,row._id,'submit',session,row.approvalReasons.length?'Aprovação necessária: '+row.approvalReasons.map(reason=>orderApprovalReasonNames[reason as keyof typeof orderApprovalReasonNames]).join('; '):'');
+}
 export const orderService={
  async list(ctx:AccessContext,companyId:string,raw:unknown){
   const input=orderListInput.parse(raw),scope=await orderScope(ctx,companyId,'order:read',input.partyId?{_id:input.partyId}:{});
@@ -125,11 +142,7 @@ export const orderService={
  },
  async createDirect(ctx:AccessContext,companyId:string,raw:unknown){
   const input=orderDirectInput.parse(raw);companyScope(ctx,companyId,'order:write');
-  return transact(async session=>{
-   const party=await approvedParty(ctx,companyId,input.partyId,session),built=await buildItems(ctx,companyId,party._id,input.items,session);assertKind(ctx,built.kind);
-   const [row]=await SalesOrder.create([{tenantId:ctx.tenantId,companyId,number:await nextNumber(ctx,companyId,session),kind:built.kind,origin:'direto',partyId:party._id,items:built.items,totalCents:built.totalCents,paymentMethod:input.paymentMethod,paymentTermDays:input.paymentTermDays,expectedDeliveryDate:input.expectedDeliveryDate,notes:input.notes,createdBy:ctx.userId}],{session});
-   await event(ctx,companyId,row!._id,'created',session,'Lançamento direto');return {id:String(row!._id),number:row!.number};
-  });
+  return transact(async session=>{const row=await createDirectOrder(ctx,companyId,input,session);return {id:String(row._id),number:row.number};});
  },
  async createFromProposal(ctx:AccessContext,companyId:string,raw:unknown){
   const input=orderFromProposalInput.parse(raw);companyScope(ctx,companyId,'order:write');
@@ -181,9 +194,7 @@ export const orderService={
    const current=await view(ctx,row,party.name),now=new Date();
    if(action==='submit'){
     if(!current.canSubmit)throw new OrderRuleRejected('STATUS');
-    const fresh=await approvedParty(ctx,companyId,row.partyId,session),reasons=await evaluate(ctx,companyId,row,fresh,session);
-    row.submittedBy=new mongoose.Types.ObjectId(ctx.userId);row.submittedAt=now;row.approvalReasons=reasons as never;
-    if(reasons.length)row.status='aguardando_aprovacao';else{row.status='confirmado';row.confirmedAt=now;await winOpportunity(ctx,companyId,row,session);}
+    await applySubmit(ctx,companyId,row,now,session);
    }else if(action==='approve'){
     if(!current.canApprove)throw new OrderRuleRejected(row.status==='aguardando_aprovacao'?'SELF_APPROVAL':'STATUS');
     row.status='confirmado';row.confirmedAt=now;row.approvedBy=new mongoose.Types.ObjectId(ctx.userId);row.decisionNote=input.note;await winOpportunity(ctx,companyId,row,session);

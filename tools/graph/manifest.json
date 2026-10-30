@@ -1326,7 +1326,7 @@
       "source": "apps/web/src/features/offline/vault.ts",
       "id": "crm:offline:cas",
       "kind": "policy",
-      "symbol": "writeEnvelope"
+      "symbol": "updateVault"
     },
     {
       "source": "apps/web/src/features/offline/OfflineWorkspace.tsx",
@@ -1356,7 +1356,7 @@
       "source": "tests/e2e/offline.spec.ts",
       "id": "crm:offline:e2e",
       "kind": "test",
-      "symbol": "coldOffline"
+      "symbol": "activity, order and ticket on the device"
     },
     {
       "id": "crm:catalog:contract",
@@ -1981,6 +1981,12 @@
       "kind": "component",
       "source": "apps/web/src/components/ReportTable.tsx",
       "symbol": "ReportTable"
+    },
+    {
+      "id": "crm:offline:engine",
+      "kind": "service",
+      "source": "apps/web/src/features/offline/engine.ts",
+      "symbol": "runEngine"
     }
   ],
   "edges": [
@@ -4078,6 +4084,26 @@
       "from": "crm:indicators:test",
       "to": "apps/api/src/modules/indicators/details.ts",
       "kind": "tests"
+    },
+    {
+      "from": "crm:offline:engine",
+      "to": "apps/web/src/features/offline/vault.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:offline:engine",
+      "to": "apps/web/src/App.tsx",
+      "kind": "rendered-by"
+    },
+    {
+      "from": "crm:offline:service",
+      "to": "apps/api/src/modules/orders/service.ts",
+      "kind": "depends-on"
+    },
+    {
+      "from": "crm:offline:service",
+      "to": "apps/api/src/modules/tickets/service.ts",
+      "kind": "depends-on"
     }
   ]
 }

@@ -348,3 +348,10 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Cards de contagem/valor abrem os registros por trás do número (mesmo escopo e filtros, Excel); "Em atendimento agora" lista check-ins abertos de visitas e OS com cliente/propriedade, sem coordenadas; gráficos mensais, por faixa e por responsável calculados no servidor.
 - `indicators-mongo` ganhou caso real de detalhamento (atendimento agora por perfil e território, carteira, visitas, chamados, OS, oportunidades, recusa de chave não detalhável e de perfil sem acesso) e gráficos; E2E novo do clique, detalhe e Excel em desktop/celular.
 - `npm run check`: aprovado, 202 Vitest, grafo declarado (330 nós/419 arestas, não Graphify AST). `npm run test:db`: 95/95. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 96/96.
+
+## Etapa 13 — offline automático (29/10/2026)
+
+- Sem senha local: chave AES-GCM não exportável do aparelho no IndexedDB, vinculada a tenant+usuário; carteira baixada ao entrar, ao reconectar e a cada 5 minutos; fila de atividades, visitas, pedidos e chamados enviada automaticamente; servidor aplica as mesmas regras online a pedidos (aprovação, crédito, tabela do cliente) e chamados (propriedade do cliente vivo, abertura no servidor).
+- `offline-mongo` ganhou caso real de pedido/chamado offline (idempotência concorrente com mesmo número, aprovação por desconto, campos forjados recusados, lead não aprovado, propriedade de outro cliente, replay com número, outro vendedor sem acesso); unitários dos novos DTOs; E2E offline reescrito (5 cenários × desktop/celular) para o fluxo sem senha.
+- Primeira rodada: o layout do offline acusou rejeição não tratada do IndexedDB em documento de origem opaca; o acesso ao armazenamento passou a recusar limpo e a tratar os eventos de erro.
+- `npm run check`: aprovado, 203 Vitest, grafo declarado (331 nós/423 arestas, não Graphify AST). `npm run test:db`: 96/96. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 92/92.

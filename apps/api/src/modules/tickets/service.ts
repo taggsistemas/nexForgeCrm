@@ -74,6 +74,20 @@ async function event(ctx:AccessContext,companyId:string,ticketId:unknown,action:
  await TicketEvent.create([{tenantId:ctx.tenantId,companyId,ticketId,actorId:ctx.userId,action,statusAfter,note:extra.note??'',fromAssigneeId:extra.fromAssigneeId??null,toAssigneeId:extra.toAssigneeId??null}],{session});
 }
 const eventKeys:Record<TicketAction,string>={'first-response':'first_response',assign:'assigned',deadline:'deadline_set',escalate:'escalated',status:'status_changed',resolve:'resolved',cancel:'cancelled'};
+/** Opens a ticket inside the caller's transaction (online creation and offline sync): live Party authority, property of the Party, server instants. */
+export async function openTicket(ctx:AccessContext,companyId:string,input:ReturnType<typeof ticketCreateInput.parse>,session:mongoose.ClientSession){
+ const access=await authority(ctx,companyId,session);
+ const [party]=await openableParties(ctx,companyId,access,{_id:oid(input.partyId)},session);if(!party)throw new RecordNotFound();
+ const property=await Property.findOne({_id:input.propertyId,tenantId:ctx.tenantId,companyId,partyId:party._id,archived:false}).session(session);if(!property)throw new InvalidReference();
+ if(access.kind==='territory'&&!access.regionIds.some(id=>String(id)===String(property.regionId)))throw new InvalidReference();
+ if(input.equipmentId&&!await Equipment.exists({_id:input.equipmentId,tenantId:ctx.tenantId,companyId,partyId:party._id,propertyId:property._id,archived:false}).session(session))throw new InvalidReference();
+ if(input.previousTicketId&&!await Ticket.exists({_id:input.previousTicketId,tenantId:ctx.tenantId,companyId,partyId:party._id,status:'resolvido'}).session(session))throw new InvalidReference();
+ await Party.updateOne({_id:party._id,tenantId:ctx.tenantId,companyId},{$inc:{commercialRevision:1}},{session});
+ const sequence=await TicketSequence.findOneAndUpdate({tenantId:ctx.tenantId,companyId},{$inc:{value:1}},{upsert:true,new:true,session,setDefaultsOnInsert:true});
+ const [row]=await Ticket.create([{...input,tenantId:ctx.tenantId,companyId,number:'CH-'+String(sequence!.value).padStart(6,'0'),openedBy:ctx.userId,openedAt:new Date()}],{session});
+ await event(ctx,companyId,row!._id,'opened','aberto',session,{note:input.description});
+ return row!;
+}
 export const ticketService={
  async settings(ctx:AccessContext,companyId:string){companyScope(ctx,companyId,'ticket:read');return ticketSettings(ctx,companyId);},
  async saveSettings(ctx:AccessContext,companyId:string,raw:unknown){
@@ -119,19 +133,7 @@ export const ticketService={
  },
  async create(ctx:AccessContext,companyId:string,raw:unknown){
   const input=ticketCreateInput.parse(raw);companyScope(ctx,companyId,'ticket:write');
-  return transact(async session=>{
-   const access=await authority(ctx,companyId,session);
-   const [party]=await openableParties(ctx,companyId,access,{_id:oid(input.partyId)},session);if(!party)throw new RecordNotFound();
-   const property=await Property.findOne({_id:input.propertyId,tenantId:ctx.tenantId,companyId,partyId:party._id,archived:false}).session(session);if(!property)throw new InvalidReference();
-   if(access.kind==='territory'&&!access.regionIds.some(id=>String(id)===String(property.regionId)))throw new InvalidReference();
-   if(input.equipmentId&&!await Equipment.exists({_id:input.equipmentId,tenantId:ctx.tenantId,companyId,partyId:party._id,propertyId:property._id,archived:false}).session(session))throw new InvalidReference();
-   if(input.previousTicketId&&!await Ticket.exists({_id:input.previousTicketId,tenantId:ctx.tenantId,companyId,partyId:party._id,status:'resolvido'}).session(session))throw new InvalidReference();
-   await Party.updateOne({_id:party._id,tenantId:ctx.tenantId,companyId},{$inc:{commercialRevision:1}},{session});
-   const sequence=await TicketSequence.findOneAndUpdate({tenantId:ctx.tenantId,companyId},{$inc:{value:1}},{upsert:true,new:true,session,setDefaultsOnInsert:true});
-   const [row]=await Ticket.create([{...input,tenantId:ctx.tenantId,companyId,number:'CH-'+String(sequence!.value).padStart(6,'0'),openedBy:ctx.userId,openedAt:new Date()}],{session});
-   await event(ctx,companyId,row!._id,'opened','aberto',session,{note:input.description});
-   return {id:String(row!._id),number:row!.number};
-  });
+  return transact(async session=>{const row=await openTicket(ctx,companyId,input,session);return {id:String(row._id),number:row.number};});
  },
  /** Triage actions. Only managers of the ticket's live territory (or company-wide) act; instants come from the server. */
  async act(ctx:AccessContext,companyId:string,id:string,action:TicketAction,raw:unknown){

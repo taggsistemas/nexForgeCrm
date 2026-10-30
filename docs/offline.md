@@ -1,57 +1,37 @@
-# Operação offline — carteira protegida e sincronização
+# Operação offline — automática, sem senha local (etapa 13 — 29/10/2026)
 
-## Como usar
-1. Entre online com sua conta, acesse **Operação offline** e escolha **Preparar carteira offline**. Selecione empresa/responsável e defina uma senha local de 12 a 256 caracteres, diferente da senha de login. O aplicativo precisa ter sido aberto online para instalar seu shell/service worker.
-2. Durante a desconexão, consulte a carteira, registre atividades e inicie/encerre visitas neste módulo. Na abertura sem rede, o espaço offline abre automaticamente; desbloqueie com a senha local; isso não cria uma sessão autenticada fictícia nas outras telas.
-3. Ao reconectar, a carteira é revalidada/atualizada. A sincronização começa automaticamente com a carteira aberta/desbloqueada. Use **Sincronizar pendências** para repetir após falha. Resultados ficam como sincronizado, conflito ou recusado. Resposta perdida mantém a operação pendente para reenvio do mesmo ID.
-4. Em conflito confirmado, confira a carteira atual e o relato, então use **Revisar conflito** para uma nova tentativa com as versões atuais. Visita já encerrada, cancelada ou em atendimento não é sobrescrita. Recusas de acesso/prazo não são convertidas em nova tentativa automaticamente.
+## Como funciona para o usuário
+1. Basta entrar conectado no CRM pelo aparelho (celular, tablet ou computador). A carteira do usuário é baixada e protegida no aparelho automaticamente: ao entrar, ao reconectar e a cada 5 minutos com o app aberto. Não há senha local nem passo de "preparar carteira".
+2. Sem internet, o app abre direto em **Operação offline** (também ao abrir o app já sem rede, desde que o aparelho tenha entrado conectado antes). Em cada cliente/lead: **Atividade**, **Iniciar visita** (com localização autorizada na entrada e na saída), **Pedido** e **Chamado**. Tudo é salvo primeiro no aparelho.
+3. Quando a conexão volta, os registros são enviados automaticamente, na ordem em que foram feitos. O indicador de conexão no topo mostra quantos registros ainda estão no aparelho. **Sincronizar agora** força o envio.
+4. Cada registro mostra a situação: aguardando envio, sincronizado (pedidos e chamados exibem o número gerado pelo servidor e o pedido mostra se ficou confirmado ou aguardando aprovação), conflito ou recusado com o motivo. Conflito confirmado permite **Nova tentativa** com as versões atuais; qualquer pendência pode ser descartada explicitamente.
+5. Ao **Encerrar sessão** com registros ainda não enviados, o app avisa quantos serão perdidos; cancelar mantém tudo, confirmar apaga os dados do aparelho.
 
-## Entregue neste incremento
-- Carteira mínima de leads/clientes, contatos autorizados e atividades diretas da agenda, incluindo visitas de planos publicados.
-- Criação de atividades diretas (ligação, e-mail, reunião, tarefa), sem recorrência offline.
-- Visita local agendada ou espontânea para cadastro do próprio vendedor. Entrada e saída pedem autorização pontual de GPS; um rascunho local aberto é preservado com criptografia até encerramento/descarte explícito.
-- Visita não agendada cria sua própria ocorrência concluída na agenda ao sincronizar, atomicamente com relatório/recibo/auditoria.
-- Atividades locais mostram origem offline na agenda. Visitas recebidas aparecem no registro em campo como relato offline, com horários informados e recebimento separados.
-- Consulta offline não expõe dados fiscais, crédito, condições financeiras, permissões administrativas, senhas ou tokens de sessão no banco local. Campos de nomes/contato/endereço/relatos ainda são dados pessoais e exigem aparelho protegido.
+## O que fica no aparelho
+Carteira atual do usuário (até 500 cadastros, 1.000 contatos e 1.000 atividades de 30 dias antes/depois), propriedades e equipamentos dos clientes (para chamados) e, para quem emite pedidos de venda, o catálogo ativo com o preço da tabela geral da empresa como sugestão. Perfis com visibilidade da empresa que ultrapassam o limite recebem automaticamente a própria carteira. Não ficam no aparelho: dados fiscais, crédito, condições de pagamento, custos, permissões, senhas ou tokens.
 
-## Limites explícitos
-Uma carteira por navegador/aparelho, usuário, tenant e empresa por vez. Até 500 cadastros, 1.000 contatos e 1.000 atividades diretas entre 30 dias anteriores/próximos; a API recusa excesso, sem truncamento silencioso. Escolha outro responsável autorizado para reduzir o escopo. Até 100 pendências locais, mais histórico limitado de registros aplicados/substituídos. Para trocar de empresa/identidade, sincronize e apague a carteira anterior explicitamente.
+## Proteção sem senha
+Um único cofre IndexedDB por aparelho, criptografado com AES-GCM 256 (IV aleatório por gravação). A chave é gerada no próprio aparelho como `CryptoKey` **não exportável** e guardada apenas no IndexedDB, vinculada ao usuário (marcador SHA-256 de tenant+usuário, sem nomes). Nada vai para localStorage; o service worker continua sem cachear respostas autenticadas. O envelope expõe só versão, marcador do dono, revisão, contador de pendências e bloqueio.
 
-Validade local de até 8 horas, limitada pela expiração da sessão e fim do trial. Renovação requer conexão e a mesma identidade autorizada. Registros já capturados têm janela máxima de envio de 7 dias após a preparação original; o novo login não altera essa janela nem os horários da autorização original.
+Limite conhecido e aceito na decisão de remover a senha: quem usar o mesmo perfil de navegador desbloqueado consegue ver os dados offline daquele usuário. Por isso o aparelho deve ter bloqueio de tela, e a orientação de uso inclui encerrar a sessão em aparelhos compartilhados. A criptografia protege contra cópia dos arquivos do navegador e leitura por outro usuário do CRM, não contra quem tem o aparelho desbloqueado, malware ou XSS.
 
-Um check-in feito na tela online não é concluído automaticamente por um relato offline. Visitas que serão registradas sem rede devem ser iniciadas e encerradas no módulo offline. Não há conversão retroativa para comprovação online. Rascunho sem saída não é enviado como visita completa; expiração pode exigir descarte explícito/regularização operacional pela gestão, sem inventar horário/localização de saída.
+Se outro usuário entrar no mesmo aparelho enquanto há registros pendentes do anterior, nada é sobrescrito: o app avisa para entrar com o usuário anterior e sincronizar, ou apagar explicitamente. Sem pendências, o cofre anterior é substituído. O cofre com senha da versão anterior é apagado quando vazio; se ainda tiver pendências, o app avisa e não o apaga.
 
-Não inclui edição offline de cadastro, qualificação/aprovações, crédito, preços, pedidos, metas, planejamento, atividades de oportunidades, anexos ou rastreamento contínuo. Não há otimização viária/mapas offline ou sincronização automática em background com aplicativo fechado. Sincronização inicia ao reconectar enquanto aberto/desbloqueado, com repetição manual após falha. Instalação nativa APK/IPA não é criada.
-
-## Criptografia e proteção local
-IndexedDB armazena apenas envelope AES-GCM 256, IV aleatório de 96 bits por gravação e salt de 128 bits. Chave derivada por PBKDF2/SHA-256 (600.000 iterações nos novos envelopes; leitura de envelopes de desenvolvimento sem esse metadado preserva os 310.000 originais, sem perder pendências), não extraível, mantida somente em memória. A senha local não é persistida e não tem recuperação. O envelope expõe somente versão, revisão, contador de pendências e marcador de bloqueio, sem nomes ou conteúdo da carteira.
-
-Service worker mantém apenas assets/shell público; nenhuma resposta HTTP autenticada é cacheada. Chave/carteira são bloqueadas ao ocultar app, após 5 minutos sem uso ou ao expirar a autorização (checagem periódica de 15s e antes de gravar). Exclusão e logout solicitam confirmação quando houver trabalho local pendente. Logout confirmado apaga o envelope; erro de conexão ao logout mantém o aviso de sessão remota não encerrada, sem afirmar revogação no servidor. Bloquear apenas a carteira conserva o envelope criptografado.
-
-Troca/expiração de sessão detectada online bloqueia a carteira; reabertura exige a mesma identidade online e senha local. Comunicação entre abas sinaliza bloqueio, sem transmitir dados. Escritas IndexedDB usam transação e comparação de revisão para impedir que uma aba sobrescreva outra silenciosamente.
-
-Criptografia em navegador não protege contra XSS enquanto desbloqueado, malware, aparelho desbloqueado ou cópia feita por quem conhece a senha local. O relógio do dispositivo não é uma fonte inviolável: há verificação de retrocesso/desvio, mas revogação/tempo remoto não podem ser garantidos imediatamente durante desconexão. Por isso o servidor nunca usa o envelope/chave local como credencial, nem aceita suas permissões ou datas como autorização.
-
-## Autorização e API
+## Autorização e regras no servidor
 Base `/api/v1/companies/:companyId/offline`:
-- POST `/prepare` `{ownerId?}`: exige sessão canônica válida, conta liberada, tenant/empresa/Party/equipe atual. Cria OfflineGrant no servidor e snapshot minimizado; capacidades de escrita são apenas auxílio visual.
-- POST `/sync` `{grantId,operation}`: sessão atual e permissões são revalidadas em cada operação. Grant deve pertencer ao mesmo usuário/tenant/empresa, ainda dentro da janela de envio; jamais autentica por si só. Troca de usuário, suspensão, trial vencido ou retirada de carteira não é contornada pelo cache.
-
-DTO estrito aceita apenas activity/visit. IDs de tenant, ator, aprovação ou recebimento não vêm do navegador. Relógio capturado precisa caber na autorização original (tolerância de 1 minuto para início/desvio) e não ultrapassar o prazo final. Isso é uma verificação de coerência, não prova do momento ou da posição física.
+- POST `/prepare` `{ownerId?}`: sessão canônica válida e conta liberada. Gera OfflineGrant com validade limitada pela sessão (até 8 h) e pelo fim do trial; janela de envio de 7 dias. É chamado automaticamente pelo app.
+- POST `/sync` `{grantId,operation}`: sessão, permissões, carteira atual e prazos são revalidados em cada operação; o grant nunca autentica sozinho. Operações: `activity`, `visit`, `order`, `ticket` (DTO estrito; tenant, dono, totais, número, status e instantes não vêm do aparelho).
+- **Pedido offline**: exige `order:write`; é criado como lançamento direto pelas mesmas regras online (cliente aprovado na carteira viva, catálogo ativo, casas decimais, totais calculados no servidor). Se marcado para envio, passa pela mesma avaliação de tabela do cliente, condições de pagamento e crédito: dentro da regra é confirmado; fora, aguarda aprovação. Recusas voltam como `ORDER_<motivo>`.
+- **Chamado offline**: exige `ticket:write`; propriedade/equipamento precisam pertencer ao cliente vivo; origem "visita"; a abertura é o instante do servidor.
+- O app valida a identidade da sessão antes de enviar; sessão expirada ou de outro usuário bloqueia o envio até entrar novamente com o mesmo usuário (os registros ficam guardados).
 
 ## Transações, idempotência e conflitos
-OfflineReceipt possui índice único tenant/company/user/operationId e hash canônico do payload validado. Recibo e efeito de negócio são gravados na mesma transação com OfflineAudit/AgendaAudit. Reenvio da mesma operação devolve o mesmo resultado; payload diferente para o mesmo ID é recusado. Falha de auditoria aborta recibo e efeito.
+OfflineReceipt (índice único tenant/empresa/usuário/operationId + hash do payload) é gravado na mesma transação do efeito e da auditoria (OfflineAudit e, para agenda, AgendaAudit). Reenvio do mesmo ID devolve o mesmo resultado (inclusive número do pedido/chamado); payload diferente com o mesmo ID é recusado. Falha de rede, timeout ou 5xx mantêm a pendência com o mesmo ID; só conflito confirmado (409) permite nova tentativa com novo ID, após o app baixar a carteira atual.
 
-Party.version e AgendaActivity.version são bases otimistas; carteira/atividade atual são verificadas antes de escrever. Acesso perdido gera recusa, sem revelar dados atuais do antigo cliente. Operação confirmada com conflito não teve efeito; o usuário pode criar nova tentativa explícita. Falha de rede, timeout ou resposta 5xx mantém ID/pendência para tentar novamente, sem gerar outra operação.
+A versão do cadastro protege atividades e visitas. Pedidos e chamados não dependem dela porque o servidor reavalia todas as regras no envio. As regras de visitas offline continuam: relato com horários/posições do aparelho guardados como não confiáveis e recebimento do servidor separado, sem criar check-in/out online falso; conflito com atendimento online, técnico ou relato sobreposto; serialização pelo executor.
 
-Atendimento simultâneo online e intervalos reportados sobrepostos geram conflito. Um toque no documento do executor serializa disputa entre importação e check-in online, inclusive entre empresas. Offline em dois dispositivos ainda pode produzir rascunhos concorrentes; não há duas visitas aprovadas automaticamente só porque foram anotadas localmente.
-
-Para visitas, OfflineVisitReport guarda observedInAt/observedOutAt, posições/precisão, origem offline e receivedAt do servidor. AgendaActivity fica completed_offline/concluida e completedAt usa o recebimento do servidor. Não criar FieldExecution com check-in/out falso. Proteções da agenda/planejamento continuam: não reabrir execução encerrada ou cancelar atendimento em andamento. Supervisor/gestão veem apenas a carteira atual autorizada.
-
-Grants/recibos técnicos têm expurgo TTL após a janela de envio + 30 dias; operação antiga já não é aceita quando expurgados. Relatos de visita e auditoria não são apagados por esse TTL. Retenção/eliminação LGPD desses dados segue definição contratual e fluxo próprio, não implementado como expurgo automático neste incremento.
+## Limites
+Uma empresa por aparelho (a primeira da conta ou a já usada no aparelho). Até 100 registros aguardando envio. Registros só são aceitos dentro da validade da autorização (até 8 h após a última atualização online, limitada pela sessão e trial); depois disso o app pede para conectar e entrar novamente. Não há sincronização com o app fechado (sem background sync), mapas offline ou instalação nativa APK/IPA — a instalação é PWA. Técnicos não usam a carteira comercial offline.
 
 ## Homologação
-Exige HTTPS em produção, Web Crypto, IndexedDB, service worker e GPS autorizado para visitas. Testes automatizados usam navegador real com rede offline simulada, criptografia/IndexedDB reais, APIs/GPS simulados; a integração MongoDB é testada separadamente. Homologar também em Android/iPhone físicos, incluindo bloqueio de tela, falta de GPS, armazenamento cheio, encerramento pelo sistema e atualização da PWA sem perder pendências.
-
-
-Referências técnicas de implementação: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/deriveKey , https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html e https://developer.chrome.com/docs/modern-web-guidance/guides/security/client-side-encryption . São referências para os parâmetros e APIs, não certificação de conformidade do produto.
+Exige HTTPS, Web Crypto, IndexedDB, service worker e GPS autorizado para visitas. Os testes automatizados usam navegador real com rede desligada, criptografia/IndexedDB reais e APIs simuladas; a integração MongoDB cobre pedidos e chamados offline, idempotência, regras e recusas. Homologar em Android/iPhone físicos: bloqueio de tela, falta de GPS, armazenamento cheio, app encerrado pelo sistema e atualização da PWA sem perder registros.

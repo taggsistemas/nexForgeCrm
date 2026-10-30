@@ -12,5 +12,10 @@ describe('offline operation inputs',()=>{
   for(const change of [{activityVersion:undefined},{activityId:undefined},{locationAuthorized:false},{checkIn:{...point,latitude:91}},{observedInAt:'2030-01-03T00:00:00Z'},{observedInAt:'2029-12-31T00:00:00Z'},{receivedAt:base.capturedAt}])expect(operationInput.safeParse({...visit,...change}).success).toBe(false);
   expect(syncInput.safeParse({grantId:'a'.repeat(24),operation:visit,permissions:['*']}).success).toBe(false);
  });
+ it('accepts orders and tickets without totals, numbers, status or opening instants from the device',()=>{
+  const order={...base,kind:'order',items:[{productId:'b'.repeat(24),quantity:'1.5',unitPriceCents:1000,discountCents:0}],expectedDeliveryDate:'2030-02-01',paymentMethod:'boleto',paymentTermDays:[30,60],notes:'',submit:true};expect(operationInput.safeParse(order).success).toBe(true);
+  for(const change of [{totalCents:1},{status:'confirmado'},{number:'PV-1'},{paymentTermDays:[]},{paymentMethod:'cheque'},{items:[]},{approvedBy:'x'}])expect(operationInput.safeParse({...order,...change}).success).toBe(false);
+  const ticket={...base,kind:'ticket',propertyId:'c'.repeat(24),equipmentId:null,criticality:'critico',title:'Parado',description:'Equipamento parado na ordenha.'};expect(operationInput.safeParse(ticket).success).toBe(true);
+  for(const change of [{openedAt:base.capturedAt},{number:'CH-1'},{description:'curto'},{criticality:'urgente'},{assigneeId:'d'.repeat(24)}])expect(operationInput.safeParse({...ticket,...change}).success).toBe(false);
+ });
 });
-

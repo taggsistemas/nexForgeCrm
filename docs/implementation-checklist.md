@@ -18,8 +18,8 @@ Atualização: 29/10/2026. Referência: requisitos funcionais v1.0 recebidos do 
 | 10. Peças utilizadas | Implementada; homologação de uso pendente | Consumo/devolução documentados na OS, inicialmente sem baixa automática |
 | 11. Dashboards | Implementada; homologação de uso pendente | Visões por perfil e indicadores territoriais comerciais/técnicos |
 | 12. Pedidos de venda e serviço | Implementada; homologação de uso pendente | Custo no catálogo, pedido de proposta/direto/OS, aprovação fora da regra, entrega, notas do Financeiro, previsão de faturamento e margem |
-| 13. Offline automático | Próxima | Salvamento criptografado no aparelho sem senha local, sincronização automática de visitas, atividades, pedidos e chamados |
-| 14. Homologação e piloto | Pendente | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
+| 13. Offline automático | Implementada; homologação em aparelhos pendente | Salvamento criptografado no aparelho sem senha local, sincronização automática de visitas, atividades, pedidos e chamados |
+| 14. Homologação e piloto | Próxima | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada | Aceites, testes integrados, dispositivos, exportação e restauração demonstrada |
 
 ## Etapa 1 — checklist de implementação
 
@@ -206,11 +206,22 @@ Decisões de Giovanni: pedido de venda a partir de proposta aceita ou direto, se
 - [x] Ajustes pós-revisão: escopo por papel (venda/serviço, carteira, equipe, escopo técnico) em pedidos, indicadores e relatórios; impressão do pedido; menu Relatórios com Excel (pedidos, vendas, serviços, itens, a faturar, faturamento, previsão); filtros alinhados; controles do menu lateral só no celular.
 - [ ] Homologar regras de aprovação, prazos e indicadores com a Só Leite.
 
-## Próxima etapa — 13. Offline automático
+## Etapa 13 — offline automático
 
-- [ ] Remover senha local e o passo "Preparar carteira"; chave não extraível no IndexedDB vinculada ao usuário.
-- [ ] Snapshot automático da carteira quando online; fila de saída para visitas, atividades, pedidos e chamados com IDs idempotentes.
-- [ ] Sincronização automática na reconexão com revalidação completa no servidor; aviso no logout com itens pendentes.
+- [x] Sem senha local nem "Preparar carteira": chave AES-GCM não exportável gerada no aparelho e guardada no IndexedDB, vinculada a tenant+usuário.
+- [x] Carteira baixada automaticamente ao entrar, ao reconectar e a cada 5 minutos; propriedades, equipamentos e catálogo com preço da tabela geral para pedidos.
+- [x] Registros salvos primeiro no aparelho: atividades, visitas (GPS autorizado), pedidos e chamados; fila com IDs idempotentes enviada automaticamente na reconexão.
+- [x] Servidor revalida tudo: pedidos pelas mesmas regras online (tabela do cliente, crédito, condições e aprovação), chamados com propriedade do cliente vivo e abertura no servidor.
+- [x] Conflito confirmado com nova tentativa explícita; aviso no logout com registros pendentes; outro usuário no aparelho não sobrescreve pendências.
+- [x] Testes: caso MongoDB real de pedido/chamado offline, unitários dos novos DTOs e 5 E2E (desktop/celular) com rede desligada.
+- [x] Verificação completa: check (203 Vitest), MongoDB 96/96, layout 115 aprovados e 2 ignorados, E2E 92/92.
+- [ ] Homologar em Android/iPhone físicos.
+
+## Próxima etapa — 14. Homologação e piloto
+
+- [ ] Executar testes integrados e ponta a ponta do roteiro T01–T08 (T01 por cadastro manual).
+- [ ] Revisar acessibilidade, testar aparelhos reais, exportação, backup e restauração demonstrada.
+- [ ] Preparar instruções de uso e corrigir os problemas encontrados.
 
 ### Ajuste após revisão da etapa 1
 - [x] Aumentar o respiro dos botões em barras, cards, seções e rodapés de modais, mantendo tamanhos de toque e rolagem organizada.

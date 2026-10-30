@@ -22,6 +22,12 @@ import {OfflineGrant,OfflineReceipt,OfflineVisitReport,OfflineAudit,initializeOf
 import {customerRegistrationFixture} from '../fixtures/customer.js';
 import {prepareAccount} from '../fixtures/ready-account.js';
 import {dateParts} from '../../packages/contracts/src/agenda.js';
+import {propertyService} from '../../apps/api/src/modules/relationships/properties.js';
+import {initializeTerritoryModels,Region} from '../../apps/api/src/modules/territories/models.js';
+import {catalogService} from '../../apps/api/src/modules/catalog/service.js';
+import {initializeCatalogModels} from '../../apps/api/src/modules/catalog/models.js';
+import {SalesOrder,initializeOrderModels} from '../../apps/api/src/modules/orders/models.js';
+import {Ticket,initializeTicketModels} from '../../apps/api/src/modules/tickets/models.js';
 type Login=NonNullable<Awaited<ReturnType<typeof identityService.login>>>;
 const uri=process.env.MONGODB_TEST_URI,db='nexforge_crm_test_'+randomUUID().replaceAll('-',''),origin='http://localhost:5173',password='offline-test-password';
 let a:Login,b:Login,s1:Login,s2:Login,company:string,companyB:string;
@@ -36,6 +42,30 @@ describe.skipIf(!uri)('offline: grants, current authorization, transactional ide
   const response=await request(app).post(base()+'/prepare').set(headers(s1)).send({});expect(response.status).toBe(200);expect(response.body.parties.map((row:{id:string})=>row.id)).toContain(party.id);expect(response.body.parties.map((row:{name:string})=>row.name)).not.toContain('Outro vendedor');expect(response.body.parties[0]).not.toHaveProperty('taxId');expect(response.body.parties[0]).not.toHaveProperty('commercial');expect(Date.parse(response.body.expiresAt)-Date.parse(response.body.issuedAt)).toBeLessThanOrEqual(8*3600000);
   expect((await request(app).post(base()+'/prepare').set(headers(s1)).send({tenantId:b.context.tenantId})).status).toBe(400);expect((await request(app).post(base()+'/prepare').set(headers(b)).send({})).status).toBe(403);expect((await request(app).post(base()+'/prepare').set('Cookie','nf_session='+s1.token).send({})).status).toBe(403);
  },30000);
+ it('synchronizes offline orders and tickets once, through the same server rules, with server numbers and instants',async()=>{
+  await Promise.all([initializeTerritoryModels(),initializeCatalogModels(),initializeOrderModels(),initializeTicketModels()]);
+  const customer=String((await Party.create({tenantId:a.context.tenantId,companyId:company,ownerId:s1.context.userId,kind:'customer',name:'Cliente pedido offline',stage:'qualificado',qualificationState:'approved',customerType:'atacado',commercial:{creditLimitCents:1000000,paymentMethods:['boleto'],paymentTermDays:[30]},address:{country:'Brasil'}}))._id);
+  const region=String((await Region.create({tenantId:a.context.tenantId,companyId:company,name:'Campos Gerais',nameKey:'campos gerais'}))._id),site=(await propertyService.create(a.context,company,customer,{name:'Sede offline',regionId:region})).id;
+  const product=(await catalogService.saveProduct(a.context,company,null,{description:'Teteira',kind:'product',unit:'pc',quantityDecimals:0,packaging:'unit',components:[],variableWeight:false,estimatedWeightGrams:null,ncm:'',cest:'',deliveryDays:5})).record.id;
+  await catalogService.saveTable(a.context,company,null,{name:'Geral',scope:'global',entries:[{productId:product,priceCents:5000}]});
+  const prepared=(await request(app).post(base()+'/prepare').set(headers(s1)).send({})).body;
+  expect(prepared.capabilities).toMatchObject({orderWrite:true,ticketWrite:true});expect(prepared.products).toEqual([expect.objectContaining({id:product,priceCents:5000,quantityDecimals:0})]);
+  expect(prepared.properties).toEqual(expect.arrayContaining([{id:site,partyId:customer,name:'Sede offline'}]));expect(prepared.parties.find((row:{id:string})=>row.id===customer).orderable).toBe(true);
+  const order={kind:'order',operationId:randomUUID(),partyId:customer,partyVersion:0,capturedAt:new Date().toISOString(),items:[{productId:product,quantity:'2',unitPriceCents:4000,discountCents:0}],expectedDeliveryDate:'2031-01-10',paymentMethod:'boleto',paymentTermDays:[30],notes:'Pedido no campo',submit:true};
+  const sent=await Promise.all([1,2].map(()=>request(app).post(base()+'/sync').set(headers(s1)).send({grantId:prepared.grantId,operation:order})));
+  expect(sent.map(row=>row.status)).toEqual([200,200]);expect(new Set(sent.map(row=>row.body.number)).size).toBe(1);expect(sent[0]!.body).toMatchObject({number:expect.stringMatching(/^PV-\d{6}$/),status:'aguardando_aprovacao'});
+  const saved=await SalesOrder.find({tenantId:a.context.tenantId,partyId:customer});expect(saved).toHaveLength(1);expect(saved[0]).toMatchObject({status:'aguardando_aprovacao',totalCents:8000,origin:'direto'});expect([...saved[0]!.approvalReasons]).toEqual(['discount']);
+  expect((await request(app).post(base()+'/sync').set(headers(s1)).send({grantId:prepared.grantId,operation:{...order,operationId:randomUUID(),totalCents:1}})).status).toBe(400);
+  const lead=await relationshipService.create(s1.context,company,'lead',{name:'Lead sem aprovação',phone:'42999999999'});
+  expect((await request(app).post(base()+'/sync').set(headers(s1)).send({grantId:prepared.grantId,operation:{...order,operationId:randomUUID(),partyId:lead.id}})).body.code).toBe('ORDER_CUSTOMER_NOT_APPROVED');
+  const ticket={kind:'ticket',operationId:randomUUID(),partyId:customer,partyVersion:7,capturedAt:new Date().toISOString(),propertyId:site,equipmentId:null,criticality:'alto',title:'Bomba parada',description:'Bomba de vácuo parou durante a ordenha.'};
+  const opened=await request(app).post(base()+'/sync').set(headers(s1)).send({grantId:prepared.grantId,operation:ticket});expect(opened.status).toBe(200);expect(opened.body.number).toMatch(/^CH-\d{6}$/);
+  const row=(await Ticket.findById(opened.body.entityId))!;expect(row.openedAt.valueOf()).toBeGreaterThanOrEqual(Date.parse(ticket.capturedAt));expect(row.origin).toBe('visita');expect(String(row.openedBy)).toBe(s1.context.userId);
+  expect((await request(app).post(base()+'/sync').set(headers(s1)).send({grantId:prepared.grantId,operation:ticket})).body).toMatchObject({replayed:true,number:opened.body.number});
+  expect((await request(app).post(base()+'/sync').set(headers(s1)).send({grantId:prepared.grantId,operation:{...ticket,operationId:randomUUID(),propertyId:String(new mongoose.Types.ObjectId())}})).body.code).toBe('TICKET_INVALID_REFERENCE');
+  expect(await OfflineAudit.countDocuments({operationId:{$in:[order.operationId,ticket.operationId]}})).toBe(2);
+  expect((await request(app).post(base()+'/sync').set(headers(s2)).send({grantId:prepared.grantId,operation:{...ticket,operationId:randomUUID()}})).status).toBe(404);
+ },60000);
  it('applies concurrent retries exactly once and rejects mutated operation identities',async()=>{
   const {party,snapshot}=await fixture('Idempotência'),operation=task(party.id),body={grantId:snapshot.grantId,operation};const results=await Promise.all([1,2,3].map(()=>request(app).post(base()+'/sync').set(headers(s1)).send(body)));expect(results.map(row=>row.status)).toEqual([200,200,200]);expect(new Set(results.map(row=>row.body.entityId)).size).toBe(1);expect(await AgendaActivity.countDocuments({partyId:party.id})).toBe(1);expect(await OfflineReceipt.countDocuments({operationId:operation.operationId})).toBe(1);
   expect((await request(app).post(base()+'/sync').set(headers(s1)).send({...body,operation:{...operation,title:'Alterado'}})).body.code).toBe('OFFLINE_IDEMPOTENCY_MISMATCH');

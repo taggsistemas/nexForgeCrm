@@ -1,0 +1,20 @@
+# Graphify: index only source, tests, docs and tooling of this repository.
+node_modules/
+dist/
+coverage/
+artifacts/
+test-results/
+playwright-report/
+graphify-out/
+tmp-repro/
+.venv/
+tools/graph/.venv/
+.env
+.env.*
+*.log
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.xlsx
+package-lock.json

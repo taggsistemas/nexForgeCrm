@@ -36,7 +36,7 @@ Ver docs/verification.md e resultado do CI remoto.
 ## Documentação
 docs/taggmaster.md, docs/architecture.md, docs/authentication.md, docs/roadmap.md,
 docs/integrations.md e tools/graph/README.md.
-Graphify AST ainda pendente; os metadados explícitos não o substituem.
+Graphify (grafo AST local para consultas dos agentes): `npm run graph:install` uma vez e `npm run graph:build`; ver tools/graph/README.md. Os metadados declarados continuam complementares.
 
 ## Publicação
 Frontend e API são workspaces separados no mesmo repositório. Consulte [o guia de publicação](docs/deployment.md) para os dois serviços no Render ou Nginx + Node em servidor próprio. Modelos em deploy/ não publicam serviços automaticamente.

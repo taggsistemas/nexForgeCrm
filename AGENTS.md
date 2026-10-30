@@ -9,7 +9,7 @@
 - Never commit secrets, customer records, location records or local database dumps.
 - Keep docs and tools/graph/manifest.json consistent with changes.
 - Run npm run check and npm run test:e2e when dependencies are available.
-- Report unexecuted checks honestly. Graph metadata is not Graphify AST output.
+- Report unexecuted checks honestly. Declared graph metadata (tools/graph/manifest.json) is not Graphify AST output; keep both. Graphify runs locally from tools/graph/.venv (npm run graph:install/build/update); query it with node tools/graph/graphify.mjs before broad searches, never commit graphify-out/ and never enable semantic extraction that sends code or docs to an external service without approval.
 - All create/edit forms must use accessible modals; lists and search remain in-page.
 - Admin-created users receive temporary passwords. Enforce password change and versioned privacy acceptance in the backend before business access.
 - Recovery tokens must be hashed, expiring and single-use; never return tokens or credentials in API responses or logs. Send email through configured backend SMTP only.

@@ -368,3 +368,8 @@ Aumentados padding de barras/cards/seções e conteúdo de modal, gap de ações
 - Central gerencial com linhas suaves (faturamento ano × ano anterior, visitas), barras agrupadas de 12 meses e pizzas por responsável e técnico; detalhamento dos cards em modal acessível; campo de produto com digitação e lista filtrada no pedido de compra.
 - `indicators-mongo` confere os tipos e os 12 pontos dos gráficos; E2E da central verifica linha, pizza, ranking, modal com foco e devolução do foco; E2E de compras escolhe o produto digitando.
 - `npm run check`: aprovado, 208 Vitest, grafo declarado (345 nós/437 arestas, não Graphify AST). `npm run test:db`: 100/100. `npm run test:layout`: 115 aprovados, 2 ignorados. E2E local: 96/96.
+
+## Graphify instalado (30/10/2026)
+
+- `graphifyy==0.9.97` (PyPI oficial, Graphify-Labs, Apache-2.0) em venv do projeto; skill e hooks com escopo do projeto (`graphify install --project`), sem alteração global. Hooks apontam para `tools/graph/graphify.mjs`, que usa a venv e não faz nada se ela não existir.
+- Extração só de código, local (`--code-only`, tree-sitter): 292 arquivos, 2.200 nós, 7.192 arestas, 79 comunidades, em ~14 s; `cluster-only --no-label` sem LLM. Conferidos `query`, `explain`, `path`, `affected`, `god-nodes`, `update` e o hook (saída 0).

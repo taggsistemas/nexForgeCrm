@@ -19,7 +19,7 @@ Regras detalhadas e auditoria do que existe: [commercial-rules-review.md](commer
 - Build e typecheck aprovados.
 - Testes unitários e HTTP aprovados.
 - E2E desktop/móvel e shell offline aprovados.
-- Graphify instalado em versão fixa e extração TypeScript/React validada.
+- Graphify instalado em versão fixa (graphifyy 0.9.97) e extração TypeScript/React validada em 30/10/2026: 292 arquivos, 2.200 nós, 7.192 arestas.
 - Grafo com metadados e proveniência.
 - Repositório privado na conta taggsistema e primeiro push confirmado.
 Itens dependentes de rede permanecem pendentes, não concluídos.
